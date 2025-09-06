@@ -7,8 +7,6 @@ export const apiRoute = async (req, res) => {
     //updates the scrapeState
     const data = await handleAdminCommand(inputParams);
 
-    console.log("API DATA")
-    console.log(data);
 
     //return to displayer
     // res.json(scrapeState);

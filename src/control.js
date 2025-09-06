@@ -1,3 +1,6 @@
-export const handleAdminCommand = async (inputParams) => { }
+export const handleAdminCommand = async (inputParams) => {
+  console.log("API DATA");
+  console.log(inputParams);
+};
 
-export const runNewScrape = async (inputParams) => { }
+export const runNewScrape = async (inputParams) => {};
