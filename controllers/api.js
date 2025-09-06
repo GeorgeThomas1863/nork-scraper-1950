@@ -1,5 +1,5 @@
 import { handleAdminCommand, runNewScrape } from "../src/control.js";
-import { scrapeState } from "../src/state.js";
+// import { scrapeState } from "../src/state.js";
 
 export const apiRoute = async (req, res) => {
     const inputParams = req.body;
@@ -7,11 +7,14 @@ export const apiRoute = async (req, res) => {
     //updates the scrapeState
     const data = await handleAdminCommand(inputParams);
 
+    console.log("API DATA")
+    console.log(data);
+
     //return to displayer
-    res.json(scrapeState);
+    // res.json(scrapeState);
 
-    //runs the command sent
-    const result = await runNewScrape(data);
+    // //runs the command sent
+    // const result = await runNewScrape(data);
 
-    return result;
+    // return result;
 };
