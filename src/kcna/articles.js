@@ -9,19 +9,22 @@ export const scrapeArticlesKCNA = async () => {
 
   for (const type of articleTypeUrlArr) {
     try {
-      const url = CONFIG[type];
+      const typeURL = CONFIG[type];
       console.log("URL");
       console.log(url);
-      const kcna = new KCNA({ url });
+      const kcna = new KCNA({ typeURL });
       //list html
       const html = await kcna.getHTML();
       const articleArray = await extractArticleList(html, type);
 
-      console.log("ARTICLE ARRAY");
-      console.log(articleArray);
+      //   console.log("ARTICLE ARRAY");
+      //   console.log(articleArray);
 
-      //   for (const article of articleArray) {
-      //   }
+      for (const a of articleArray) {
+        const articleURL = "http://www.kcna.kp" + a;
+        console.log("ARTICLE URL");
+        console.log(articleURL);
+      }
     } catch (e) {
       console.log(e.message + "; URL: " + e.url + "; ARTICLE TYPE: " + e.articleType + "; F BREAK: " + e.function);
     }
