@@ -1,3 +1,5 @@
+import axios from "axios";
+
 class KCNA {
   constructor(dataObject) {
     this.dataObject = dataObject;
