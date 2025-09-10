@@ -1,20 +1,33 @@
 export const handleAdminCommand = async (inputParams) => {
-  const { commandType } = inputParams;
+  const { command } = inputParams;
 
   console.log("API DATA");
   console.log(inputParams);
 
   //prob not necessary to track data
-  let data = "";
-  switch (commandType) {
+
+  switch (command) {
     case "admin-start-scrape":
       //ADD check to see if scrape already running
-      data = await runNewScrape(inputParams);
-      return data;
+      return await runNewScrape(inputParams);
 
     default:
       return null;
   }
 };
 
-export const runNewScrape = async (inputParams) => {};
+//check which site should be targeted
+export const runNewScrape = async (inputParams) => {
+  const { site } = inputParams;
+
+  switch (site) {
+    case "kcna":
+      return await scrapeKCNA();
+
+    case "watch":
+      return await scrapeWatch();
+
+    default:
+      return null;
+  }
+};
