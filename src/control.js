@@ -1,6 +1,9 @@
 export const handleAdminCommand = async (inputParams) => {
   const { commandType } = inputParams;
 
+  console.log("API DATA");
+  console.log(inputParams);
+
   //prob not necessary to track data
   let data = "";
   switch (commandType) {
@@ -12,8 +15,6 @@ export const handleAdminCommand = async (inputParams) => {
     default:
       return null;
   }
-  console.log("API DATA");
-  console.log(inputParams);
 };
 
 export const runNewScrape = async (inputParams) => {};
