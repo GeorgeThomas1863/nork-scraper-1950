@@ -7,11 +7,14 @@ import KCNA from "../../models/kcna.js";
 export const scrapeArticlesKCNA = async () => {
   const { articleTypeUrlArr } = CONFIG;
 
+  console.log("ARTICLE TYPE URL ARRAY");
+  console.log(articleTypeUrlArr);
+
   for (const type of articleTypeUrlArr) {
     try {
       const typeURL = CONFIG[type];
-      console.log("URL");
-      console.log(url);
+      console.log("TYPE URL");
+      console.log(typeURL);
       const kcna = new KCNA({ typeURL });
       //list html
       const html = await kcna.getHTML();
