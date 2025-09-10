@@ -15,7 +15,7 @@ export const scrapeArticlesKCNA = async () => {
       const typeURL = CONFIG[type];
       // console.log("TYPE URL");
       // console.log(typeURL);
-      const kcna = new KCNA({ typeURL });
+      const kcna = new KCNA({ url: typeURL });
       //list html
       const html = await kcna.getHTML();
       const articleArray = await extractArticleList(html, type);
