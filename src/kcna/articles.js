@@ -13,8 +13,8 @@ export const scrapeArticlesKCNA = async () => {
   for (const type of articleTypeUrlArr) {
     try {
       const typeURL = CONFIG[type];
-      console.log("TYPE URL");
-      console.log(typeURL);
+      // console.log("TYPE URL");
+      // console.log(typeURL);
       const kcna = new KCNA({ typeURL });
       //list html
       const html = await kcna.getHTML();
@@ -48,6 +48,9 @@ export const extractArticleList = async (html, type) => {
 
   const articleLinkElement = document.querySelector(".article-link");
   const linkElementArray = articleLinkElement?.querySelectorAll("a");
+
+  console.log("LINK ELEMENT ARRAY");
+  console.log(linkElementArray);
 
   //throw error if no links found
   if (!linkElementArray || !linkElementArray.length) {
