@@ -1,3 +1,9 @@
+import { scrapeArticlesKCNA } from "./kcna/articles.js";
+import { scrapePicsKCNA } from "./kcna/pics.js";
+import { scrapeVidsKCNA } from "./kcna/vids.js";
+
+import { uploadTG } from "./tg/upload.js";
+
 export const handleAdminCommand = async (inputParams) => {
   const { command } = inputParams;
 
@@ -31,3 +37,14 @@ export const runNewScrape = async (inputParams) => {
       return null;
   }
 };
+
+export const scrapeKCNA = async () => {
+  await scrapeArticlesKCNA();
+  await scrapePicsKCNA();
+  await scrapeVidsKCNA();
+
+  //upload to TG
+  await uploadTG();
+};
+
+export const scrapeWatch = async () => {};

@@ -1,0 +1,1 @@
+export const scrapePicsKCNA = async () => {};
