@@ -24,7 +24,7 @@ export const logScrapeStartKCNA = async () => {
   console.log("START DATA");
   console.log(startData);
 
-  const newScrapeId = startData.insertedId;
+  const newScrapeId = startData.insertedId?.toString() || null;
 
   kcnaState.scrapeId = newScrapeId;
   kcnaState.scrapeEndTime = null;
