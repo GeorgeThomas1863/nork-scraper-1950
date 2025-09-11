@@ -49,9 +49,6 @@ export const extractArticleList = async (html, type) => {
   const articleLinkElement = document.querySelector(".article-link");
   const linkElementArray = articleLinkElement?.querySelectorAll("a");
 
-  console.log("LINK ELEMENT ARRAY");
-  console.log(linkElementArray);
-
   //throw error if no links found
   if (!linkElementArray || !linkElementArray.length) {
     const error = new Error("CANT EXTRACT ARTICLE LIST");

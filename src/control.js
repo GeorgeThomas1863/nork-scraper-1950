@@ -1,6 +1,7 @@
 import { scrapeArticlesKCNA } from "./kcna/articles.js";
 import { scrapePicsKCNA } from "./kcna/pics.js";
 import { scrapeVidsKCNA } from "./kcna/vids.js";
+import { kcnaState, logScrapeStartKCNA, logScrapeStopKCNA } from "./kcna/kcna-state.js";
 
 import { uploadTG } from "./tg/upload.js";
 
@@ -14,7 +15,6 @@ export const handleAdminCommand = async (inputParams) => {
 
   switch (command) {
     case "admin-start-scrape":
-      //ADD check to see if scrape already running
       return await runNewScrape(inputParams);
 
     default:
@@ -28,6 +28,9 @@ export const runNewScrape = async (inputParams) => {
 
   switch (site) {
     case "kcna":
+      if (kcnaState.scrapeActive) {
+        return { data: "ALREADY SCRAPING FAGGOT" };
+      }
       return await scrapeKCNA();
 
     case "watch":
@@ -39,12 +42,16 @@ export const runNewScrape = async (inputParams) => {
 };
 
 export const scrapeKCNA = async () => {
+  await logScrapeStartKCNA()
+
   await scrapeArticlesKCNA();
   await scrapePicsKCNA();
   await scrapeVidsKCNA();
 
   //upload to TG
   await uploadTG();
+
+  await logScrapeStopKCNA();
 };
 
 export const scrapeWatch = async () => {};
