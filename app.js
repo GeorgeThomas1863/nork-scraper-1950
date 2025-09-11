@@ -1,3 +1,7 @@
+//CURRENT STEP: ON ARTICLE CONTENT, USE UPDATE WHEN STORING
+
+//ADD THE SCRAPE STOP LOGIC / CHECK TO EVERYTHING
+
 import CONFIG from "./config/config.js";
 import express from "express";
 import cors from "cors";

@@ -38,7 +38,6 @@ export const scrapeArticleURLs = async () => {
         console.log("STORE DATA");
         console.log(storeData);
 
-        //for tracking
         articleURLArray.push(params);
       }
     } catch (e) {
