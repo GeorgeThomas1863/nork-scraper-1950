@@ -13,10 +13,10 @@ export const scrapeArticlesKCNA = async () => {
 
 //get article urls
 export const scrapeArticleURLs = async () => {
-  const { articleTypeUrlArr, articles } = CONFIG;
+  const { articleTypeArr, articles } = CONFIG;
 
   const articleURLArray = [];
-  for (const type of articleTypeUrlArr) {
+  for (const type of articleTypeArr) {
     try {
       const typeURL = CONFIG[type];
 
