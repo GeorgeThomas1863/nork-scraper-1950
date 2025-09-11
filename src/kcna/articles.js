@@ -45,6 +45,8 @@ export const scrapeArticleURLs = async () => {
       console.log(e.message + "; URL: " + e.url + "; ARTICLE TYPE: " + e.articleType + "; F BREAK: " + e.function);
     }
   }
+
+  return articleURLArray;
 };
 
 export const extractArticleList = async (html, type) => {
