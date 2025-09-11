@@ -40,3 +40,6 @@ export const logScrapeStartKCNA = async () => {
   console.log(kcnaState);
   return true;
 };
+
+
+export const logScrapeStopKCNA = async () => {}
