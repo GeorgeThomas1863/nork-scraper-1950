@@ -19,7 +19,7 @@ export const logScrapeStartKCNA = async () => {
   const newScrapeStartTime = new Date();
 
   console.log("STARTING NEW KCNA SCRAPE AT " + newScrapeStartTime);
-  const startModel = new dbModel({ startTime: newScrapeStartTime }, log);
+  const startModel = new dbModel({ scrapeStartTime: newScrapeStartTime }, log);
   const startData = await startModel.storeAny();
   console.log("START DATA");
   console.log(startData);
@@ -31,7 +31,7 @@ export const logScrapeStartKCNA = async () => {
   kcnaState.scrapeStartTime = newScrapeStartTime;
 
   //update the log
-  const updateModel = new dbModel({ keyToLookup: "startTime", itemValue: newScrapeStartTime, updateObj: kcnaState }, log);
+  const updateModel = new dbModel({ keyToLookup: "scrapeStartTime", itemValue: newScrapeStartTime, updateObj: kcnaState }, log);
   const updateData = await updateModel.updateObjItem();
   console.log("UPDATE DATA");
   console.log(updateData);
