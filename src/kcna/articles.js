@@ -4,6 +4,7 @@ import CONFIG from "../../config/config.js";
 import KCNA from "../../models/kcna.js";
 import dbModel from "../../models/db-model.js";
 import { kcnaState } from "./kcna-state.js";
+import { extractItemDate, lookupItemDate } from "./util.js";
 
 export const scrapeArticlesKCNA = async () => {
   const { articles } = CONFIG;
@@ -15,11 +16,13 @@ export const scrapeArticlesKCNA = async () => {
   //find new article urls by those without text content
   const newArticleModel = new dbModel({ keyExists: "url", keyEmpty: "text" }, articles);
   const newArticleArray = await newArticleModel.findEmptyItems();
-  console.log("NEW ARTICLE ARRAY");
-  console.log(newArticleArray);
+
+  const articleContentArray = await scrapeArticleContent(newArticleArray);
+  console.log("ARTICLE CONTENT ARRAY");
+  console.log(articleContentArray);
 };
 
-//GET ARTICLE URLS
+//ARTICLE URL SECTION
 export const scrapeArticleURLs = async () => {
   const { articleTypeArr, articles } = CONFIG;
 
@@ -30,13 +33,15 @@ export const scrapeArticleURLs = async () => {
 
       const kcna = new KCNA({ url: typeURL });
       const html = await kcna.getHTML();
-      const articleListArray = await extractArticleList(html, type);
+      const articleListArray = await parseArticleList(html, type);
 
       //loop through each article and store
       for (const a of articleListArray) {
-        const articleURL = "http://www.kcna.kp" + a;
+        const { articleLink, articleDate } = a;
+        const articleURL = "http://www.kcna.kp" + articleLink;
         const params = {
           url: articleURL,
+          date: articleDate,
           articleType: type,
           scrapeId: kcnaState.scrapeId,
         };
@@ -56,12 +61,12 @@ export const scrapeArticleURLs = async () => {
   return articleURLArray;
 };
 
-export const extractArticleList = async (html, type) => {
+export const parseArticleList = async (html, type) => {
   if (!html) {
     const error = new Error("FAILED TO GET ARTICLE LIST HTML ");
     error.url = CONFIG[type];
     error.articleType = type;
-    error.function = "extractArticleList";
+    error.function = "parseArticleList";
     throw error;
   }
 
@@ -76,14 +81,15 @@ export const extractArticleList = async (html, type) => {
     const error = new Error("CANT EXTRACT ARTICLE LIST");
     error.url = CONFIG[type];
     error.articleType = type;
-    error.function = "extractArticleList";
+    error.function = "parseArticleList";
     throw error;
   }
 
   const articleArray = [];
   for (const linkElement of linkElementArray) {
     const articleLink = linkElement.getAttribute("href");
-    articleArray.push(articleLink);
+    const articleDate = await extractItemDate(linkElement);
+    articleArray.push({ articleLink, articleDate });
   }
 
   //throw error if no links found
@@ -91,9 +97,153 @@ export const extractArticleList = async (html, type) => {
     const error = new Error("CANT EXTRACT ARTICLES FROM ELEMENT");
     error.url = CONFIG[type];
     error.articleType = type;
-    error.function = "extractArticleList";
+    error.function = "parseArticleList";
     throw error;
   }
 
   return articleArray;
+};
+
+//-----------------------------
+
+//ARTICLE CONTENT SECTION
+
+export const scrapeArticleContent = async (inputArray) => {
+  if (!inputArray || !inputArray.length) return null;
+
+  const articleContentArray = [];
+  for (const article of inputArray) {
+    const { url } = article;
+    try {
+      const kcna = new KCNA({ url });
+      const html = await kcna.getHTML();
+
+      const articleContent = await parseArticleContent(html, url);
+      if (!articleContent) continue;
+
+      console.log("ARTICLE CONTENT");
+      console.log(articleContent);
+      articleContentArray.push(articleContent);
+    } catch (e) {
+      console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+    }
+    return articleContentArray;
+  }
+};
+
+export const parseArticleContent = async (html, url) => {
+  if (!html) {
+    const error = new Error("FAILED TO GET ARTICLE ITEM HTML ");
+    error.url = url;
+    error.function = "parseArticleContent";
+    throw error;
+  }
+
+  const dom = new JSDOM(html);
+  const document = dom.window.document;
+
+  const articleTitle = await extractArticleTitle(document);
+  const articleText = await extractArticleText(document);
+  const articlePicPage = await extractArticlePicPage(document);
+  const articlePicArray = await extractArticlePicArray(articlePicPage);
+
+  const storeParams = {
+    title: articleTitle,
+    text: articleText,
+    picPageURL: articlePicPage,
+    picArray: articlePicArray,
+  };
+
+  const storeModel = new dbModel({ keyToLookup: "url", itemValue: url, updateObj: storeParams }, articles);
+  const storeData = await storeModel.updateObjItem();
+  console.log("STORE DATA");
+  console.log(storeData);
+
+  return storeParams;
+};
+
+export const extractArticleTitle = async (document) => {
+  const titleElement = document.querySelector(".article-main-title");
+  const articleTitle = titleElement?.textContent?.replace(/\s+/g, " ").trim();
+  return articleTitle;
+};
+
+export const extractArticleText = async (document) => {
+  //extract text content
+  const textElement = document.querySelector(".content-wrapper");
+  const textArray = textElement.querySelectorAll("p"); //array of paragraph elements
+
+  const paragraphArray = [];
+  for (let i = 0; i < textArray.length; i++) {
+    paragraphArray.push(textArray[i].textContent.trim());
+  }
+
+  // Join paragraphs with double newlines for better readability
+  const articleText = paragraphArray.join("\n\n");
+  return articleText;
+};
+
+export const extractArticlePicPage = async (document) => {
+  //get article PAGE (if exists) where all pics are displayed
+  const mediaIconElement = document.querySelector(".media-icon");
+  const picPageHref = mediaIconElement?.firstElementChild?.getAttribute("href");
+
+  //return null if  pic doesnt exist
+  if (!picPageHref) return null;
+
+  //otherwise build pic / pic array
+  const picPageURL = "http://www.kcna.kp" + picPageHref;
+  return picPageURL;
+};
+
+export const extractArticlePicArray = async (url) => {
+  const { pics } = CONFIG;
+  const { scrapeId } = kcnaState;
+  if (!url) return null;
+
+  try {
+    const kcna = new KCNA({ url });
+    const html = await kcna.getHTML();
+
+    if (!html) {
+      const error = new Error("FAILED TO GET ARTICLE PIC ARRAY HTML ");
+      error.url = url;
+      error.function = "extractArticlePicArray";
+      throw error;
+    }
+
+    const dom = new JSDOM(html);
+    const document = dom.window.document;
+
+    //get and loop through img elements
+    const picArray = [];
+    const imgArray = document.querySelectorAll("img");
+    for (let i = 0; i < imgArray.length; i++) {
+      try {
+        const imgSrc = imgArray[i].getAttribute("src");
+        if (!imgSrc) continue;
+
+        const articlePicURL = "http://www.kcna.kp" + imgSrc;
+
+        picArray.push(articlePicURL);
+
+        //store url to picDB (so dont have to do again); build params
+        const storeParams = {
+          url: articlePicURL,
+          scrapeId: scrapeId,
+          date: await lookupItemDate(url, "articles"),
+        };
+
+        const storePicModel = new dbModel(storeParams, pics);
+        await storePicModel.storeUniqueURL();
+      } catch (e) {
+        console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+      }
+    }
+
+    return picArray;
+  } catch (e) {
+    console.log(e.message + "; URL: " + e.url + "; F BREAK: " + e.function);
+    return null;
+  }
 };
