@@ -6,6 +6,8 @@ import dbModel from "../../models/db-model.js";
 import { kcnaState } from "./kcna-state.js";
 
 export const scrapeArticlesKCNA = async () => {
+  const { articles } = CONFIG;
+
   const articleURLs = await scrapeArticleURLs();
   console.log("ARTICLE URLS");
   console.log(articleURLs);
