@@ -132,6 +132,9 @@ export const scrapeArticleContent = async (inputArray) => {
 };
 
 export const parseArticleContent = async (html, url) => {
+  const { articles } = CONFIG;
+  if (!url) return null;
+
   if (!html) {
     const error = new Error("FAILED TO GET ARTICLE ITEM HTML ");
     error.url = url;
