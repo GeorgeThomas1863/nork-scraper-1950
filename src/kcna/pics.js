@@ -74,7 +74,8 @@ export const parsePicSetList = async (url) => {
 
   const picSetArray = [];
   for (const picSetElement of photoWrapperArray) {
-    const picSetLink = picSetElement.getAttribute("href");
+    const titleWrapper = picSetElement.querySelector(".title a");
+    const picSetLink = titleWrapper.getAttribute("href");
     const picSetDate = await extractItemDate(picSetElement);
     picSetArray.push({ picSetLink, picSetDate });
   }
