@@ -88,11 +88,11 @@ export const parseArticleList = async (html, type) => {
   const articleArray = [];
   for (const linkElement of linkElementArray) {
     const articleLink = linkElement.getAttribute("href");
-    console.log("ARTICLE LINK");
-    console.log(articleLink);
+    // console.log("ARTICLE LINK");
+    // console.log(articleLink);
     const articleDate = await extractItemDate(linkElement);
-    console.log("ARTICLE DATE");
-    console.log(articleDate);
+    // console.log("ARTICLE DATE");
+    // console.log(articleDate);
     articleArray.push({ articleLink, articleDate });
   }
 
@@ -114,6 +114,9 @@ export const parseArticleList = async (html, type) => {
 
 export const scrapeArticleContent = async (inputArray) => {
   if (!inputArray || !inputArray.length) return null;
+
+  console.log("INPUT ARRAY!!!");
+  console.log(inputArray);
 
   const articleContentArray = [];
   for (const article of inputArray) {
