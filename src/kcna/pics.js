@@ -79,6 +79,9 @@ export const parsePicSetList = async (url) => {
     picSetArray.push({ picSetLink, picSetDate });
   }
 
+  console.log("PIC SET ARRAY");
+  console.log(picSetArray);
+
   //throw error if no links found
   if (!picSetArray || !picSetArray.length) {
     const error = new Error("CANT EXTRACT ARTICLES FROM ELEMENT");
