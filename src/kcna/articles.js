@@ -1,7 +1,7 @@
 import { JSDOM } from "jsdom";
 
 import CONFIG from "../../config/config.js";
-import KCNA from "../../models/kcna.js";
+import NORK from "../../models/nork-model.js";
 import dbModel from "../../models/db-model.js";
 import { kcnaState } from "./kcna-state.js";
 import { extractItemDate, lookupItemDate } from "./util.js";
@@ -10,7 +10,7 @@ export const scrapeArticlesKCNA = async () => {
   const { articles } = CONFIG;
 
   const articleURLs = await scrapeArticleURLs();
-  console.log("ARTICLE URLS");
+  console.log("NEW ARTICLE URLS");
   console.log(articleURLs);
 
   //find new article urls by those without text content
@@ -31,7 +31,7 @@ export const scrapeArticleURLs = async () => {
     try {
       const typeURL = CONFIG[type];
 
-      const kcna = new KCNA({ url: typeURL });
+      const kcna = new NORK({ url: typeURL });
       const html = await kcna.getHTML();
       const articleListArray = await parseArticleList(html, type);
 
@@ -88,11 +88,7 @@ export const parseArticleList = async (html, type) => {
   const articleArray = [];
   for (const linkElement of linkElementArray) {
     const articleLink = linkElement.getAttribute("href");
-    // console.log("ARTICLE LINK");
-    // console.log(articleLink);
     const articleDate = await extractItemDate(linkElement);
-    // console.log("ARTICLE DATE");
-    // console.log(articleDate);
     articleArray.push({ articleLink, articleDate });
   }
 
@@ -114,9 +110,6 @@ export const parseArticleList = async (html, type) => {
 
 export const scrapeArticleContent = async (inputArray) => {
   if (!inputArray || !inputArray.length) return null;
-
-  // console.log("INPUT ARRAY!!!");
-  // console.log(inputArray);
 
   const articleContentArray = [];
   for (const article of inputArray) {
@@ -142,7 +135,7 @@ export const parseArticleContent = async (url) => {
   console.log("CONTENT URL");
   console.log(url);
 
-  const kcna = new KCNA({ url });
+  const kcna = new NORK({ url });
   const html = await kcna.getHTML();
 
   if (!html) {
@@ -218,7 +211,7 @@ export const extractArticlePicArray = async (url) => {
   if (!url) return null;
 
   try {
-    const kcna = new KCNA({ url });
+    const kcna = new NORK({ url });
     const html = await kcna.getHTML();
 
     if (!html) {
@@ -243,11 +236,13 @@ export const extractArticlePicArray = async (url) => {
 
         picArray.push(articlePicURL);
 
+        const picDate = await lookupItemDate(url, "articles");
+
         //store url to picDB (so dont have to do again); build params
         const storeParams = {
           url: articlePicURL,
           scrapeId: scrapeId,
-          date: await lookupItemDate(url, "articles"),
+          date: picDate,
         };
 
         const storePicModel = new dbModel(storeParams, pics);

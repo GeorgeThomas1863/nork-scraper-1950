@@ -1,6 +1,6 @@
 import axios from "axios";
 
-class KCNA {
+class NORK {
   constructor(dataObject) {
     this.dataObject = dataObject;
   }
@@ -26,4 +26,4 @@ class KCNA {
   }
 }
 
-export default KCNA;
+export default NORK;
