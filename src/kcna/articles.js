@@ -115,17 +115,14 @@ export const parseArticleList = async (html, type) => {
 export const scrapeArticleContent = async (inputArray) => {
   if (!inputArray || !inputArray.length) return null;
 
-  console.log("INPUT ARRAY!!!");
-  console.log(inputArray);
+  // console.log("INPUT ARRAY!!!");
+  // console.log(inputArray);
 
   const articleContentArray = [];
   for (const article of inputArray) {
     const { url } = article;
     try {
-      const kcna = new KCNA({ url });
-      const html = await kcna.getHTML();
-
-      const articleContent = await parseArticleContent(html, url);
+      const articleContent = await parseArticleContent(url);
       if (!articleContent) continue;
 
       console.log("ARTICLE CONTENT");
@@ -138,9 +135,15 @@ export const scrapeArticleContent = async (inputArray) => {
   }
 };
 
-export const parseArticleContent = async (html, url) => {
-  const { articles } = CONFIG;
+export const parseArticleContent = async (url) => {
   if (!url) return null;
+  const { articles } = CONFIG;
+
+  console.log("CONTENT URL");
+  console.log(url);
+
+  const kcna = new KCNA({ url });
+  const html = await kcna.getHTML();
 
   if (!html) {
     const error = new Error("FAILED TO GET ARTICLE ITEM HTML ");
