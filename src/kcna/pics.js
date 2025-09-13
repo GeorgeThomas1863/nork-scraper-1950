@@ -28,6 +28,9 @@ export const scrapePicSetURLs = async () => {
         scrapeId: kcnaState.scrapeId,
       };
 
+      console.log("PARAMS");
+      console.log(params);
+
       const storeModel = new dbModel(params, picSets);
       const storeData = await storeModel.storeUniqueURL();
       console.log("STORE DATA");
