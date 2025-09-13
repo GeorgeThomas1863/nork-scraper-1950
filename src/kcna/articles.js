@@ -164,8 +164,11 @@ export const parseArticleContent = async (url) => {
     title: articleTitle,
     text: articleText,
     picPageURL: articlePicPage,
-    picArray: articlePicArray,
   };
+
+  if (articlePicArray) {
+    storeParams.picArray = articlePicArray;
+  }
 
   const storeModel = new dbModel({ keyToLookup: "url", itemValue: url, updateObj: storeParams }, articles);
   const storeData = await storeModel.updateObjItem();
