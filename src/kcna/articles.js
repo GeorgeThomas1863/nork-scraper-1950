@@ -131,8 +131,8 @@ export const scrapeArticleContent = async (inputArray) => {
     } catch (e) {
       console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
     }
-    return articleContentArray;
   }
+  return articleContentArray;
 };
 
 export const parseArticleContent = async (url) => {
