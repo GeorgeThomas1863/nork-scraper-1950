@@ -94,7 +94,7 @@ export const parsePicSetList = async (url) => {
 
   //throw error if no links found
   if (!picSetArray || !picSetArray.length) {
-    const error = new Error("CANT EXTRACT ARTICLES FROM ELEMENT");
+    const error = new Error("CANT EXTRACT PIC SET FROM ELEMENT");
     error.url = url;
     error.function = "parsePicSetList";
     throw error;
@@ -142,119 +142,61 @@ export const parsePicSetContent = async (url) => {
     throw error;
   }
 
-  console.log("PIC SETHTML");
-  console.log(html);
+  const dom = new JSDOM(html);
+  const document = dom.window.document;
 
-  //   const dom = new JSDOM(html);
-  //   const document = dom.window.document;
+  const picSetTitle = await extractPicSetTitle(document);
+  const picSetPicArray = await extractPicSetPicArray(document, url);
 
-  //   const articleTitle = await extractArticleTitle(document);
-  //   const articleText = await extractArticleText(document);
-  //   const articlePicPage = await extractArticlePicPage(document);
-  //   const articlePicArray = await extractArticlePicArray(articlePicPage);
+  const storeParams = {
+    title: picSetTitle,
+    picArray: picSetPicArray,
+  };
 
-  //   const storeParams = {
-  //     title: articleTitle,
-  //     text: articleText,
-  //     picPageURL: articlePicPage,
-  //   };
+  const storeModel = new dbModel({ keyToLookup: "url", itemValue: url, updateObj: storeParams }, picSets);
+  const storeData = await storeModel.updateObjItem();
+  console.log("STORE DATA");
+  console.log(storeData);
 
-  //   if (articlePicArray) {
-  //     storeParams.picArray = articlePicArray;
-  //   }
+  return storeParams;
+};
 
-  //   const storeModel = new dbModel({ keyToLookup: "url", itemValue: url, updateObj: storeParams }, articles);
-  //   const storeData = await storeModel.updateObjItem();
-  //   console.log("STORE DATA");
-  //   console.log(storeData);
+export const extractPicSetTitle = async (document) => {
+  const titleElement = document.querySelector(".title .main span");
+  if (titleElement) {
+    return titleElement.textContent.trim();
+  }
+  return null;
+};
 
-  //   return storeParams;
-  // };
+export const extractPicSetPicArray = async (document, url) => {
+  const { pics } = CONFIG;
 
-  // export const extractArticleTitle = async (document) => {
-  //   const titleElement = document.querySelector(".article-main-title");
-  //   const articleTitle = titleElement?.textContent?.replace(/\s+/g, " ").trim();
-  //   return articleTitle;
-  // };
+  const picElementArray = document.querySelectorAll(".content img");
 
-  // export const extractArticleText = async (document) => {
-  //   //extract text content
-  //   const textElement = document.querySelector(".content-wrapper");
-  //   const textArray = textElement.querySelectorAll("p"); //array of paragraph elements
+  const picSetPicArray = [];
+  for (const picElement of picElementArray) {
+    try {
+      const picSrc = picElement.getAttribute("src");
+      if (!picSrc) continue;
+      const picSetPicURL = "http://www.kcna.kp" + picSrc;
+      picSetPicArray.push(picSetPicURL);
 
-  //   const paragraphArray = [];
-  //   for (let i = 0; i < textArray.length; i++) {
-  //     paragraphArray.push(textArray[i].textContent.trim());
-  //   }
+      const picDate = await lookupItemDate(url, "picSets");
 
-  //   // Join paragraphs with double newlines for better readability
-  //   const articleText = paragraphArray.join("\n\n");
-  //   return articleText;
-  // };
+      //store url to picDB (so dont have to do again); build params
+      const storeParams = {
+        url: picSetPicURL,
+        scrapeId: kcnaState.scrapeId,
+        date: picDate,
+      };
 
-  // export const extractArticlePicPage = async (document) => {
-  //   //get article PAGE (if exists) where all pics are displayed
-  //   const mediaIconElement = document.querySelector(".media-icon");
-  //   const picPageHref = mediaIconElement?.firstElementChild?.getAttribute("href");
+      const storePicModel = new dbModel(storeParams, pics);
+      await storePicModel.storeUniqueURL();
+    } catch (e) {
+      console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+    }
+  }
 
-  //   //return null if  pic doesnt exist
-  //   if (!picPageHref) return null;
-
-  //   //otherwise build pic / pic array
-  //   const picPageURL = "http://www.kcna.kp" + picPageHref;
-  //   return picPageURL;
-  // };
-
-  // export const extractArticlePicArray = async (url) => {
-  //   const { pics } = CONFIG;
-  //   const { scrapeId } = kcnaState;
-  //   if (!url) return null;
-
-  //   try {
-  //     const kcna = new NORK({ url });
-  //     const html = await kcna.getHTML();
-
-  //     if (!html) {
-  //       const error = new Error("FAILED TO GET ARTICLE PIC ARRAY HTML ");
-  //       error.url = url;
-  //       error.function = "extractArticlePicArray";
-  //       throw error;
-  //     }
-
-  //     const dom = new JSDOM(html);
-  //     const document = dom.window.document;
-
-  //     //get and loop through img elements
-  //     const picArray = [];
-  //     const imgArray = document.querySelectorAll("img");
-  //     for (let i = 0; i < imgArray.length; i++) {
-  //       try {
-  //         const imgSrc = imgArray[i].getAttribute("src");
-  //         if (!imgSrc) continue;
-
-  //         const articlePicURL = "http://www.kcna.kp" + imgSrc;
-
-  //         picArray.push(articlePicURL);
-
-  //         const picDate = await lookupItemDate(url, "articles");
-
-  //         //store url to picDB (so dont have to do again); build params
-  //         const storeParams = {
-  //           url: articlePicURL,
-  //           scrapeId: scrapeId,
-  //           date: picDate,
-  //         };
-
-  //         const storePicModel = new dbModel(storeParams, pics);
-  //         await storePicModel.storeUniqueURL();
-  //       } catch (e) {
-  //         console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
-  //       }
-  //     }
-
-  //     return picArray;
-  //   } catch (e) {
-  //     console.log(e.message + "; URL: " + e.url + "; F BREAK: " + e.function);
-  //     return null;
-  //   }
+  return picSetPicArray;
 };
