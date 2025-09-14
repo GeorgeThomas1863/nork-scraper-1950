@@ -4,7 +4,7 @@ import CONFIG from "../../config/config.js";
 import NORK from "../../models/nork-model.js";
 import dbModel from "../../models/db-model.js";
 import { kcnaState } from "./kcna-state.js";
-import { extractItemDate } from "./util.js";
+import { extractItemDate, lookupItemDate } from "./util.js";
 
 export const scrapePicsKCNA = async () => {
   const { picSets } = CONFIG;
