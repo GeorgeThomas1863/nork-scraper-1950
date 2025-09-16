@@ -3,7 +3,7 @@ import { JSDOM } from "jsdom";
 import CONFIG from "../../config/config.js";
 import NORK from "../../models/nork-model.js";
 import dbModel from "../../models/db-model.js";
-import { kcnaState } from "./kcna-state.js";
+import { kcnaState } from "./state.js";
 import { extractItemDate, lookupItemDate } from "./util.js";
 
 export const scrapeArticlesKCNA = async () => {
@@ -20,6 +20,8 @@ export const scrapeArticlesKCNA = async () => {
   const articleContentArray = await scrapeArticleContent(newArticleArray);
   console.log("ARTICLE CONTENT ARRAY");
   console.log(articleContentArray);
+
+  return articleContentArray;
 };
 
 //ARTICLE URL SECTION

@@ -3,7 +3,7 @@ import { JSDOM } from "jsdom";
 import CONFIG from "../../config/config.js";
 import NORK from "../../models/nork-model.js";
 import dbModel from "../../models/db-model.js";
-import { kcnaState } from "./kcna-state.js";
+import { kcnaState } from "./state.js";
 import { extractItemDate, lookupItemDate } from "./util.js";
 
 export const scrapePicsKCNA = async () => {
@@ -19,6 +19,8 @@ export const scrapePicsKCNA = async () => {
   const picSetContentArray = await scrapePicSetContent(newPicSetArray);
   console.log("PIC SET CONTENT ARRAY");
   console.log(picSetContentArray);
+
+  return picSetContentArray;
 };
 
 export const scrapePicSetURLs = async () => {
@@ -27,7 +29,7 @@ export const scrapePicSetURLs = async () => {
   try {
     const picSetListArray = await parsePicSetList(picListURL);
 
-    const picSetURLs = [];
+    const picSetURLArray = [];
     for (const picSet of picSetListArray) {
       const { picSetLink, picSetDate } = picSet;
       const picSetURL = "http://www.kcna.kp" + picSetLink;
@@ -45,10 +47,10 @@ export const scrapePicSetURLs = async () => {
       console.log("STORE DATA");
       console.log(storeData);
 
-      picSetURLs.push(params);
+      picSetURLArray.push(params);
     }
 
-    return picSetURLs;
+    return picSetURLArray;
   } catch (e) {
     console.log(e.message + "; URL: " + e.url + "; F BREAK: " + e.function);
     return null;
