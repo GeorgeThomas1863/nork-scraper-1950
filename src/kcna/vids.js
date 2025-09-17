@@ -90,7 +90,7 @@ export const parseVidPageList = async (url) => {
     const vidPageLink = vidLinkElement.getAttribute("href");
     const vidPageDate = await extractItemDate(vidPageElement);
     //thumbnail only on list page
-    const thumbnailURL = await extractVidThumbnail(vidPageElement, url);
+    const thumbnailURL = await extractVidThumbnail(vidPageElement, vidPageDate);
     vidPageArray.push({ vidPageLink, vidPageDate, thumbnailURL });
   }
 
@@ -108,7 +108,7 @@ export const parseVidPageList = async (url) => {
   return vidPageArray;
 };
 
-export const extractVidThumbnail = async (inputElement, url) => {
+export const extractVidThumbnail = async (inputElement, date) => {
   const { pics } = CONFIG;
   if (!inputElement) return null;
 
@@ -127,14 +127,12 @@ export const extractVidThumbnail = async (inputElement, url) => {
     throw error;
   }
 
-  const vidDate = await lookupItemDate(url, "vidPages");
-
   //store thumbnail to picsDB
   try {
     const storeParams = {
       url: thumbnailURL,
       scrapeId: kcnaState.scrapeId,
-      date: vidDate,
+      date: date,
     };
 
     const picModel = new dbModel(storeParams, pics);
