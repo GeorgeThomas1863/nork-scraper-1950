@@ -1,7 +1,7 @@
 import { scrapeArticlesKCNA } from "./kcna/articles.js";
 import { scrapePicsKCNA } from "./kcna/pics.js";
 import { scrapeVidsKCNA } from "./kcna/vids.js";
-import { kcnaState, logScrapeStartKCNA, logScrapeStopKCNA } from "./kcna/kcna-state.js";
+import { kcnaState, logScrapeStartKCNA, logScrapeStopKCNA } from "./kcna/state.js";
 
 import { uploadTG } from "./tg/upload.js";
 
@@ -42,7 +42,7 @@ export const runNewScrape = async (inputParams) => {
 };
 
 export const scrapeKCNA = async () => {
-  await logScrapeStartKCNA()
+  await logScrapeStartKCNA();
 
   await scrapeArticlesKCNA();
   await scrapePicsKCNA();
