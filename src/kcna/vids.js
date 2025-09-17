@@ -177,35 +177,94 @@ export const extractVidPageTitle = async (document) => {
 };
 
 export const extractVidURL = async (document, url) => {
-  const { pics } = CONFIG;
+  const { vids } = CONFIG;
+  if (!document) return null;
 
-  const picElementArray = document.querySelectorAll(".content img");
+  const scriptArray = document.querySelectorAll("script");
 
-  const picSetPicArray = [];
-  for (const picElement of picElementArray) {
-    try {
-      const picSrc = picElement.getAttribute("src");
-      if (!picSrc) continue;
-      const picSetPicURL = "http://www.kcna.kp" + picSrc;
-      picSetPicArray.push(picSetPicURL);
+  if (!scriptArray || !scriptArray.length) {
+    const error = new Error("CANT EXTRACT SCRIPTS FOR VID URL");
+    error.url = url;
+    error.function = "extractVidURL";
+    throw error;
+  }
 
-      const picDate = await lookupItemDate(url, "picSets");
+  const vidLink = await parseVidScripts(scriptArray);
+  if (!vidLink) {
+    const error = new Error("CANT VID URL FROM SCRIPTS");
+    error.url = url;
+    error.function = "extractVidURL";
+    throw error;
+  }
 
-      //store url to picDB (so dont have to do again); build params
-      const storeParams = {
-        url: picSetPicURL,
-        scrapeId: kcnaState.scrapeId,
-        date: picDate,
-      };
+  const vidURL = "http://www.kcna.kp" + vidLink;
+  const vidDate = await lookupItemDate(url, "vidPages");
 
-      const storePicModel = new dbModel(storeParams, pics);
-      await storePicModel.storeUniqueURL();
-    } catch (e) {
-      console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+  try {
+    //store url to vidDB (so dont have to do again); build params
+    const storeParams = {
+      url: vidURL,
+      scrapeId: kcnaState.scrapeId,
+      date: vidDate,
+    };
+
+    const storeVidModel = new dbModel(storeParams, vids);
+    const storeData = await storeVidModel.storeUniqueURL();
+    console.log(storeData);
+  } catch (e) {
+    console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+  }
+
+  return vidURL;
+};
+
+export const parseVidScripts = async (inputArray) => {
+  if (!inputArray || !inputArray.length) return null;
+
+  for (const script of inputArray) {
+    const content = script.textContent;
+    if (content && content.includes("type='video/mp4'")) {
+      //regex looking for the vid type mp4
+      const match = content.match(/source src='([^']+)' type='video\/mp4'/);
+      if (match && match[1]) return match[1];
     }
   }
 
-  return picSetPicArray;
+  return null;
 };
 
-export const extractVidThumbnail = async (document, url) => {};
+export const extractVidThumbnail = async (document, url) => {
+  const { pics } = CONFIG;
+  if (!document) return null;
+
+  //get thumbnailURL
+  const thumbnailElement = document.querySelector(".img img");
+  const thumbnailLink = thumbnailElement.getAttribute("src");
+  const thumbnailURL = "http://www.kcna.kp" + thumbnailLink;
+
+  if (!thumbnailURL) {
+    const error = new Error("CANT EXTRACT VID THUMBNAIL");
+    error.url = url;
+    error.function = "extractVidThumbnail";
+    throw error;
+  }
+
+  const vidDate = await lookupItemDate(url, "vidPages");
+
+  //store it in picURLs
+  try {
+    const storeParams = {
+      url: thumbnailURL,
+      scrapeId: kcnaState.scrapeId,
+      date: vidDate,
+    };
+
+    const picModel = new dbModel(storeParams, pics);
+    const storeData = await picModel.storeUniqueURL();
+    console.log(storeData);
+  } catch (e) {
+    console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+  }
+
+  return thumbnailURL;
+};
