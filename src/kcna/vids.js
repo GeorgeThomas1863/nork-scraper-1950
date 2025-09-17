@@ -237,6 +237,9 @@ export const extractVidThumbnail = async (document, url) => {
   const { pics } = CONFIG;
   if (!document) return null;
 
+  console.log("VID THUMNAIL DOCUMENT");
+  console.log(document);
+
   //get thumbnailURL
   const thumbnailElement = document.querySelector(".img img");
   const thumbnailLink = thumbnailElement.getAttribute("src");
