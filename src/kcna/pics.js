@@ -138,9 +138,9 @@ export const parsePicSetContent = async (url) => {
   const html = await kcna.getHTML();
 
   if (!html) {
-    const error = new Error("FAILED TO GET ARTICLE ITEM HTML ");
+    const error = new Error("FAILED TO GET PIC SET ITEM HTML ");
     error.url = url;
-    error.function = "parseArticleContent";
+    error.function = "parsePicSetContent";
     throw error;
   }
 

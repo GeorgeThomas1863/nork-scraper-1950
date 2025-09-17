@@ -13,14 +13,14 @@ export const scrapeVidsKCNA = async () => {
   console.log("NEW VID PAGE URLS");
   console.log(vidPageURLs);
 
-  // const newPicSetModel = new dbModel({ keyExists: "url", keyEmpty: "picArray" }, picSets);
-  // const newPicSetArray = await newPicSetModel.findEmptyItems();
+  const newVidPageModel = new dbModel({ keyExists: "url", keyEmpty: "vidURL" }, vidPages);
+  const newVidPageArray = await newVidPageModel.findEmptyItems();
 
-  // const picSetContentArray = await scrapePicSetContent(newPicSetArray);
-  // console.log("PIC SET CONTENT ARRAY");
-  // console.log(picSetContentArray);
+  const vidPageContentArray = await scrapeVidPageContent(newVidPageArray);
+  console.log("VID PAGE CONTENT ARRAY");
+  console.log(vidPageContentArray);
 
-  // return picSetContentArray;
+  return vidPageContentArray;
 };
 
 export const scrapeVidPageURLs = async () => {
@@ -104,3 +104,108 @@ export const parseVidPageList = async (url) => {
 
   return vidPageArray;
 };
+
+//------------------------------
+
+export const scrapeVidPageContent = async (inputArray) => {
+  if (!inputArray || !inputArray.length) return null;
+
+  const vidPageContentArray = [];
+  for (const vidPage of inputArray) {
+    const { url } = vidPage;
+    try {
+      const vidPageContent = await parseVidPageContent(url);
+      if (!vidPageContent) continue;
+      console.log("VID PAGE CONTENT");
+      console.log(vidPageContent);
+
+      vidPageContentArray.push(vidPageContent);
+    } catch (e) {
+      console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+    }
+  }
+  return vidPageContentArray;
+};
+
+export const parseVidPageContent = async (url) => {
+  if (!url) return null;
+  const { vidPages } = CONFIG;
+
+  console.log("CONTENT URL");
+  console.log(url);
+
+  const kcna = new NORK({ url });
+  const html = await kcna.getHTML();
+
+  console.log("VID PAGE HTML");
+  console.log(html);
+
+  if (!html) {
+    const error = new Error("FAILED TO GET VID PAGE ITEM HTML ");
+    error.url = url;
+    error.function = "parseVidPageContent";
+    throw error;
+  }
+
+  const dom = new JSDOM(html);
+  const document = dom.window.document;
+
+  const vidPageTitle = await extractVidPageTitle(document);
+  const vidURL = await extractVidURL(document, url);
+  const thumbnailURL = await extractVidThumbnail(document, url);
+
+  const storeParams = {
+    title: vidPageTitle,
+    vidURL: vidURL,
+    thumbnailURL: thumbnailURL,
+  };
+
+  const storeModel = new dbModel({ keyToLookup: "url", itemValue: url, updateObj: storeParams }, vidPages);
+  const storeData = await storeModel.updateObjItem();
+  console.log("STORE DATA");
+  console.log(storeData);
+
+  return storeParams;
+};
+
+export const extractVidPageTitle = async (document) => {
+  const titleElement = document.querySelector(".title .main span");
+  if (titleElement) {
+    return titleElement.textContent.trim();
+  }
+  return null;
+};
+
+export const extractVidURL = async (document, url) => {
+  const { pics } = CONFIG;
+
+  const picElementArray = document.querySelectorAll(".content img");
+
+  const picSetPicArray = [];
+  for (const picElement of picElementArray) {
+    try {
+      const picSrc = picElement.getAttribute("src");
+      if (!picSrc) continue;
+      const picSetPicURL = "http://www.kcna.kp" + picSrc;
+      picSetPicArray.push(picSetPicURL);
+
+      const picDate = await lookupItemDate(url, "picSets");
+
+      //store url to picDB (so dont have to do again); build params
+      const storeParams = {
+        url: picSetPicURL,
+        scrapeId: kcnaState.scrapeId,
+        date: picDate,
+      };
+
+      const storePicModel = new dbModel(storeParams, pics);
+      await storePicModel.storeUniqueURL();
+    } catch (e) {
+      console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+    }
+  }
+
+  return picSetPicArray;
+};
+
+export const extractVidThumbnail = async (document, url) => {};
