@@ -1,1 +1,3 @@
-export const uploadTG = async () => {};
+export const uploadTG = async () => {
+  //build
+};

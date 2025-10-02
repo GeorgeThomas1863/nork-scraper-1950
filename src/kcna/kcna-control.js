@@ -1,5 +1,24 @@
 import CONFIG from "../../config/config.js";
 import dbModel from "../../models/db-model.js";
+import { scrapeArticlesKCNA } from "./articles.js";
+import { scrapePicsKCNA } from "./pics.js";
+import { scrapeVidsKCNA } from "./vids.js";
+import { uploadTG } from "../tg/upload.js";
+
+export const scrapeKCNA = async () => {
+  await logScrapeStartKCNA();
+
+  await scrapeArticlesKCNA();
+  await scrapePicsKCNA();
+  await scrapeVidsKCNA();
+
+  //upload to TG
+  await uploadTG();
+
+  await logScrapeStopKCNA();
+};
+
+//-----------------
 
 export const kcnaState = {
   scrapeId: null,
@@ -41,5 +60,6 @@ export const logScrapeStartKCNA = async () => {
   return true;
 };
 
-
-export const logScrapeStopKCNA = async () => {}
+export const logScrapeStopKCNA = async () => {
+  //build
+};
