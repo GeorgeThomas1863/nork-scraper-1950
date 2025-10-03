@@ -247,6 +247,10 @@ export const extractArticlePicArray = async (url) => {
           date: picDate,
         };
 
+        console.log("!!!!!!!!!!!!!");
+        console.log("STORE PARAMS");
+        console.log(storeParams);
+
         const storePicModel = new dbModel(storeParams, pics);
         await storePicModel.storeUniqueURL();
       } catch (e) {

@@ -85,10 +85,6 @@ export const parsePicSetList = async (url) => {
 
   const picSetArray = [];
   for (const picSetElement of photoWrapperArray) {
-    console.log("!!!!!!!!!!!!!");
-    console.log("PIC SET ELEMENT");
-    console.log(picSetElement);
-
     const titleWrapper = picSetElement.querySelector(".title a");
     const picSetLink = titleWrapper.getAttribute("href");
     const picSetDate = await extractItemDate(picSetElement);
@@ -196,6 +192,10 @@ export const extractPicSetPicArray = async (document, url) => {
         scrapeId: kcnaState.scrapeId,
         date: picDate,
       };
+
+      console.log("!!!!!!!!!!!!!");
+      console.log("STORE PARAMS");
+      console.log(storeParams);
 
       const storePicModel = new dbModel(storeParams, pics);
       await storePicModel.storeUniqueURL();

@@ -135,6 +135,10 @@ export const extractVidThumbnail = async (inputElement, date) => {
       date: date,
     };
 
+    console.log("!!!!!!!!!!!!!");
+    console.log("STORE PARAMS");
+    console.log(storeParams);
+
     const picModel = new dbModel(storeParams, pics);
     const storeData = await picModel.storeUniqueURL();
     console.log(storeData);
