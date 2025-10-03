@@ -1,19 +1,26 @@
 import CONFIG from "../../config/config.js";
 import dbModel from "../../models/db-model.js";
 import { scrapeArticlesKCNA } from "./articles.js";
-import { scrapePicsKCNA } from "./pics.js";
-import { scrapeVidsKCNA } from "./vids.js";
-import { uploadTG } from "../tg/upload.js";
+import { scrapePicSetsKCNA } from "./picSets.js";
+import { scrapeVidPagesKCNA } from "./vidPages.js";
+import { downloadPicsKCNA, uploadPicsKCNA } from "./pics.js";
+import { downloadVidsKCNA, uploadVidsKCNA } from "./vids.js";
 
 export const scrapeKCNA = async () => {
   await logScrapeStartKCNA();
 
+  //URLs
   await scrapeArticlesKCNA();
-  await scrapePicsKCNA();
-  await scrapeVidsKCNA();
+  await scrapePicSetsKCNA();
+  await scrapeVidPagesKCNA();
+
+  //download to server
+  await downloadPicsKCNA();
+  await downloadVidsKCNA();
 
   //upload to TG
-  await uploadTG();
+  await uploadPicsKCNA();
+  await uploadVidsKCNA();
 
   await logScrapeStopKCNA();
 };
