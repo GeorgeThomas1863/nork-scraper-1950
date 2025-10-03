@@ -1,7 +1,5 @@
 import { kcnaState, scrapeKCNA } from "./kcna/kcna-control.js";
 
-import { uploadTG } from "./tg/upload.js";
-
 export const handleAdminCommand = async (inputParams) => {
   const { command } = inputParams;
 
