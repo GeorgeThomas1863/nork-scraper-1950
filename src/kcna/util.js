@@ -1,6 +1,6 @@
 //helper functions
 import dbModel from "../../models/db-model.js";
-import { kcnaState } from "./state.js";
+import { kcnaState } from "./kcna-control.js";
 
 export const extractItemDate = async (linkElement) => {
   const { scrapeStartTime } = kcnaState;
