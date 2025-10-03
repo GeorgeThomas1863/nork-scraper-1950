@@ -113,6 +113,10 @@ export const parseArticleList = async (html, type) => {
 export const scrapeArticleContent = async (inputArray) => {
   if (!inputArray || !inputArray.length) return null;
 
+  console.log("++++++++++++++++++");
+  console.log("INPUT ARRAY");
+  console.log(inputArray);
+
   const articleContentArray = [];
   for (const article of inputArray) {
     const { url } = article;
