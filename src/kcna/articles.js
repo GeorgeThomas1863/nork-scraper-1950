@@ -113,15 +113,11 @@ export const parseArticleList = async (html, type) => {
 export const scrapeArticleContent = async (inputArray) => {
   if (!inputArray || !inputArray.length) return null;
 
-  console.log("++++++++++++++++++");
-  console.log("INPUT ARRAY");
-  console.log(inputArray);
-
   const articleContentArray = [];
   for (const article of inputArray) {
-    const { url } = article;
+    const { url, date } = article;
     try {
-      const articleContent = await parseArticleContent(url);
+      const articleContent = await parseArticleContent(url, date);
       if (!articleContent) continue;
 
       console.log("ARTICLE CONTENT");
@@ -134,7 +130,7 @@ export const scrapeArticleContent = async (inputArray) => {
   return articleContentArray;
 };
 
-export const parseArticleContent = async (url) => {
+export const parseArticleContent = async (url, date) => {
   if (!url) return null;
   const { articles } = CONFIG;
 
@@ -157,7 +153,7 @@ export const parseArticleContent = async (url) => {
   const articleTitle = await extractArticleTitle(document);
   const articleText = await extractArticleText(document);
   const articlePicPage = await extractArticlePicPage(document);
-  const articlePicArray = await extractArticlePicArray(articlePicPage);
+  const articlePicArray = await extractArticlePicArray(articlePicPage, date);
 
   const storeParams = {
     title: articleTitle,
@@ -211,7 +207,7 @@ export const extractArticlePicPage = async (document) => {
   return picPageURL;
 };
 
-export const extractArticlePicArray = async (url) => {
+export const extractArticlePicArray = async (url, date) => {
   const { pics } = CONFIG;
   const { scrapeId } = kcnaState;
   if (!url) return null;
@@ -242,13 +238,11 @@ export const extractArticlePicArray = async (url) => {
 
         picArray.push(articlePicURL);
 
-        const picDate = await lookupItemDate(url, "articles");
-
         //store url to picDB (so dont have to do again); build params
         const storeParams = {
           url: articlePicURL,
           scrapeId: scrapeId,
-          date: picDate,
+          date: date,
         };
 
         console.log("!!!!!!!!!!!!!");
