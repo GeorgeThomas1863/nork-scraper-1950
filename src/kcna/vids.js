@@ -103,6 +103,13 @@ export const buildChunkArray = async (vidName, vidSize) => {
   if (!!vidName || !!vidSize) return null;
   const { tempPath, downloadVidChunkSize } = CONFIG;
 
+  console.log("VID NAME");
+  console.log(vidName);
+  console.log("VID SIZE");
+  console.log(vidSize);
+  console.log("DOWNLOAD VID CHUNK SIZE");
+  console.log(downloadVidChunkSize);
+
   const totalVidChunks = Math.ceil(vidSize / downloadVidChunkSize);
   const chunkArray = [];
   for (let i = 0; i < totalVidChunks; i++) {
@@ -120,6 +127,9 @@ export const buildChunkArray = async (vidName, vidSize) => {
       endByte: endByte,
       chunkSize: chunkSize,
     };
+
+    console.log("CHUNK OBJ");
+    console.log(chunkObj);
 
     chunkArray.push(chunkObj);
   }
