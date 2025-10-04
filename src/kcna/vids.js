@@ -31,7 +31,7 @@ export const downloadVidsKCNA = async () => {
 export const downloadVidFS = async (inputParams) => {
   if (!inputParams) return null;
   const { downloadVidChunkSize, tempPath, downloadVidConcurrent } = CONFIG;
-  const { url, savePath, vidName } = inputParams;
+  const { url, savePath, vidName, vidId } = inputParams;
 
   // console.log("INPUT PARAMS");
   // console.log(inputParams);
@@ -46,7 +46,7 @@ export const downloadVidFS = async (inputParams) => {
   // console.log(totalVidChunks);
 
   //build chunk array so names / paths in one place
-  const chunkArray = await buildChunkArray(vidName, vidSize);
+  const chunkArray = await buildChunkArray(vidId, vidSize);
   const downloadObj = { ...inputParams, headers: headers, vidSize: vidSize, totalVidChunks: totalVidChunks, chunkArray: chunkArray };
 
   console.log("CHUNK ARRAY");
@@ -102,21 +102,14 @@ export const downloadVidHeaders = async (url) => {
   return headers;
 };
 
-export const buildChunkArray = async (vidName, vidSize) => {
-  if (!vidName || !vidSize) return null;
+export const buildChunkArray = async (vidId, vidSize) => {
+  if (!vidId || !vidSize) return null;
   const { tempPath, downloadVidChunkSize } = CONFIG;
-
-  console.log("VID NAME");
-  console.log(vidName);
-  console.log("VID SIZE");
-  console.log(vidSize);
-  console.log("DOWNLOAD VID CHUNK SIZE");
-  console.log(downloadVidChunkSize);
 
   const totalVidChunks = Math.ceil(vidSize / downloadVidChunkSize);
   const chunkArray = [];
   for (let i = 0; i < totalVidChunks; i++) {
-    const chunkName = `${vidName}_chunk_${i + 1}.mp4`;
+    const chunkName = `${vidId}_chunk_${i + 1}.mp4`;
     const chunkPath = path.join(tempPath, chunkName);
     const startByte = i * downloadVidChunkSize;
     const endByte = Math.min(startByte + downloadVidChunkSize - 1, vidSize - 1);
