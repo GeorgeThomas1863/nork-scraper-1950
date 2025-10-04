@@ -31,8 +31,8 @@ export const downloadVidFS = async (inputParams) => {
   const { downloadVidChunkSize, downloadVidConcurrent, vidRetries } = CONFIG;
   const { url, vidId } = inputParams;
 
-  console.log("DOWNLOADING VID CONCURRENT");
-  console.log(downloadVidConcurrent);
+  // console.log("DOWNLOADING VID CONCURRENT");
+  // console.log(downloadVidConcurrent);
 
   const headers = await downloadVidHeaders(url);
   const vidSize = +headers["content-range"]?.substring(headers["content-range"]?.lastIndexOf("/") + 1, headers["content-range"]?.length); //in bytes
@@ -54,7 +54,7 @@ export const downloadVidFS = async (inputParams) => {
     console.log(`Resuming Chunk ${chunkArrayCompleted.length + 1} of ${totalVidChunks} total chunks`);
   }
 
-  let chunksToDownloadArray = [...chunkArrayPending];
+  let chunksToDownloadArray = chunkArrayPending;
 
   for (let r = 0; r < vidRetries; r++) {
     const failedDownloadArray = [];
@@ -183,6 +183,9 @@ export const getChunksCompleted = async (inputArray) => {
 export const downloadVidChunk = async (inputObj) => {
   if (!inputObj) return null;
   const { url, chunkIndex, chunkPath, startByte, endByte } = inputObj;
+
+  console.log("DOWNLOADING CHUNK");
+  console.log(inputObj);
 
   try {
     const res = await axios({
