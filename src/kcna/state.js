@@ -45,7 +45,7 @@ export const logScrapeStopKCNA = async () => {
   const { log } = CONFIG;
   //build
   const scrapeEndTime = new Date();
-  const scrapeLengthSeconds = scrapeEndTime - kcnaState.scrapeStartTime;
+  const scrapeLengthSeconds = (scrapeEndTime - kcnaState.scrapeStartTime) / 1000;
   kcnaState.scrapeEndTime = scrapeEndTime;
   kcnaState.scrapeLengthSeconds = scrapeLengthSeconds;
 
