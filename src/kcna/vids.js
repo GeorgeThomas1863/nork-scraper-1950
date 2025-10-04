@@ -37,10 +37,10 @@ export const downloadVidFS = async (inputParams) => {
   const vidSize = +headers["content-range"]?.substring(headers["content-range"]?.lastIndexOf("/") + 1, headers["content-range"]?.length); //in bytes
   const totalVidChunks = Math.ceil(vidSize / downloadVidChunkSize);
 
-  console.log("VID SIZE");
-  console.log(vidSize);
-  console.log("TOTAL VID CHUNKS");
-  console.log(totalVidChunks);
+  // console.log("VID SIZE");
+  // console.log(vidSize);
+  // console.log("TOTAL VID CHUNKS");
+  // console.log(totalVidChunks);
 
   //build chunk array so names / paths in one place
   const chunkArray = await buildChunkArray(vidName, vidSize);
