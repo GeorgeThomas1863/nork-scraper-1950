@@ -51,55 +51,77 @@ export const downloadVidFS = async (inputParams) => {
 
   const downloadObj = { ...inputParams, headers, vidSize, totalVidChunks };
 
-  //REFACTORING HERE
+  console.log("DOWNLOAD OBJ");
+  console.log(downloadObj);
+
   const downloadData = await downloadChunksWithRetries(downloadObj, chunksPending, chunksCompleted);
 
-  let chunksToDownloadArray = [...chunksPending];
-
-  for (let r = 0; r < vidRetries; r++) {
-    const failedDownloadArray = [];
-
-    for (let i = 0; i < chunksToDownloadArray.length; i += downloadVidConcurrent) {
-      const batchArray = chunksToDownloadArray.slice(i, i + downloadVidConcurrent);
-      const promiseArray = [];
-
-      for (let j = 0; j < batchArray.length; j++) {
-        const chunkToDownload = batchArray[j];
-        const chunkObj = { ...chunkToDownload, ...downloadObj };
-        console.log("CHUNK OBJ");
-        console.log(chunkObj);
-
-        const downloadPromise = downloadVidChunk(chunkObj);
-        promiseArray.push(downloadPromise);
-      }
-
-      const results = await Promise.allSettled(promiseArray);
-
-      for (let j = 0; j < results.length; j++) {
-        const resultItem = results[j];
-
-        if (resultItem.status === "fulfilled" && resultItem.value) {
-          chunkArrayCompleted.push(batchArray[j]);
-        } else {
-          console.error(`Failed chunk ${batchArray[j].chunkIndex}: ${resultItem.reason || "Unknown error"}`);
-          failedDownloadArray.push(batchArray[j]);
-        }
-      }
-
-      // Show progress
-      const progress = ((chunkArrayCompleted.length / totalVidChunks) * 100).toFixed(1);
-      console.log(`Overall progress: ${progress}% (${chunkArrayCompleted.length}/${totalVidChunks} chunks)`);
-    }
-
-    chunksToDownloadArray = failedDownloadArray;
-    if (chunksToDownloadArray && r < vidRetries - 1) {
-      console.log(`Retrying download of ${chunksToDownloadArray.length} chunks (RETRY ATTEMPT ${r + 1})`);
-    }
-  }
+  console.log("DOWNLOAD DATA");
+  console.log(downloadData);
 };
 
-const downloadChunksWithRetries = async (inputObj, chunksPending, chunksCompleted) => {
+export const downloadChunksWithRetries = async (inputObj, chunksPending, chunksCompleted) => {
   if (!inputObj || !chunksPending || !chunksCompleted) return null;
+  const { vidRetries, downloadVidConcurrent } = CONFIG;
+
+  for (let i = 0; i < vidRetries; i++) {
+    chunksPending = await downloadPendingChunkArray(inputObj, chunksPending, chunksCompleted);
+
+    if (chunksPending.length === 0) {
+      console.log("ALL CHUNKS DOWNLOADED");
+      return true;
+    }
+
+    if (i < vidRetries - 1) {
+      console.log(`Retrying download of ${chunksPending.length} chunks (RETRY ATTEMPT ${i + 1})`);
+    }
+  }
+
+  console.error(`Failed to download ${chunksPending.length} chunks after ${vidRetries} retries`);
+  return null;
+};
+
+export const downloadPendingChunkArray = async (inputObj, chunksPending, chunksCompleted) => {
+  if (!inputObj || !chunksPending || !chunksCompleted) return null;
+  const { downloadVidConcurrent } = CONFIG;
+
+  const failedDownloadArray = [];
+
+  for (let i = 0; i < chunksPending.length; i += downloadVidConcurrent) {
+    const batchArray = chunksPending.slice(i, i + downloadVidConcurrent);
+    const failed = await downloadChunksBatch(inputObj, batchArray, chunksCompleted);
+    failedDownloadArray.push(...failed);
+  }
+
+  return failedDownloadArray;
+};
+
+export const downloadChunksBatch = async (inputObj, batchArray, chunksCompleted) => {
+  const { totalVidChunks } = inputObj;
+
+  const promiseArray = batchArray.map((chunk) => {
+    const chunkObj = { ...chunk, ...inputObj };
+    return downloadVidChunk(chunkObj);
+  });
+
+  const results = await Promise.allSettled(promiseArray);
+
+  const failedChunks = [];
+  for (let i = 0; i < results.length; i++) {
+    const resultItem = results[i];
+
+    if (resultItem.status === "fulfilled" && resultItem.value) {
+      chunksCompleted.push(batchArray[i]);
+    } else {
+      console.error(`Failed chunk ${batchArray[i].chunkIndex}: ${resultItem.reason || "Unknown error"}`);
+      failedChunks.push(batchArray[i]);
+    }
+  }
+
+  const progress = ((chunksCompleted.length / totalVidChunks) * 100).toFixed(1);
+  console.log(`Overall progress: ${progress}% (${chunksCompleted.length}/${totalVidChunks} chunks)`);
+
+  return failedChunks;
 };
 
 //res.headers doesnt work, so getting headers by getting small number of bytes
@@ -190,9 +212,6 @@ export const getChunksCompleted = async (inputArray) => {
 export const downloadVidChunk = async (inputObj) => {
   if (!inputObj) return null;
   const { url, chunkIndex, chunkPath, startByte, endByte } = inputObj;
-
-  // console.log("DOWNLOADING CHUNK");
-  // console.log(inputObj);
 
   try {
     const res = await axios({
