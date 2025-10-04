@@ -61,8 +61,8 @@ export const downloadVidFS = async (inputParams) => {
     for (let j = 0; j < batchArray.length; j++) {
       const chunkToDownload = batchArray[j];
       const chunkObj = { ...chunkToDownload, ...downloadObj };
-      await downloadVidChunk(chunkObj);
-      promiseArray.push();
+      const downloadPromise = downloadVidChunk(chunkObj);
+      promiseArray.push(downloadPromise);
     }
 
     const results = await Promise.allSettled(promiseArray);
