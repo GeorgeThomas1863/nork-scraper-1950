@@ -11,8 +11,8 @@ export const downloadVidsKCNA = async () => {
   const vidArray = await vidModel.findEmptyItems();
   if (!vidArray || !vidArray.length) return null;
 
-  // console.log("DOWNLOAD VID ARRAY");
-  // console.log(vidArray);
+  console.log("ITEMS TO DOWNLOAD VID ARRAY");
+  console.log(vidArray);
 
   const downloadVidArray = [];
   for (const vidItem of vidArray) {
