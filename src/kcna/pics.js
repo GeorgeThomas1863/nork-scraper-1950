@@ -18,6 +18,8 @@ export const downloadPicsKCNA = async () => {
       picItem.savePath = path.join(picPath, picItem.picName);
 
       const picData = await downloadPicFS(picItem);
+      console.log("PIC DATA");
+      console.log(picData);
     } catch (e) {
       console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
     }
@@ -51,10 +53,6 @@ export const downloadPicFS = async (inputParams) => {
     throw error;
   }
 
-  console.log("!!!!!!");
-  console.log("DOWNLOAD PIC RES DATA");
-  console.log(res.headers);
-
   let downloadedSize = 0;
 
   const writer = fs.createWriteStream(savePath);
@@ -73,8 +71,13 @@ export const downloadPicFS = async (inputParams) => {
     stream.on("error", reject);
   });
 
+  const returnObj = {
+    headers: res.headers,
+    downloadedSize: downloadedSize,
+  };
+
   console.log(`DOWNLOAD COMPLETE: ${picName} | FINAL SIZE: ${Math.round(downloadedSize / 1024)}KB`);
-  return { downloadedSize: downloadedSize };
+  return returnObj;
 };
 
 export const uploadPicsKCNA = async () => {
