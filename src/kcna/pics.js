@@ -11,7 +11,7 @@ export const downloadPicsKCNA = async () => {
   const picArray = await picModel.findEmptyItems();
   if (!picArray || !picArray.length) return null;
 
-  //CREATE PIC ID AND SAVE IT EARLIER IN PIC DB (maybe make last couple chars in URL?)
+  const downloadPicArray = [];
   for (const picItem of picArray) {
     try {
       const { picId, url } = picItem;
@@ -37,10 +37,14 @@ export const downloadPicsKCNA = async () => {
 
       console.log("PIC STORE DATA");
       console.log(storeData);
+
+      downloadPicArray.push(storeParams);
     } catch (e) {
       console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
     }
   }
+
+  return downloadPicArray;
 };
 
 export const downloadPicFS = async (inputParams) => {
