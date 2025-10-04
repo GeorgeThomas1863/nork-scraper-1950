@@ -14,16 +14,19 @@ export const downloadPicsKCNA = async () => {
   //CREATE PIC ID AND SAVE IT EARLIER IN PIC DB (maybe make last couple chars in URL?)
   for (const picItem of picArray) {
     try {
-      const { picId } = picItem;
+      const { picId, url } = picItem;
       picItem.picName = picId + ".jpg";
       picItem.savePath = path.join(picPath, picItem.picName);
 
       const picData = await downloadPicFS(picItem);
+      const { headers, downloadedSize } = picData;
+      picItem.picSize = downloadedSize;
+      picItem.headers = headers;
 
       const storeParams = {
         keyToLookup: "url",
-        itemValue: picItem.url,
-        updateObj: picData,
+        itemValue: url,
+        updateObj: picItem,
       };
 
       console.log("STORE PARAMS");
