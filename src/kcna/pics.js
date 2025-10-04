@@ -9,6 +9,7 @@ export const downloadPicsKCNA = async () => {
   const { pics, picPath } = CONFIG;
   const picModel = new dbModel({ keyExists: "url", keyEmpty: "picSize" }, pics);
   const picArray = await picModel.findEmptyItems();
+  if (!picArray || !picArray.length) return null;
 
   //CREATE PIC ID AND SAVE IT EARLIER IN PIC DB (maybe make last couple chars in URL?)
   for (const picItem of picArray) {
@@ -18,8 +19,21 @@ export const downloadPicsKCNA = async () => {
       picItem.savePath = path.join(picPath, picItem.picName);
 
       const picData = await downloadPicFS(picItem);
-      console.log("PIC DATA");
-      console.log(picData);
+
+      const storeParams = {
+        keyToLookup: "url",
+        itemValue: picItem.url,
+        updateObj: picData,
+      };
+
+      console.log("STORE PARAMS");
+      console.log(storeParams);
+
+      const storePicModel = new dbModel(storeParams, pics);
+      const storeData = await storePicModel.updateObjItem();
+
+      console.log("PIC STORE DATA");
+      console.log(storeData);
     } catch (e) {
       console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
     }
@@ -46,7 +60,7 @@ export const downloadPicFS = async (inputParams) => {
     responseType: "stream",
   });
 
-  if (!res || !res.data) {
+  if (!res || !res.data || !res.headers) {
     const error = new Error("AXIOS RES FUCKED");
     error.url = url;
     error.function = "downloadPicFS";
@@ -72,7 +86,7 @@ export const downloadPicFS = async (inputParams) => {
   });
 
   const returnObj = {
-    headers: res.headers,
+    headers: { ...res.headers }, //converts to normal obj
     downloadedSize: downloadedSize,
   };
 
