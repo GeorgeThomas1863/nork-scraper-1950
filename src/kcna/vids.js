@@ -76,7 +76,7 @@ export const downloadVidFS = async (inputParams) => {
         const resultItem = results[j];
 
         if (resultItem.status === "fulfilled" && resultItem.value) {
-          chunkArrayCompleted.push(resultItem.value);
+          chunkArrayCompleted.push(batchArray[j]);
         } else {
           console.error(`Failed chunk ${batchArray[j].chunkIndex}: ${resultItem.reason || "Unknown error"}`);
           failedDownloadArray.push(batchArray[j]);
