@@ -11,8 +11,8 @@ export const downloadVidsKCNA = async () => {
   const vidArray = await vidModel.findEmptyItems();
   if (!vidArray || !vidArray.length) return null;
 
-  console.log("NUMBER OF VIDS TO DOWNLOAD");
-  console.log(vidArray.length);
+  console.log("STARTING VIDEO DOWNLOAD");
+  console.log(`NUMBER OF VIDS TO DOWNLOAD: ${vidArray.length}`);
 
   const downloadVidArray = [];
   for (const vidItem of vidArray) {
@@ -23,12 +23,15 @@ export const downloadVidsKCNA = async () => {
     const vidData = await downloadVidFS(vidItem);
     downloadVidArray.push(vidData);
   }
+
+  console.log("FINISHED VIDEO DOWNLOAD");
+  console.log(`DOWNLOADED ${downloadVidArray.length} VIDS`);
   return downloadVidArray;
 };
 
 export const downloadVidFS = async (inputParams) => {
   if (!inputParams) return null;
-  const { downloadVidChunkSize, downloadVidConcurrent, vidRetries } = CONFIG;
+  const { downloadVidChunkSize } = CONFIG;
   const { url, vidId } = inputParams;
 
   const headers = await downloadVidHeaders(url);
@@ -42,80 +45,97 @@ export const downloadVidFS = async (inputParams) => {
 
   if (chunksCompleted && chunksCompleted.length === totalVidChunks) {
     console.log("Vid already downloaded");
-    return null;
+    return chunksCompleted;
   }
 
   if (chunksCompleted && chunksCompleted.length > 0) {
     console.log(`Resuming Chunk ${chunksCompleted.length + 1} of ${totalVidChunks} total chunks`);
   }
 
-  const downloadObj = { ...inputParams, headers, vidSize, totalVidChunks };
+  const downloadObj = { ...inputParams, headers, vidSize, totalVidChunks, chunksPending, chunksCompleted };
 
   console.log("DOWNLOAD OBJ");
   console.log(downloadObj);
 
-  const downloadData = await downloadChunksWithRetries(downloadObj, chunksPending, chunksCompleted);
+  await downloadChunksWithRetries(downloadObj);
 
-  console.log("DOWNLOAD DATA");
-  console.log(downloadData);
+  //defining storeObj as downloadObj without 2 items (which are renamed to remove them)
+  const { chunksPending: _, chunksCompleted: __, ...storeObj } = downloadObj;
+
+  console.log("STORE OBJ");
+  console.log(storeObj);
+
+  const storeModel = new dbModel({ keyToLookup: "url", itemValue: url, updateObj: storeObj }, vids);
+  const storeData = await storeModel.updateObjItem();
+
+  console.log("STORE DATA");
+  console.log(storeData);
+
+  return storeObj;
 };
 
-export const downloadChunksWithRetries = async (inputObj, chunksPending, chunksCompleted) => {
-  if (!inputObj || !chunksPending || !chunksCompleted) return null;
-  const { vidRetries, downloadVidConcurrent } = CONFIG;
+export const downloadChunksWithRetries = async (inputObj) => {
+  if (!inputObj) return null;
+  const { vidRetries } = CONFIG;
 
   for (let i = 0; i < vidRetries; i++) {
-    chunksPending = await downloadPendingChunkArray(inputObj, chunksPending, chunksCompleted);
+    inputObj.chunksPending = await downloadPendingChunkArray(inputObj);
 
-    if (chunksPending.length === 0) {
+    if (inputObj.chunksPending.length === 0) {
       console.log("ALL CHUNKS DOWNLOADED");
       return true;
     }
 
     if (i < vidRetries - 1) {
-      console.log(`Retrying download of ${chunksPending.length} chunks (RETRY ATTEMPT ${i + 1})`);
+      console.log(`Retrying download of ${inputObj.chunksPending.length} chunks (RETRY ATTEMPT ${i + 1})`);
     }
   }
 
-  console.error(`Failed to download ${chunksPending.length} chunks after ${vidRetries} retries`);
+  console.error(`Failed to download ${inputObj.chunksPending.length} chunks after ${vidRetries} retries`);
   return null;
 };
 
-export const downloadPendingChunkArray = async (inputObj, chunksPending, chunksCompleted) => {
-  if (!inputObj || !chunksPending || !chunksCompleted) return null;
+export const downloadPendingChunkArray = async (inputObj) => {
+  if (!inputObj) return null;
   const { downloadVidConcurrent } = CONFIG;
+  const { chunksPending } = inputObj;
 
   const failedDownloadArray = [];
 
   for (let i = 0; i < chunksPending.length; i += downloadVidConcurrent) {
     const batchArray = chunksPending.slice(i, i + downloadVidConcurrent);
-    const failed = await downloadChunksBatch(inputObj, batchArray, chunksCompleted);
-    failedDownloadArray.push(...failed);
+    const failedObj = await downloadChunksBatch(inputObj, batchArray);
+    failedDownloadArray.push(...failedObj);
   }
 
   return failedDownloadArray;
 };
 
-export const downloadChunksBatch = async (inputObj, batchArray, chunksCompleted) => {
-  const { totalVidChunks } = inputObj;
+export const downloadChunksBatch = async (inputObj, inputArray) => {
+  if (!inputObj || !inputArray || !inputArray.length) return null;
+  const { totalVidChunks, chunksCompleted } = inputObj;
 
-  const promiseArray = batchArray.map((chunk) => {
+  const promiseArray = [];
+  for (let i = 0; i < inputArray.length; i++) {
+    const chunk = inputArray[i];
     const chunkObj = { ...chunk, ...inputObj };
-    return downloadVidChunk(chunkObj);
-  });
+    const promise = downloadVidChunk(chunkObj);
+    promiseArray.push(promise);
+  }
 
   const results = await Promise.allSettled(promiseArray);
 
   const failedChunks = [];
   for (let i = 0; i < results.length; i++) {
     const resultItem = results[i];
+    const chunk = inputArray[i];
 
-    if (resultItem.status === "fulfilled" && resultItem.value) {
-      chunksCompleted.push(batchArray[i]);
-    } else {
-      console.error(`Failed chunk ${batchArray[i].chunkIndex}: ${resultItem.reason || "Unknown error"}`);
-      failedChunks.push(batchArray[i]);
+    if (resultItem.status !== "fulfilled" || !resultItem.value) {
+      console.error(`Failed chunk ${chunk.chunkIndex}: ${resultItem.reason || "Unknown error"}`);
+      failedChunks.push(chunk);
+      continue;
     }
+    chunksCompleted.push(chunk);
   }
 
   const progress = ((chunksCompleted.length / totalVidChunks) * 100).toFixed(1);
@@ -123,6 +143,50 @@ export const downloadChunksBatch = async (inputObj, batchArray, chunksCompleted)
 
   return failedChunks;
 };
+
+export const downloadVidChunk = async (inputObj) => {
+  if (!inputObj) return null;
+  const { url, chunkIndex, chunkPath, startByte, endByte } = inputObj;
+
+  try {
+    const res = await axios({
+      method: "get",
+      url: url,
+      timeout: 60 * 1000, //1 minute
+      responseType: "stream",
+      headers: {
+        Range: `bytes=${startByte}-${endByte}`,
+      },
+    });
+
+    if (!res || !res.data) {
+      const error = new Error("CHUNK DOWNLOAD FUCKED");
+      error.url = url;
+      error.function = "downloadVidChunk";
+      throw error;
+    }
+
+    const writer = fs.createWriteStream(chunkPath);
+    res.data.pipe(writer);
+
+    await new Promise((resolve, reject) => {
+      writer.on("finish", resolve);
+      writer.on("error", reject);
+      res.data.on("error", reject);
+    });
+
+    console.log(`Chunk ${chunkIndex} downloaded (bytes ${startByte}-${endByte})`);
+
+    return true;
+  } catch (e) {
+    console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+    return null;
+  }
+};
+
+//-------------------
+
+//UTIL DOWNLOAD FUNCTIONS
 
 //res.headers doesnt work, so getting headers by getting small number of bytes
 export const downloadVidHeaders = async (url) => {
@@ -207,46 +271,6 @@ export const getChunksCompleted = async (inputArray) => {
   }
 
   return completedChunkArray;
-};
-
-export const downloadVidChunk = async (inputObj) => {
-  if (!inputObj) return null;
-  const { url, chunkIndex, chunkPath, startByte, endByte } = inputObj;
-
-  try {
-    const res = await axios({
-      method: "get",
-      url: url,
-      timeout: 60 * 1000, //1 minute
-      responseType: "stream",
-      headers: {
-        Range: `bytes=${startByte}-${endByte}`,
-      },
-    });
-
-    if (!res || !res.data) {
-      const error = new Error("CHUNK DOWNLOAD FUCKED");
-      error.url = url;
-      error.function = "downloadVidChunk";
-      throw error;
-    }
-
-    const writer = fs.createWriteStream(chunkPath);
-    res.data.pipe(writer);
-
-    await new Promise((resolve, reject) => {
-      writer.on("finish", resolve);
-      writer.on("error", reject);
-      res.data.on("error", reject);
-    });
-
-    console.log(`Chunk ${chunkIndex} downloaded (bytes ${startByte}-${endByte})`);
-
-    return true;
-  } catch (e) {
-    console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
-    return null;
-  }
 };
 
 //--------------------------
