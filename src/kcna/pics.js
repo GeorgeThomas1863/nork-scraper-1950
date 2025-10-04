@@ -13,17 +13,20 @@ export const downloadPicsKCNA = async () => {
   //CREATE PIC ID AND SAVE IT EARLIER IN PIC DB (maybe make last couple chars in URL?)
   for (const picItem of picArray) {
     try {
-      const { url, picId } = picItem;
-      const savePath = path.join(picPath, picId + ".jpg");
-      const picData = await downloadPicFS(url, savePath);
+      const { picId } = picItem;
+      picItem.picName = picId + ".jpg";
+      picItem.savePath = path.join(picPath, picItem.picName);
+
+      const picData = await downloadPicFS(picItem);
     } catch (e) {
       console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
     }
   }
 };
 
-export const downloadPicFS = async (url, savePath) => {
-  if (!url || !savePath) return null;
+export const downloadPicFS = async (inputParams) => {
+  if (!inputParams) return null;
+  const { url, savePath, picName } = inputParams;
   const { picProgressSize } = CONFIG;
 
   const picExists = fs.existsSync(savePath);
@@ -70,7 +73,7 @@ export const downloadPicFS = async (url, savePath) => {
     stream.on("error", reject);
   });
 
-  console.log(`DOWNLOAD COMPLETE: ${picId}.jpg | FINAL SIZE: ${Math.round(downloadedSize / 1024)}KB`);
+  console.log(`DOWNLOAD COMPLETE: ${picName} | FINAL SIZE: ${Math.round(downloadedSize / 1024)}KB`);
   return { downloadedSize: downloadedSize };
 };
 
