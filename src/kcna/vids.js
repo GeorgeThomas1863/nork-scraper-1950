@@ -31,30 +31,30 @@ export const downloadVidFS = async (inputParams) => {
   const { downloadVidChunkSize, downloadVidConcurrent, vidRetries } = CONFIG;
   const { url, vidId } = inputParams;
 
-  // console.log("DOWNLOADING VID CONCURRENT");
-  // console.log(downloadVidConcurrent);
-
   const headers = await downloadVidHeaders(url);
   const vidSize = +headers["content-range"]?.substring(headers["content-range"]?.lastIndexOf("/") + 1, headers["content-range"]?.length); //in bytes
   const totalVidChunks = Math.ceil(vidSize / downloadVidChunkSize);
 
-  const downloadObj = { ...inputParams, headers: headers, vidSize: vidSize, totalVidChunks: totalVidChunks };
-
   //build chunk array so names / paths in one place
   const chunkArrayDefault = await buildChunkArrayDefault(vidId, vidSize);
-  const chunkArrayCompleted = await getChunksCompleted(chunkArrayDefault);
-  const chunkArrayPending = chunkArrayDefault.filter((chunk) => !chunkArrayCompleted.includes(chunk));
+  const chunksCompleted = await getChunksCompleted(chunkArrayDefault);
+  const chunksPending = chunkArrayDefault.filter((chunk) => !chunksCompleted.includes(chunk));
 
-  if (chunkArrayCompleted && chunkArrayCompleted.length === totalVidChunks) {
+  if (chunksCompleted && chunksCompleted.length === totalVidChunks) {
     console.log("Vid already downloaded");
     return null;
   }
 
-  if (chunkArrayCompleted && chunkArrayCompleted.length > 0) {
-    console.log(`Resuming Chunk ${chunkArrayCompleted.length + 1} of ${totalVidChunks} total chunks`);
+  if (chunksCompleted && chunksCompleted.length > 0) {
+    console.log(`Resuming Chunk ${chunksCompleted.length + 1} of ${totalVidChunks} total chunks`);
   }
 
-  let chunksToDownloadArray = [...chunkArrayPending];
+  const downloadObj = { ...inputParams, headers, vidSize, totalVidChunks };
+
+  //REFACTORING HERE
+  const downloadData = await downloadChunksWithRetries(downloadObj, chunksPending, chunksCompleted);
+
+  let chunksToDownloadArray = [...chunksPending];
 
   for (let r = 0; r < vidRetries; r++) {
     const failedDownloadArray = [];
@@ -96,6 +96,10 @@ export const downloadVidFS = async (inputParams) => {
       console.log(`Retrying download of ${chunksToDownloadArray.length} chunks (RETRY ATTEMPT ${r + 1})`);
     }
   }
+};
+
+const downloadChunksWithRetries = async (inputObj, chunksPending, chunksCompleted) => {
+  if (!inputObj || !chunksPending || !chunksCompleted) return null;
 };
 
 //res.headers doesnt work, so getting headers by getting small number of bytes
@@ -187,8 +191,8 @@ export const downloadVidChunk = async (inputObj) => {
   if (!inputObj) return null;
   const { url, chunkIndex, chunkPath, startByte, endByte } = inputObj;
 
-  console.log("DOWNLOADING CHUNK");
-  console.log(inputObj);
+  // console.log("DOWNLOADING CHUNK");
+  // console.log(inputObj);
 
   try {
     const res = await axios({
