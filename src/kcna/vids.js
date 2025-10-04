@@ -33,6 +33,9 @@ export const downloadVidFS = async (inputParams) => {
   const { downloadVidChunkSize, tempPath, downloadVidConcurrent } = CONFIG;
   const { url, savePath, vidName } = inputParams;
 
+  // console.log("INPUT PARAMS");
+  // console.log(inputParams);
+
   const headers = await downloadVidHeaders(url);
   const vidSize = +headers["content-range"]?.substring(headers["content-range"]?.lastIndexOf("/") + 1, headers["content-range"]?.length); //in bytes
   const totalVidChunks = Math.ceil(vidSize / downloadVidChunkSize);
@@ -100,7 +103,7 @@ export const downloadVidHeaders = async (url) => {
 };
 
 export const buildChunkArray = async (vidName, vidSize) => {
-  if (!!vidName || !!vidSize) return null;
+  if (!vidName || !vidSize) return null;
   const { tempPath, downloadVidChunkSize } = CONFIG;
 
   console.log("VID NAME");
