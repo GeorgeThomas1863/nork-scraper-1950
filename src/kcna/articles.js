@@ -3,7 +3,7 @@ import { JSDOM } from "jsdom";
 import CONFIG from "../../config/config.js";
 import NORK from "../../models/nork-model.js";
 import dbModel from "../../models/db-model.js";
-import { kcnaState } from "./kcna-control.js";
+import kcnaState from "./state.js";
 import { extractItemDate, getIdFromURL } from "./util.js";
 
 export const scrapeArticlesKCNA = async () => {
