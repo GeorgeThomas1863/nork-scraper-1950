@@ -88,10 +88,10 @@ export const downloadVidHeaders = async (url) => {
       throw error;
     }
 
-    console.log("RES HEADERS");
-    console.log(resHeaders);
-
     const headers = { ...resHeaders.headers };
+    console.log("RES HEADERS");
+    console.log(headers);
+
     return headers;
   } catch (e) {
     console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
