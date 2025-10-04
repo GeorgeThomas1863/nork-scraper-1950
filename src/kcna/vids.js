@@ -54,13 +54,13 @@ export const downloadVidFS = async (inputParams) => {
     console.log(`Resuming Chunk ${chunkArrayCompleted.length + 1} of ${totalVidChunks} total chunks`);
   }
 
-  console.log("CHUNK ARRAY PENDING");
-  console.log(chunkArrayPending);
+  // console.log("CHUNK ARRAY PENDING");
+  // console.log(chunkArrayPending);
 
   let chunksToDownloadArray = [...chunkArrayPending];
 
-  console.log("CHUNKS TO DOWNLOAD ARRAY");
-  console.log(chunksToDownloadArray);
+  // console.log("CHUNKS TO DOWNLOAD ARRAY");
+  // console.log(chunksToDownloadArray);
 
   for (let r = 0; r < vidRetries; r++) {
     const failedDownloadArray = [];
@@ -72,6 +72,9 @@ export const downloadVidFS = async (inputParams) => {
       for (let j = 0; j < batchArray.length; j++) {
         const chunkToDownload = batchArray[j];
         const chunkObj = { ...chunkToDownload, ...downloadObj };
+        console.log("CHUNK OBJ");
+        console.log(chunkObj);
+
         const downloadPromise = downloadVidChunk(chunkObj);
         promiseArray.push(downloadPromise);
       }
