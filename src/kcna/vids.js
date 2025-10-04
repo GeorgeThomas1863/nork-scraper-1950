@@ -16,12 +16,16 @@ export const downloadVidsKCNA = async () => {
 
   const downloadVidArray = [];
   for (const vidItem of vidArray) {
-    const { vidId } = vidItem;
-    vidItem.vidName = vidId + ".mp4";
-    vidItem.savePath = path.join(vidPath, vidItem.vidName);
+    try {
+      const { vidId } = vidItem;
+      vidItem.vidName = vidId + ".mp4";
+      vidItem.savePath = path.join(vidPath, vidItem.vidName);
 
-    const vidData = await downloadVidFS(vidItem);
-    downloadVidArray.push(vidData);
+      const vidData = await downloadVidFS(vidItem);
+      downloadVidArray.push(vidData);
+    } catch (e) {
+      console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+    }
   }
 
   console.log("FINISHED VIDEO DOWNLOAD");
@@ -52,12 +56,31 @@ export const downloadVidFS = async (inputParams) => {
     console.log(`Resuming Chunk ${chunksCompleted.length + 1} of ${totalVidChunks} total chunks`);
   }
 
-  const downloadObj = { ...inputParams, headers, vidSize, totalVidChunks, chunksPending, chunksCompleted };
+  const downloadObj = { ...inputParams, headers, vidSize, totalVidChunks, chunkArrayDefault, chunksPending, chunksCompleted };
 
-  await downloadChunksWithRetries(downloadObj);
+  //throw error on failed download
+  const downloadChunksData = await downloadChunksWithRetries(downloadObj);
+  if (!downloadChunksData || !downloadChunksData.length) {
+    const error = new Error("FAILED TO DOWNLOAD VIDEO");
+    error.url = url;
+    error.function = "downloadVidFS";
+    throw error;
+  }
+
+  //most check prob unnecessary, remove later
+  if (downloadChunksData.length < totalVidChunks * 0.9) {
+    const error = new Error("FAILED TO DOWNLOAD MOST CHUNKS, LESS THAN 90% DOWNLOADED");
+    error.url = url;
+    error.function = "downloadVidFS";
+    throw error;
+  }
+
+  //otherwise merge chunks and cleanup
+  await mergeChunks(downloadObj);
+  await cleanupTempFiles(downloadObj);
 
   //defining storeObj as downloadObj without 2 items (which are renamed to remove them bc already defined in function)
-  const { chunksPending: _, chunksCompleted: __, ...storeObj } = downloadObj;
+  const { chunksPending: _, chunksCompleted: __, chunkArrayDefault: ___, ...storeObj } = downloadObj;
 
   console.log("STORE OBJ");
   console.log(storeObj);
@@ -80,7 +103,7 @@ export const downloadChunksWithRetries = async (inputObj) => {
 
     if (inputObj.chunksPending.length === 0) {
       console.log("ALL CHUNKS DOWNLOADED");
-      return true;
+      return inputObj.chunksCompleted;
     }
 
     if (i < vidRetries - 1) {
@@ -268,6 +291,54 @@ export const getChunksCompleted = async (inputArray) => {
   }
 
   return completedChunkArray;
+};
+
+export const mergeChunks = async (inputObj) => {
+  if (!inputObj) return null;
+  const { savePath, chunkArrayDefault } = inputObj;
+
+  console.log("Merging chunks...");
+  const writeStream = fs.createWriteStream(savePath);
+
+  for (let i = 0; i < chunkArrayDefault.length; i++) {
+    const chunk = chunkArrayDefault[i];
+    const { chunkPath, chunkIndex } = chunk;
+    if (!fs.existsSync(chunkPath)) continue;
+
+    console.log(`MERGING CHUNK ${chunkIndex} OF ${chunkArrayDefault.length}`);
+
+    const chunkData = fs.readFileSync(chunkPath);
+    writeStream.write(chunkData);
+    fs.unlinkSync(chunkPath); // Clean up temp file
+  }
+
+  // CRITICAL FOR PROPER AWAITING AND LATER CHECKS
+  await new Promise((resolve, reject) => {
+    writeStream.on("finish", () => {
+      console.log("Merge complete");
+      resolve();
+    });
+    writeStream.on("error", (error) => {
+      console.error("Error during merge:", error);
+      reject(error);
+    });
+    writeStream.end();
+  });
+};
+
+export const cleanupTempFiles = async (inputObj) => {
+  if (!inputObj) return null;
+  const { chunkArrayDefault } = inputObj;
+
+  for (let i = 0; i < chunkArrayDefault.length; i++) {
+    const chunk = chunkArrayDefault[i];
+    const { chunkPath } = chunk;
+    if (fs.existsSync(chunkPath)) {
+      fs.unlinkSync(chunkPath);
+    }
+  }
+
+  return true;
 };
 
 //--------------------------
