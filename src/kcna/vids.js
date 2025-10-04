@@ -54,7 +54,13 @@ export const downloadVidFS = async (inputParams) => {
     console.log(`Resuming Chunk ${chunkArrayCompleted.length + 1} of ${totalVidChunks} total chunks`);
   }
 
-  let chunksToDownloadArray = chunkArrayPending;
+  console.log("CHUNK ARRAY PENDING");
+  console.log(chunkArrayPending);
+
+  let chunksToDownloadArray = [...chunkArrayPending];
+
+  console.log("CHUNKS TO DOWNLOAD ARRAY");
+  console.log(chunksToDownloadArray);
 
   for (let r = 0; r < vidRetries; r++) {
     const failedDownloadArray = [];
