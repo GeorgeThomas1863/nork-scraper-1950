@@ -63,6 +63,21 @@ export const downloadVidFS = async (inputParams) => {
     }
 
     const results = await Promise.allSettled(promiseArray);
+
+    for (let j = 0; j < results.length; j++) {
+      const resultItem = results[j];
+
+      if (resultItem.status === "fulfilled" && resultItem.value) {
+        chunkArrayCompleted.push(resultItem.value);
+      } else {
+        console.error(`Failed chunk ${batchArray[j].chunkIndex}: ${resultItem.reason || "Unknown error"}`);
+        // failedChunkArray.push(batchArray[j]);
+      }
+    }
+
+    // Show progress
+    const progress = ((chunkArrayCompleted.length / totalVidChunks) * 100).toFixed(1);
+    console.log(`Overall progress: ${progress}% (${chunkArrayCompleted.length}/${totalVidChunks} chunks)`);
   }
 };
 
