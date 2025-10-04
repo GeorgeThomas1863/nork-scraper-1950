@@ -113,7 +113,7 @@ export const buildChunkArrayDefault = async (vidId, vidSize) => {
     const chunkSize = endByte - startByte + 1;
 
     const chunkObj = {
-      index: i,
+      chunkIndex: i + 1,
       chunkName: chunkName,
       chunkPath: chunkPath,
       startByte: startByte,
@@ -153,12 +153,9 @@ export const getChunksCompleted = async (inputArray) => {
 
 export const downloadVidChunk = async (inputObj) => {
   if (!inputObj) return null;
-  const { url, chunkPath, startByte, endByte } = inputObj;
+  const { url, chunkIndex, chunkPath, startByte, endByte } = inputObj;
 
   try {
-    console.log("DOWNLOADING CHUNK");
-    console.log(inputObj);
-
     const res = await axios({
       method: "get",
       url: url,
@@ -184,6 +181,8 @@ export const downloadVidChunk = async (inputObj) => {
       writer.on("error", reject);
       res.data.on("error", reject);
     });
+
+    console.log(`Chunk ${chunkIndex} downloaded (bytes ${startByte}-${endByte})`);
 
     return true;
   } catch (e) {
