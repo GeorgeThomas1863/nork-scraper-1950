@@ -4,7 +4,7 @@ import CONFIG from "../../config/config.js";
 import NORK from "../../models/nork-model.js";
 import dbModel from "../../models/db-model.js";
 import { kcnaState } from "./kcna-control.js";
-import { extractItemDate, lookupItemDate } from "./util.js";
+import { extractItemDate, lookupItemDate, getIdFromURL } from "./util.js";
 
 export const scrapeVidPagesKCNA = async () => {
   const { vidPages } = CONFIG;
@@ -128,8 +128,10 @@ export const extractVidThumbnail = async (inputElement, date) => {
   }
 
   //store thumbnail to picsDB
+  const picId = await getIdFromURL(thumbnailURL);
   try {
     const storeParams = {
+      picId: picId,
       url: thumbnailURL,
       scrapeId: kcnaState.scrapeId,
       date: date,
@@ -246,7 +248,9 @@ export const extractVidURL = async (document, url) => {
 
   try {
     //store url to vidDB (so dont have to do again); build params
+    const vidId = await getIdFromURL(vidURL);
     const storeParams = {
+      vidId: vidId,
       url: vidURL,
       scrapeId: kcnaState.scrapeId,
       date: vidDate,

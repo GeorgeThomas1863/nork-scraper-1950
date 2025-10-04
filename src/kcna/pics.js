@@ -6,14 +6,18 @@ export const downloadPicsKCNA = async () => {
   const picModel = new dbModel({ keyExists: "url", keyEmpty: "picSize" }, pics);
   const picArray = await picModel.findEmptyItems();
 
-  //CREATE PIC ID AND SAVE IT EARLIER IN PIC DB (maybe make last couple chars in URL?)
-  for (const picItem of picArray) {
-    const { url } = picItem;
-    const picData = await downloadPicFS(url, savePath);
+  console.log("PIC ARRAY");
+  console.log(picArray);
+  console.log(picArray.length);
 
-    console.log("PIC TO DOWNLOAD ARRAY");
-    console.log(picArray);
-  }
+  //CREATE PIC ID AND SAVE IT EARLIER IN PIC DB (maybe make last couple chars in URL?)
+  // for (const picItem of picArray) {
+  //   const { url } = picItem;
+  //   const picData = await downloadPicFS(url, savePath);
+
+  //   console.log("PIC TO DOWNLOAD ARRAY");
+  //   console.log(picArray);
+  // }
 };
 
 export const downloadPicFS = async (url, savePath) => {

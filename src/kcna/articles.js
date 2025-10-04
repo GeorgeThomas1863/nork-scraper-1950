@@ -4,7 +4,7 @@ import CONFIG from "../../config/config.js";
 import NORK from "../../models/nork-model.js";
 import dbModel from "../../models/db-model.js";
 import { kcnaState } from "./kcna-control.js";
-import { extractItemDate, lookupItemDate } from "./util.js";
+import { extractItemDate, getIdFromURL } from "./util.js";
 
 export const scrapeArticlesKCNA = async () => {
   const { articles } = CONFIG;
@@ -239,7 +239,9 @@ export const extractArticlePicArray = async (url, date) => {
         picArray.push(articlePicURL);
 
         //store url to picDB (so dont have to do again); build params
+        const picId = await getIdFromURL(articlePicURL);
         const storeParams = {
+          picId: picId,
           url: articlePicURL,
           scrapeId: scrapeId,
           date: date,

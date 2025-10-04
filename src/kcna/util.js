@@ -45,3 +45,18 @@ export const lookupItemDate = async (url, collection) => {
   const lookupData = await lookupModel.getUniqueItem();
   return lookupData?.date;
 };
+
+export const getNextId = async (keyToLookup, collection) => {
+  const dataModel = new dbModel({ keyToLookup: keyToLookup }, collection);
+  const maxId = await dataModel.findMaxId();
+
+  if (!maxId) return 1;
+
+  return maxId + 1;
+};
+
+export const getIdFromURL = async (url) => {
+  const dotIndex = url.lastIndexOf(".kcmsf");
+  const id = url.substring(dotIndex - 7, dotIndex);
+  return id;
+};
