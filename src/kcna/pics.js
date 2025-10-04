@@ -53,7 +53,7 @@ export const downloadPicFS = async (inputParams) => {
 
   console.log("!!!!!!");
   console.log("DOWNLOAD PIC RES DATA");
-  console.log(res.data);
+  console.log(res.headers);
 
   let downloadedSize = 0;
 
