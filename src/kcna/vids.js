@@ -31,7 +31,7 @@ export const downloadVidsKCNA = async () => {
 
 export const downloadVidFS = async (inputParams) => {
   if (!inputParams) return null;
-  const { downloadVidChunkSize } = CONFIG;
+  const { downloadVidChunkSize, vids } = CONFIG;
   const { url, vidId } = inputParams;
 
   const headers = await downloadVidHeaders(url);
@@ -54,12 +54,9 @@ export const downloadVidFS = async (inputParams) => {
 
   const downloadObj = { ...inputParams, headers, vidSize, totalVidChunks, chunksPending, chunksCompleted };
 
-  console.log("DOWNLOAD OBJ");
-  console.log(downloadObj);
-
   await downloadChunksWithRetries(downloadObj);
 
-  //defining storeObj as downloadObj without 2 items (which are renamed to remove them)
+  //defining storeObj as downloadObj without 2 items (which are renamed to remove them bc already defined in function)
   const { chunksPending: _, chunksCompleted: __, ...storeObj } = downloadObj;
 
   console.log("STORE OBJ");
