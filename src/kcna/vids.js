@@ -16,16 +16,12 @@ export const downloadVidsKCNA = async () => {
 
   const downloadVidArray = [];
   for (const vidItem of vidArray) {
-    try {
-      const { vidId } = vidItem;
-      vidItem.vidName = vidId + ".mp4";
-      vidItem.savePath = path.join(vidPath, vidItem.vidName);
+    const { vidId } = vidItem;
+    vidItem.vidName = vidId + ".mp4";
+    vidItem.savePath = path.join(vidPath, vidItem.vidName);
 
-      const vidData = await downloadVidFS(vidItem);
-      downloadVidArray.push(vidData);
-    } catch (e) {
-      console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
-    }
+    const vidData = await downloadVidFS(vidItem);
+    downloadVidArray.push(vidData);
   }
   return downloadVidArray;
 };
@@ -75,27 +71,32 @@ export const downloadVidHeaders = async (url) => {
   const randomBytes = Math.floor(Math.random() * 200);
   const byteText = "bytes=0-" + randomBytes;
 
-  const resHeaders = await axios({
-    method: "get",
-    url: url,
-    headers: {
-      Range: byteText,
-    },
-    timeout: 30 * 1000, //30 seconds
-  });
+  try {
+    const resHeaders = await axios({
+      method: "get",
+      url: url,
+      headers: {
+        Range: byteText,
+      },
+      timeout: 30 * 1000, //30 seconds
+    });
 
-  if (!resHeaders || !resHeaders.headers) {
-    const error = new Error("FAILED TO GET VID HEADERS");
-    error.url = url;
-    error.function = "downloadVidFS";
-    throw error;
+    if (!resHeaders || !resHeaders.headers) {
+      const error = new Error("FAILED TO GET VID HEADERS");
+      error.url = url;
+      error.function = "downloadVidFS";
+      throw error;
+    }
+
+    console.log("RES HEADERS");
+    console.log(resHeaders);
+
+    const headers = { ...resHeaders.headers };
+    return headers;
+  } catch (e) {
+    console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+    return null;
   }
-
-  console.log("RES HEADERS");
-  console.log(resHeaders);
-
-  const headers = { ...resHeaders.headers };
-  return headers;
 };
 
 export const buildChunkArrayDefault = async (vidId, vidSize) => {
@@ -120,16 +121,13 @@ export const buildChunkArrayDefault = async (vidId, vidSize) => {
       chunkSize: chunkSize,
     };
 
-    // console.log("CHUNK OBJ");
-    // console.log(chunkObj);
-
     chunkArray.push(chunkObj);
   }
   return chunkArray;
 };
 
 export const getChunksCompleted = async (inputArray) => {
-  if (!inputObj || !inputObj.length) return null;
+  if (!inputArray || !inputArray.length) return null;
 
   //loop through and see if any chunks already downloaded
   const completedChunkArray = [];
