@@ -57,7 +57,7 @@ export const downloadVidFS = async (inputParams) => {
   // console.log("CHUNK ARRAY PENDING");
   // console.log(chunkArrayPending);
 
-  let chunksToDownloadArray = [...chunkArrayPending];
+  // let chunksToDownloadArray = [...chunkArrayPending];
 
   // console.log("CHUNKS TO DOWNLOAD ARRAY");
   // console.log(chunksToDownloadArray);
@@ -65,8 +65,8 @@ export const downloadVidFS = async (inputParams) => {
   for (let r = 0; r < vidRetries; r++) {
     const failedDownloadArray = [];
 
-    for (let i = 0; i < chunksToDownloadArray.length; i += downloadVidConcurrent) {
-      const batchArray = chunksToDownloadArray.slice(i, i + downloadVidConcurrent);
+    for (let i = 0; i < chunkArrayPending.length; i += downloadVidConcurrent) {
+      const batchArray = chunkArrayPending.slice(i, i + downloadVidConcurrent);
       const promiseArray = [];
 
       for (let j = 0; j < batchArray.length; j++) {
@@ -98,9 +98,9 @@ export const downloadVidFS = async (inputParams) => {
     }
 
     // chunksToDownloadArray = failedDownloadArray;
-    if (chunksToDownloadArray && r < vidRetries - 1) {
-      console.log(`Retrying download of ${chunksToDownloadArray.length} chunks (RETRY ATTEMPT ${r + 1})`);
-    }
+    // if (chunksToDownloadArray && r < vidRetries - 1) {
+    //   console.log(`Retrying download of ${chunksToDownloadArray.length} chunks (RETRY ATTEMPT ${r + 1})`);
+    // }
   }
 };
 
