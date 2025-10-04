@@ -27,9 +27,18 @@ export const downloadVidsKCNA = async () => {
 
 export const downloadVidFS = async (inputParams) => {
   if (!inputParams) return null;
+  const { url, savePath, tempPath, vidName } = inputParams;
 
-  console.log("DOWNLOAD VID INPUT PARAMS");
-  console.log(inputParams);
+  //get vid header info FIRST
+  const resHeaders = await axios({
+    method: "head",
+    url: url,
+    timeout: 60 * 1000, //1 minute
+  });
+
+  console.log("RES HEADERS");
+  console.log(resHeaders);
+
 };
 
 export const uploadVidsKCNA = async () => {
