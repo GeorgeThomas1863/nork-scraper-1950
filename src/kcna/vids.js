@@ -29,16 +29,30 @@ export const downloadVidFS = async (inputParams) => {
   if (!inputParams) return null;
   const { url, savePath, tempPath, vidName } = inputParams;
 
-  //get vid header info FIRST
+  //get vid header info FIRST (doesnt support header req)
+  const randomBytes = Math.floor(Math.random() * 200);
+  const byteText = "bytes=0-" + randomBytes;
+
   const resHeaders = await axios({
-    method: "head",
+    method: "get",
     url: url,
-    timeout: 60 * 1000, //1 minute
+    headers: {
+      Range: byteText,
+    },
+    timeout: 30 * 1000, //30 seconds
   });
 
-  console.log("RES HEADERS");
-  console.log(resHeaders);
+  if (!resHeaders || !resHeaders.headers) {
+    const error = new Error("FAILED TO GET VID HEADERS");
+    error.url = url;
+    error.function = "downloadVidFS";
+    throw error;
+  }
 
+  const headers = resHeaders.headers;
+
+  console.log("RES HEADERS");
+  console.log(headers);
 };
 
 export const uploadVidsKCNA = async () => {
