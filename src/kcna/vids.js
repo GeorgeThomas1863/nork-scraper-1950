@@ -97,7 +97,7 @@ export const downloadVidFS = async (inputParams) => {
       console.log(`Overall progress: ${progress}% (${chunkArrayCompleted.length}/${totalVidChunks} chunks)`);
     }
 
-    chunksToDownloadArray = failedDownloadArray;
+    // chunksToDownloadArray = failedDownloadArray;
     if (chunksToDownloadArray && r < vidRetries - 1) {
       console.log(`Retrying download of ${chunksToDownloadArray.length} chunks (RETRY ATTEMPT ${r + 1})`);
     }
