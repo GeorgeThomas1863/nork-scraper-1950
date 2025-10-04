@@ -54,55 +54,49 @@ export const downloadVidFS = async (inputParams) => {
     console.log(`Resuming Chunk ${chunkArrayCompleted.length + 1} of ${totalVidChunks} total chunks`);
   }
 
-  // console.log("CHUNK ARRAY PENDING");
-  // console.log(chunkArrayPending);
+  let chunksToDownloadArray = [...chunkArrayPending];
 
-  // let chunksToDownloadArray = [...chunkArrayPending];
+  for (let r = 0; r < vidRetries; r++) {
+    const failedDownloadArray = [];
 
-  // console.log("CHUNKS TO DOWNLOAD ARRAY");
-  // console.log(chunksToDownloadArray);
+    for (let i = 0; i < chunksToDownloadArray.length; i += downloadVidConcurrent) {
+      const batchArray = chunksToDownloadArray.slice(i, i + downloadVidConcurrent);
+      const promiseArray = [];
 
-  // for (let r = 0; r < vidRetries; r++) {
-  //   const failedDownloadArray = [];
+      for (let j = 0; j < batchArray.length; j++) {
+        const chunkToDownload = batchArray[j];
+        const chunkObj = { ...chunkToDownload, ...downloadObj };
+        console.log("CHUNK OBJ");
+        console.log(chunkObj);
 
-  for (let i = 0; i < chunkArrayPending.length; i += downloadVidConcurrent) {
-    const batchArray = chunkArrayPending.slice(i, i + downloadVidConcurrent);
-    const promiseArray = [];
-
-    for (let j = 0; j < batchArray.length; j++) {
-      const chunkToDownload = batchArray[j];
-      const chunkObj = { ...chunkToDownload, ...downloadObj };
-      console.log("CHUNK OBJ");
-      console.log(chunkObj);
-
-      const downloadPromise = downloadVidChunk(chunkObj);
-      promiseArray.push(downloadPromise);
-    }
-
-    const results = await Promise.allSettled(promiseArray);
-
-    for (let j = 0; j < results.length; j++) {
-      const resultItem = results[j];
-
-      if (resultItem.status === "fulfilled" && resultItem.value) {
-        chunkArrayCompleted.push(batchArray[j]);
-      } else {
-        console.error(`Failed chunk ${batchArray[j].chunkIndex}: ${resultItem.reason || "Unknown error"}`);
-        failedDownloadArray.push(batchArray[j]);
+        const downloadPromise = downloadVidChunk(chunkObj);
+        promiseArray.push(downloadPromise);
       }
+
+      const results = await Promise.allSettled(promiseArray);
+
+      for (let j = 0; j < results.length; j++) {
+        const resultItem = results[j];
+
+        if (resultItem.status === "fulfilled" && resultItem.value) {
+          chunkArrayCompleted.push(batchArray[j]);
+        } else {
+          console.error(`Failed chunk ${batchArray[j].chunkIndex}: ${resultItem.reason || "Unknown error"}`);
+          failedDownloadArray.push(batchArray[j]);
+        }
+      }
+
+      // Show progress
+      const progress = ((chunkArrayCompleted.length / totalVidChunks) * 100).toFixed(1);
+      console.log(`Overall progress: ${progress}% (${chunkArrayCompleted.length}/${totalVidChunks} chunks)`);
     }
 
-    // Show progress
-    const progress = ((chunkArrayCompleted.length / totalVidChunks) * 100).toFixed(1);
-    console.log(`Overall progress: ${progress}% (${chunkArrayCompleted.length}/${totalVidChunks} chunks)`);
+    chunksToDownloadArray = failedDownloadArray;
+    if (chunksToDownloadArray && r < vidRetries - 1) {
+      console.log(`Retrying download of ${chunksToDownloadArray.length} chunks (RETRY ATTEMPT ${r + 1})`);
+    }
   }
-
-  // chunksToDownloadArray = failedDownloadArray;
-  // if (chunksToDownloadArray && r < vidRetries - 1) {
-  //   console.log(`Retrying download of ${chunksToDownloadArray.length} chunks (RETRY ATTEMPT ${r + 1})`);
-  // }
 };
-// };
 
 //res.headers doesnt work, so getting headers by getting small number of bytes
 export const downloadVidHeaders = async (url) => {
