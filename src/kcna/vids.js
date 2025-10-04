@@ -31,6 +31,9 @@ export const downloadVidFS = async (inputParams) => {
   const { downloadVidChunkSize, downloadVidConcurrent } = CONFIG;
   const { url, vidId } = inputParams;
 
+  console.log("DOWNLOADING VID CONCURRENT");
+  console.log(downloadVidConcurrent);
+
   const headers = await downloadVidHeaders(url);
   const vidSize = +headers["content-range"]?.substring(headers["content-range"]?.lastIndexOf("/") + 1, headers["content-range"]?.length); //in bytes
   const totalVidChunks = Math.ceil(vidSize / downloadVidChunkSize);
