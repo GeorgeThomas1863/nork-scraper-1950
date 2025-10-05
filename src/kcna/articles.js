@@ -3,8 +3,9 @@ import { JSDOM } from "jsdom";
 import CONFIG from "../../config/config.js";
 import NORK from "../../models/nork-model.js";
 import dbModel from "../../models/db-model.js";
+import { tgSendMessage } from "../tg/tg-api.js";
 import kcnaState from "./state.js";
-import { extractItemDate, getIdFromURL, getTGInputs } from "./util.js";
+import { extractItemDate, getIdFromURL, normalizeTGInputs } from "./util.js";
 
 export const scrapeArticlesKCNA = async () => {
   const { articles } = CONFIG;
@@ -282,20 +283,49 @@ export const uploadArticlesKCNA = async () => {
 
     //normalize url and date
     const tgInputs = await normalizeTGInputs(url, date);
-    if (!tgInputs) continue;
     const uploadObj = { ...article, ...tgInputs };
     const titleText = await buildArticleTitleText(uploadObj);
+    uploadObj.titleText = titleText;
 
     //channel to upload to
     uploadObj.tgChannelId = tgChannelId;
+
+    const uploadTitleData = await uploadArticleTitle(uploadObj);
   }
 };
 
 export const buildArticleTitleText = async (inputObj) => {
   if (!inputObj) return null;
-  const { title, articleType, articleId } = inputObj;
+  const { title, dateNormal, articleType, articleId } = inputObj;
 
   const titleText = `🇰🇵 🇰🇵 🇰🇵
   
-  <b>ARTICLE TYPE:</b> ${title} - ${articleType}`;
+  <b>ARTICLE TYPE:</b> ${articleType} | ID: ${articleId}
+  
+  -----------------
+  
+  <b>${title}</b>
+  <i>${dateNormal}</i>
+
+  -----------------
+  `;
+
+  return titleText;
+};
+
+export const uploadArticleTitle = async (inputObj) => {
+  if (!inputObj) return null;
+  const { tgChannelId, titleText } = inputObj;
+
+  const params = {
+    chat_id: tgChannelId,
+    text: titleText,
+    parse_mode: "HTML",
+  };
+
+  console.log("ARTICLE TITLE PARAMS");
+  console.log(params);
+
+  const data = await tgSendMessage(params);
+  return data;
 };
