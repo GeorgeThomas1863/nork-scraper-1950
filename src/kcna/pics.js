@@ -109,6 +109,7 @@ export const downloadPicFS = async (inputParams) => {
 
 //UPLOAD PICS TG SECTION
 
+//FINISH HERE
 export const uploadPicsKCNA = async () => {
   const { pics } = CONFIG;
 
