@@ -111,20 +111,48 @@ export const downloadPicFS = async (inputParams) => {
 export const updatePicDataKCNA = async () => {
   const { pics, articles } = CONFIG;
 
-  const picModel = new dbModel("", pics);
-  const picArrayAll = await picModel.getAll();
-  if (!picArrayAll || !picArrayAll.length) return null;
+  // const picModel = new dbModel("", pics);
+  // const picArrayAll = await picModel.getAll();
+  // if (!picArrayAll || !picArrayAll.length) return null;
 
   const articleModel = new dbModel("", articles);
   const articleDataArray = await articleModel.getAll();
   if (!articleDataArray || !articleDataArray.length) return null;
 
   for (const article of articleDataArray) {
-    const { picArray } = article;
+    const { url, picArray } = article;
     if (!picArray || !picArray.length) continue;
+
+    const rebuiltPicArray = await rebuildArticlePicArray(picArray);
+
+    const updateParams = {
+      docKey: "url",
+      docValue: url,
+      updateKey: "picArray",
+      updateArray: rebuiltPicArray,
+    };
+    const updateArticleModel = new dbModel(updateParams, articles);
+    await updateArticleModel.updateArrayNested();
   }
 
   // const updateArticleModel = new dbModel("", articles);
+};
+
+export const rebuildArticlePicArray = async (inputArray) => {
+  if (!inputArray || !inputArray.length) return null;
+  const { pics } = CONFIG;
+
+  const rebuiltPicArray = [];
+  for (const url of inputArray) {
+    const lookupPicModel = new dbModel({ keyToLookup: "url", itemValue: url }, pics);
+
+    const picData = await lookupPicModel.getUniqueItem();
+    if (!picData) continue;
+
+    rebuiltPicArray.push(picData);
+  }
+
+  return rebuiltPicArray;
 };
 
 //---------------------------
