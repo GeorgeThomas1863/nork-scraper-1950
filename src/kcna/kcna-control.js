@@ -4,7 +4,6 @@ import { scrapePicSetsKCNA } from "./picSets.js";
 import { scrapeVidPagesKCNA } from "./vidPages.js";
 import { downloadPicsKCNA, uploadPicsKCNA } from "./pics.js";
 import { downloadVidsKCNA, uploadVidsKCNA } from "./vids.js";
-import { updatePicDataKCNA, updateVidDataKCNA } from "./update-db.js";
 
 export const scrapeKCNA = async () => {
   await logScrapeStartKCNA();
