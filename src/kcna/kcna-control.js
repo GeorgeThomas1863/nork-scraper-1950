@@ -22,9 +22,5 @@ export const scrapeKCNA = async () => {
   await uploadPicsKCNA();
   await uploadVidsKCNA();
 
-  //update collections
-  // await updatePicDataKCNA();
-  // await updateVidDataKCNA();
-
   await logScrapeStopKCNA();
 };

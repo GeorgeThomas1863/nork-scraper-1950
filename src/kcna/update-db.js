@@ -127,7 +127,7 @@ export const updateVidPageThumbnail = async (inputArray) => {
   const updateVidPageArray = [];
   for (const vidPage of inputArray) {
     try {
-      const updateVidPageData = await updateVidPageItem(vidPage);
+      const updateVidPageData = await updateThumbnailItem(vidPage);
       if (!updateVidPageData) continue;
       updateVidPageArray.push(updateVidPageData);
     } catch (e) {
@@ -138,7 +138,7 @@ export const updateVidPageThumbnail = async (inputArray) => {
   return updateVidPageArray;
 };
 
-export const updateVidPageItem = async (inputObj) => {
+export const updateThumbnailItem = async (inputObj) => {
   if (!inputObj || !inputObj.url || !inputObj.thumbnailURL) return null;
   const { url, thumbnailURL } = inputObj;
   const { vidPages } = CONFIG;
@@ -150,7 +150,7 @@ export const updateVidPageItem = async (inputObj) => {
     keyToLookup: "url",
     itemValue: url,
     insertKey: "thumbnailData",
-    insertValue: picData,
+    updateObj: picData,
   };
 
   const updateVidPageModel = new dbModel(updateParams, vidPages);
@@ -186,4 +186,60 @@ export const getPicData = async (url) => {
   const picData = await lookupPicModel.getUniqueItem();
 
   return picData;
+};
+
+//-------------------------------------
+
+export const updateVidDataKCNA = async () => {
+  const { vidPages } = CONFIG;
+
+  const vidPagesModel = new dbModel("", vidPages);
+  const vidPagesArray = await vidPagesModel.getAll();
+
+  const updateVidPageArray = [];
+  for (const vidPage of vidPagesArray) {
+    try {
+      const updateVidPageData = await updateVidItem(vidPage);
+      if (!updateVidPageData) continue;
+      updateVidPageArray.push(updateVidPageData);
+    } catch (e) {
+      console.log(e.message + "; URL: " + e.url + "; F BREAK: " + e.function);
+    }
+  }
+
+  return updateVidPageArray;
+};
+
+export const updateVidItem = async (inputObj) => {
+  if (!inputObj || !inputObj.url || !inputObj.vidURL) return null;
+  const { vidPages } = CONFIG;
+
+  const { url, vidURL } = inputObj;
+
+  const vidData = await getVidData(vidURL);
+  if (!vidData) return null;
+
+  const updateParams = {
+    keyToLookup: "url",
+    itemValue: url,
+    insertKey: "vidData",
+    updateObj: vidData,
+  };
+
+  const updateVidPageModel = new dbModel(updateParams, vidPages);
+  const storeData = await updateVidPageModel.updateObjInsert();
+  console.log("UPDATE DATA");
+  console.log(storeData);
+
+  return vidData;
+};
+
+export const getVidData = async (url) => {
+  if (!url) return null;
+  const { vids } = CONFIG;
+
+  const lookupVidModel = new dbModel({ keyToLookup: "url", itemValue: url }, vids);
+  const vidData = await lookupVidModel.getUniqueItem();
+
+  return vidData;
 };

@@ -45,6 +45,9 @@ export const downloadPicsKCNA = async () => {
     }
   }
 
+  console.log("FINISHED PIC DOWNLOAD");
+  console.log(`DOWNLOADED ${downloadPicArray.length} PICS`);
+
   //UPDATE DB (with full pic data in each collection)
   await updatePicDataKCNA();
 

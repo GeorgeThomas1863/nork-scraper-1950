@@ -4,6 +4,7 @@ import axios from "axios";
 
 import CONFIG from "../../config/config.js";
 import dbModel from "../../models/db-model.js";
+import { updateVidDataKCNA } from "./update-db.js";
 
 export const downloadVidsKCNA = async () => {
   const { vids, vidPath } = CONFIG;
@@ -17,11 +18,18 @@ export const downloadVidsKCNA = async () => {
   const downloadVidArray = [];
   for (const vidItem of vidArray) {
     try {
-      const { vidId } = vidItem;
+      const { vidId, url } = vidItem;
       vidItem.vidName = vidId + ".mp4";
       vidItem.savePath = path.join(vidPath, vidItem.vidName);
 
       const vidData = await downloadVidFS(vidItem);
+      if (!vidData) continue;
+
+      const storeModel = new dbModel({ keyToLookup: "url", itemValue: url, updateObj: vidData }, vids);
+      const storeData = await storeModel.updateObjItem();
+      console.log("STORE DATA");
+      console.log(storeData);
+
       downloadVidArray.push(vidData);
     } catch (e) {
       console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
@@ -30,6 +38,9 @@ export const downloadVidsKCNA = async () => {
 
   console.log("FINISHED VIDEO DOWNLOAD");
   console.log(`DOWNLOADED ${downloadVidArray.length} VIDS`);
+
+  await updateVidDataKCNA();
+
   return downloadVidArray;
 };
 
@@ -79,19 +90,20 @@ export const downloadVidFS = async (inputParams) => {
   await mergeChunks(downloadObj);
   await cleanupTempFiles(downloadObj);
 
-  //defining storeObj as downloadObj without 2 items (which are renamed to remove them bc already defined in function)
-  const { chunksPending: _, chunksCompleted: __, chunkArrayDefault: ___, ...storeObj } = downloadObj;
+  //defining returnObj as downloadObj without 2 items (which are renamed to remove them bc already defined in function)
+  const { chunksPending: _, chunksCompleted: __, chunkArrayDefault: ___, ...returnObj } = downloadObj;
 
   // console.log("STORE OBJ");
   // console.log(storeObj);
 
-  const storeModel = new dbModel({ keyToLookup: "url", itemValue: url, updateObj: storeObj }, vids);
-  const storeData = await storeModel.updateObjItem();
+  //store e
+  // const storeModel = new dbModel({ keyToLookup: "url", itemValue: url, updateObj: storeObj }, vids);
+  // const storeData = await storeModel.updateObjItem();
 
-  console.log("STORE DATA");
-  console.log(storeData);
+  // console.log("STORE DATA");
+  // console.log(storeData);
 
-  return storeObj;
+  return returnObj;
 };
 
 export const downloadChunksWithRetries = async (inputObj) => {
