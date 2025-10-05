@@ -41,11 +41,13 @@ export const scrapeArticleURLs = async () => {
       for (const a of articleListArray) {
         const { articleLink, articleDate } = a;
         const articleURL = "http://www.kcna.kp" + articleLink;
+        const articleId = await getIdFromURL(articleURL);
         const params = {
           url: articleURL,
           date: articleDate,
           articleType: type,
           scrapeId: kcnaState.scrapeId,
+          articleId: articleId,
         };
 
         const storeModel = new dbModel(params, articles);
@@ -276,17 +278,24 @@ export const uploadArticlesKCNA = async () => {
   if (!articleArray || !articleArray.length) return null;
 
   for (const article of articleArray) {
-    const { url, date, title } = article;
+    const { url, date } = article;
 
     //normalize url and date
     const tgInputs = await normalizeTGInputs(url, date);
-    const titleText = await buildArticleTitleText(title);
     if (!tgInputs) continue;
     const uploadObj = { ...article, ...tgInputs };
+    const titleText = await buildArticleTitleText(uploadObj);
 
     //channel to upload to
     uploadObj.tgChannelId = tgChannelId;
   }
 };
 
-export const buildArticleTitleText = async (title) => {};
+export const buildArticleTitleText = async (inputObj) => {
+  if (!inputObj) return null;
+  const { title, articleType, articleId } = inputObj;
+
+  const titleText = `🇰🇵 🇰🇵 🇰🇵
+  
+  <b>ARTICLE TYPE:</b> ${title} - ${articleType}`;
+};
