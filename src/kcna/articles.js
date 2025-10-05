@@ -4,7 +4,7 @@ import CONFIG from "../../config/config.js";
 import NORK from "../../models/nork-model.js";
 import dbModel from "../../models/db-model.js";
 import kcnaState from "./state.js";
-import { extractItemDate, getIdFromURL } from "./util.js";
+import { extractItemDate, getIdFromURL, getTGInputs } from "./util.js";
 
 export const scrapeArticlesKCNA = async () => {
   const { articles } = CONFIG;
@@ -264,3 +264,29 @@ export const extractArticlePicArray = async (url, date) => {
     return null;
   }
 };
+
+//-------------------------
+
+//UPLOAD TG SECTION
+
+export const uploadArticlesKCNA = async () => {
+  const { articles, tgChannelId } = CONFIG;
+  const articleModel = new dbModel({ keyExists: "url", keyEmpty: "tgChannelId" }, articles);
+  const articleArray = await articleModel.findEmptyItems();
+  if (!articleArray || !articleArray.length) return null;
+
+  for (const article of articleArray) {
+    const { url, date, title } = article;
+
+    //normalize url and date
+    const tgInputs = await normalizeTGInputs(url, date);
+    const titleText = await buildArticleTitleText(title);
+    if (!tgInputs) continue;
+    const uploadObj = { ...article, ...tgInputs };
+
+    //channel to upload to
+    uploadObj.tgChannelId = tgChannelId;
+  }
+};
+
+export const buildArticleTitleText = async (title) => {};

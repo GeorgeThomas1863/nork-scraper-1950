@@ -1,5 +1,5 @@
 import { logScrapeStartKCNA, logScrapeStopKCNA } from "./state.js";
-import { scrapeArticlesKCNA } from "./articles.js";
+import { scrapeArticlesKCNA, uploadArticlesKCNA } from "./articles.js";
 import { scrapePicSetsKCNA } from "./picSets.js";
 import { scrapeVidPagesKCNA } from "./vidPages.js";
 import { downloadPicsKCNA, uploadPicsKCNA } from "./pics.js";
@@ -14,11 +14,12 @@ export const scrapeKCNA = async () => {
   await scrapePicSetsKCNA();
   await scrapeVidPagesKCNA();
 
-  //download to server
+  //download media to server
   await downloadPicsKCNA();
   await downloadVidsKCNA();
 
   //upload to TG
+  await uploadArticlesKCNA();
   await uploadPicsKCNA();
   await uploadVidsKCNA();
 

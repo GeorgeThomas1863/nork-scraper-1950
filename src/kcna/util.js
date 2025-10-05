@@ -60,3 +60,14 @@ export const getIdFromURL = async (url) => {
   const id = url.substring(dotIndex - 7, dotIndex);
   return id;
 };
+
+export const normalizeTGInputs = async (url, date) => {
+  if (!url || !date) return null;
+
+  const returnObj = {
+    urlNormal: url.replace(/\./g, "[.]").replace(/:/g, "[:]").replace(/\?/g, "[?]"),
+    dateNormal: new Date(date).toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" }),
+  };
+
+  return returnObj;
+};

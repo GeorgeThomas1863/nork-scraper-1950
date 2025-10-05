@@ -102,5 +102,10 @@ export const downloadPicFS = async (inputParams) => {
 };
 
 export const uploadPicsKCNA = async () => {
-  //build
+  const { pics } = CONFIG;
+
+  const picModel = new dbModel({ keyExists: "url", keyEmpty: "uploadTG" }, pics);
+  const picArray = await picModel.findEmptyItems(); 
+  if (!picArray || !picArray.length) return null;
+  
 };
