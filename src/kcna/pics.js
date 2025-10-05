@@ -109,43 +109,48 @@ export const downloadPicFS = async (inputParams) => {
 //UPDATE DB (with full pic data in each collection)
 
 export const updatePicDataKCNA = async () => {
-  const { pics, articles } = CONFIG;
-
-  // const picModel = new dbModel("", pics);
-  // const picArrayAll = await picModel.getAll();
-  // if (!picArrayAll || !picArrayAll.length) return null;
+  const { articles } = CONFIG;
 
   const articleModel = new dbModel("", articles);
   const articleDataArray = await articleModel.getAll();
   if (!articleDataArray || !articleDataArray.length) return null;
 
+  const updatedArticleArray = [];
   for (const article of articleDataArray) {
-    const { url, picArray } = article;
-    if (!picArray || !picArray.length) continue;
+    try {
+      const { url, picArray } = article;
+      if (!picArray || !picArray.length) continue;
 
-    const rebuiltPicArray = await rebuildArticlePicArray(picArray);
+      const rebuiltPicArray = await rebuildPicArray(picArray);
+      if (!rebuiltPicArray || !rebuiltPicArray.length) continue;
 
-    const updateParams = {
-      docKey: "url",
-      docValue: url,
-      updateKey: "picArray",
-      updateArray: rebuiltPicArray,
-    };
-    const updateArticleModel = new dbModel(updateParams, articles);
-    await updateArticleModel.updateArrayNested();
+      const updateParams = {
+        docKey: "url",
+        docValue: url,
+        updateKey: "picArray",
+        updateArray: rebuiltPicArray,
+      };
+      const updateArticleModel = new dbModel(updateParams, articles);
+      const storeData = await updateArticleModel.updateArrayNested();
+      console.log("STORE DATA");
+      console.log(storeData);
+
+      updatedArticleArray.push(updateParams);
+    } catch (e) {
+      console.log(e.message + "; URL: " + e.url + "; F BREAK: " + e.function);
+    }
   }
 
-  // const updateArticleModel = new dbModel("", articles);
+  return updatedArticleArray;
 };
 
-export const rebuildArticlePicArray = async (inputArray) => {
+export const rebuildPicArray = async (inputArray) => {
   if (!inputArray || !inputArray.length) return null;
   const { pics } = CONFIG;
 
   const rebuiltPicArray = [];
   for (const url of inputArray) {
     const lookupPicModel = new dbModel({ keyToLookup: "url", itemValue: url }, pics);
-
     const picData = await lookupPicModel.getUniqueItem();
     if (!picData) continue;
 
