@@ -14,7 +14,7 @@ export const scrapeKCNA = async () => {
   await scrapePicSetsKCNA();
   await scrapeVidPagesKCNA();
 
-  //download media to server
+  //download media to server and updates db
   await downloadPicsKCNA();
   await downloadVidsKCNA();
 
@@ -24,8 +24,8 @@ export const scrapeKCNA = async () => {
   await uploadVidsKCNA();
 
   //update collections
-  await updatePicDataKCNA();
-  await updateVidDataKCNA();
+  // await updatePicDataKCNA();
+  // await updateVidDataKCNA();
 
   await logScrapeStopKCNA();
 };

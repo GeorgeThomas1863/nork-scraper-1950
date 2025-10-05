@@ -5,6 +5,7 @@ import NORK from "../../models/nork-model.js";
 import dbModel from "../../models/db-model.js";
 import { tgSendMessage } from "../tg/tg-api.js";
 import kcnaState from "./state.js";
+import { uploadPicArray } from "./pics.js";
 import { extractItemDate, getIdFromURL, normalizeTGInputs } from "./util.js";
 
 export const scrapeArticlesKCNA = async () => {
@@ -279,7 +280,7 @@ export const uploadArticlesKCNA = async () => {
   if (!articleArray || !articleArray.length) return null;
 
   for (const article of articleArray) {
-    const { url, date } = article;
+    const { url, date, picArray } = article;
 
     //normalize url and date
     const tgInputs = await normalizeTGInputs(url, date);
@@ -291,6 +292,11 @@ export const uploadArticlesKCNA = async () => {
     uploadObj.tgChannelId = tgChannelId;
 
     const uploadTitleData = await uploadArticleTitle(uploadObj);
+
+    //post pics if exist
+    if (picArray && picArray.length) {
+      // const uploadPicData = await uploadPicArray(picArray);
+    }
   }
 };
 
@@ -300,14 +306,14 @@ export const buildArticleTitleText = async (inputObj) => {
 
   const titleText = `🇰🇵 🇰🇵 🇰🇵
   
-  <b>ARTICLE TYPE:</b> ${articleType} | ID: ${articleId}
+<b>ARTICLE TYPE:</b> ${articleType} | ID: ${articleId}
   
-  -----------------
+-----------------
   
-  <b>${title}</b>
-  <i>${dateNormal}</i>
+<b>${title}</b>
+<i>${dateNormal}</i>
 
-  -----------------
+-----------------
   `;
 
   return titleText;

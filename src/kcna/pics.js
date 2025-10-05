@@ -44,6 +44,9 @@ export const downloadPicsKCNA = async () => {
     }
   }
 
+  //UPDATE DB (with full pic data in each collection)
+  await updatePicDataKCNA();
+
   return downloadPicArray;
 };
 
@@ -101,11 +104,39 @@ export const downloadPicFS = async (inputParams) => {
   return returnObj;
 };
 
+//-------------------
+
+//UPDATE DB (with full pic data in each collection)
+
+export const updatePicDataKCNA = async () => {
+  const { pics, articles } = CONFIG;
+
+  const picModel = new dbModel("", pics);
+  const picArrayAll = await picModel.getAll();
+  if (!picArrayAll || !picArrayAll.length) return null;
+
+  const articleModel = new dbModel("", articles);
+  const articleDataArray = await articleModel.getAll();
+  if (!articleDataArray || !articleDataArray.length) return null;
+
+  for (const article of articleDataArray) {
+    const { picArray } = article;
+    if (!picArray || !picArray.length) continue;
+  }
+
+  // const updateArticleModel = new dbModel("", articles);
+};
+
+//---------------------------
+
+//UPLOAD PICS TG SECTION
+
 export const uploadPicsKCNA = async () => {
   const { pics } = CONFIG;
 
   const picModel = new dbModel({ keyExists: "url", keyEmpty: "uploadTG" }, pics);
-  const picArray = await picModel.findEmptyItems(); 
+  const picArray = await picModel.findEmptyItems();
   if (!picArray || !picArray.length) return null;
-  
 };
+
+export const uploadPicArray = async (inputArray) => {};
