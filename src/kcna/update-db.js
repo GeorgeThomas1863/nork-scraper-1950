@@ -140,13 +140,19 @@ export const updateVidPageThumbnail = async (inputArray) => {
 
 export const updateVidPageItem = async (inputObj) => {
   if (!inputObj || !inputObj.url || !inputObj.thumbnailURL) return null;
-  const { url, thumbnailURL } = inputObj;
+  const { thumbnailURL } = inputObj;
   const { vidPages } = CONFIG;
 
   const picData = await getPicData(thumbnailURL);
   if (!picData) return null;
 
-  const updateVidPageModel = new dbModel({ keyToLookup: "url", itemValue: url, updateObj: picData }, vidPages);
+  //   const updateParams = {
+  //     keyToLookup: "thumbnailURL",
+  //     itemValue: thumbnailURL,
+  //     updateObj: picData,
+  //   };
+
+  const updateVidPageModel = new dbModel({ keyToLookup: "thumbnailURL", itemValue: thumbnailURL, updateObj: picData }, vidPages);
   const storeData = await updateVidPageModel.updateObjItem();
   console.log("UPDATE DATA");
   console.log(storeData);
