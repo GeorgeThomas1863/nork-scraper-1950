@@ -4,6 +4,7 @@ import axios from "axios";
 
 import CONFIG from "../../config/config.js";
 import dbModel from "../../models/db-model.js";
+import { updatePicDataKCNA } from "./update-db.js";
 
 export const downloadPicsKCNA = async () => {
   const { pics, picPath } = CONFIG;
@@ -102,62 +103,6 @@ export const downloadPicFS = async (inputParams) => {
 
   console.log(`DOWNLOAD COMPLETE: ${picName} | FINAL SIZE: ${Math.round(downloadedSize / 1024)}KB`);
   return returnObj;
-};
-
-//-------------------
-
-//UPDATE DB (with full pic data in each collection)
-
-export const updatePicDataKCNA = async () => {
-  const { articles } = CONFIG;
-
-  const articleModel = new dbModel("", articles);
-  const articleDataArray = await articleModel.getAll();
-  if (!articleDataArray || !articleDataArray.length) return null;
-
-  const updatedArticleArray = [];
-  for (const article of articleDataArray) {
-    try {
-      const { url, picArray } = article;
-      if (!picArray || !picArray.length) continue;
-
-      const rebuiltPicArray = await rebuildPicArray(picArray);
-      if (!rebuiltPicArray || !rebuiltPicArray.length) continue;
-
-      const updateParams = {
-        docKey: "url",
-        docValue: url,
-        updateKey: "picArray",
-        updateArray: rebuiltPicArray,
-      };
-      const updateArticleModel = new dbModel(updateParams, articles);
-      const storeData = await updateArticleModel.updateArrayNested();
-      console.log("STORE DATA");
-      console.log(storeData);
-
-      updatedArticleArray.push(updateParams);
-    } catch (e) {
-      console.log(e.message + "; URL: " + e.url + "; F BREAK: " + e.function);
-    }
-  }
-
-  return updatedArticleArray;
-};
-
-export const rebuildPicArray = async (inputArray) => {
-  if (!inputArray || !inputArray.length) return null;
-  const { pics } = CONFIG;
-
-  const rebuiltPicArray = [];
-  for (const url of inputArray) {
-    const lookupPicModel = new dbModel({ keyToLookup: "url", itemValue: url }, pics);
-    const picData = await lookupPicModel.getUniqueItem();
-    if (!picData) continue;
-
-    rebuiltPicArray.push(picData);
-  }
-
-  return rebuiltPicArray;
 };
 
 //---------------------------
