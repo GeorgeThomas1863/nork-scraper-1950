@@ -117,12 +117,13 @@ export const extractVidURL = async (document, date) => {
 
     const storeVidModel = new dbModel(storeParams, vids);
     const storeData = await storeVidModel.storeUniqueURL();
+    console.log("STORE DATA");
     console.log(storeData);
+
+    return vidURL;
   } catch (e) {
     console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
   }
-
-  return vidURL;
 };
 
 export const parseVidScripts = async (inputArray) => {
