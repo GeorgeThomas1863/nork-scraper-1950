@@ -12,7 +12,7 @@ export const tgSendMessage = async (inputParams) => {
   const url = `https://api.telegram.org/bot${token}/sendMessage`;
   const data = await tgPostReq(url, inputParams);
 
-  const checkData = await checkToken(data, tokenIndex);
+  const checkData = await checkToken(data);
 
   //try again
   if (!checkData) return await tgSendMessage(inputParams);
@@ -36,7 +36,7 @@ export const tgPostPicFS = async (inputParams) => {
 
   const data = await tgPostPicReq(url, form);
 
-  const checkData = await checkToken(data, tokenIndex);
+  const checkData = await checkToken(data);
 
   if (!checkData) return await tgPostPicFS(inputParams);
 
@@ -109,7 +109,7 @@ export const tgPostPicReq = async (url, form) => {
   }
 };
 
-export const checkToken = async (data, tokenIndex) => {
+export const checkToken = async (data) => {
   //   if (!state.active) return null;
   if (data && data.ok) return true;
 
