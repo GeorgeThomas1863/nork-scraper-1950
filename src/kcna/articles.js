@@ -3,7 +3,7 @@ import { JSDOM } from "jsdom";
 import CONFIG from "../../config/config.js";
 import NORK from "../../models/nork-model.js";
 import dbModel from "../../models/db-model.js";
-import { tgSendMessage } from "../tg/tg-control.js";
+import { tgSendMessage } from "../tg-api.js";
 import kcnaState from "./state.js";
 import { postPicArrayTG } from "./pics.js";
 import { extractItemDate, getIdFromURL, normalizeTGInputs } from "./util.js";
@@ -308,15 +308,13 @@ export const buildArticleTitleText = async (inputObj) => {
 
   const titleText = `🇰🇵 🇰🇵 🇰🇵
   
-<b>ARTICLE TYPE:</b> ${articleType} | ID: ${articleId}
-  
------------------
-  
 <b>${title}</b>
 <i>${dateNormal}</i>
 
 -----------------
-  `;
+
+<b>ARTICLE TYPE:</b> ${articleType} | ID: ${articleId}
+`;
 
   return titleText;
 };
