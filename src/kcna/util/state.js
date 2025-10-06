@@ -1,5 +1,5 @@
-import CONFIG from "../../config/config.js";
-import dbModel from "../../models/db-model.js";
+import CONFIG from "../../../config/config.js";
+import dbModel from "../../../models/db-model.js";
 
 const kcnaState = {
   scrapeId: null,
