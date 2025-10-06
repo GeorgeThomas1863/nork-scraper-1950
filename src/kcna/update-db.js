@@ -3,15 +3,7 @@ import dbModel from "../../models/db-model.js";
 
 //UPDATE DB (with full pic data in each collection)
 export const updatePicDataKCNA = async () => {
-  //returns array of data that needs to be updated
-  // const collectionsToUpdate = await getCollectionsToUpdate();
-
-  //for tracking
-  // const updateArray = [];
-  // const updateArticleData = await updateArticlePics(collectionsToUpdate[0]);
-  // const updatePicSetData = await updatePicSetPics(collectionsToUpdate[1]);
-  // const updateVidData = await updateVidPageThumbnail(collectionsToUpdate[2]);
-  // updateArray.push(updateArticleData, updatePicSetData, updateVidData);
+  console.log("UPDATING PIC DATA");
 
   const updateArray = [];
   const updateArticleData = await updateArticlePics();
@@ -205,6 +197,8 @@ export const getPicData = async (url) => {
 
 export const updateVidDataKCNA = async () => {
   const { vidPages } = CONFIG;
+
+  console.log("UPDATING VID DATA");
 
   const vidPageVidModel = new dbModel({ arrayKey: "vidData", keyEmpty: "vidSize" }, vidPages);
   const vidPageDataArray = await vidPageVidModel.findEmptyItemsNested();
