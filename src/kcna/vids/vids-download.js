@@ -252,13 +252,13 @@ export const downloadVidHeaders = async (url) => {
 
 export const buildChunkArrayDefault = async (vidId, vidSize) => {
   if (!vidId || !vidSize) return null;
-  const { tempPath, downloadVidChunkSize } = CONFIG;
+  const { tmpPath, downloadVidChunkSize } = CONFIG;
 
   const totalVidChunks = Math.ceil(vidSize / downloadVidChunkSize);
   const chunkArray = [];
   for (let i = 0; i < totalVidChunks; i++) {
     const chunkName = `${vidId}_chunk_${i + 1}.mp4`;
-    const chunkPath = path.join(tempPath, chunkName);
+    const chunkPath = path.join(tmpPath, chunkName);
     const startByte = i * downloadVidChunkSize;
     const endByte = Math.min(startByte + downloadVidChunkSize - 1, vidSize - 1);
     const chunkSize = endByte - startByte + 1;
