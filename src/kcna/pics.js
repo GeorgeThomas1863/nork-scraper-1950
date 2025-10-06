@@ -10,10 +10,6 @@ export const downloadPicsKCNA = async () => {
   const picModel = new dbModel({ keyExists: "url", keyEmpty: "picSize" }, pics);
   const picArray = await picModel.findEmptyItems();
 
-  console.log("!!!!!!!")
-  console.log("DOWNLOAD PIC ARRAY");
-  console.log(picArray);
-
   if (!picArray || !picArray.length) return null;
 
   const downloadPicArray = [];
@@ -59,14 +55,6 @@ export const downloadPicFS = async (inputParams) => {
   if (!inputParams) return null;
   const { url, savePath, picName } = inputParams;
   const { picProgressSize } = CONFIG;
-
-  const picExists = fs.existsSync(savePath);
-  if (picExists) {
-    const error = new Error("PIC ALREADY DOWNLOADED");
-    error.url = url;
-    error.function = "downloadPicFS";
-    throw error;
-  }
 
   const res = await axios({
     method: "get",
