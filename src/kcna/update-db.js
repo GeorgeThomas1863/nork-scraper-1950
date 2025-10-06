@@ -230,6 +230,9 @@ export const updateVidItem = async (inputObj) => {
     updateObj: vidData,
   };
 
+  console.log("UPDATE VID PAGE PARAMS");
+  console.log(updateParams);
+
   const updateVidPageModel = new dbModel(updateParams, vidPages);
   const storeData = await updateVidPageModel.updateObjInsert();
   console.log("STORE DATA");
