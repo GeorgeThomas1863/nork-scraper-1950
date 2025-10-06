@@ -359,7 +359,7 @@ export const buildArticlePicCaption = async (inputObj, picIndex) => {
   const { picArray, dateNormal } = inputObj;
 
   const articlePicCaption = `
-<b>PIC ${picIndex + 1} OF ${picArray.length + 1}</b> 
+<b>ARTICLE PIC: ${picIndex + 1} OF ${picArray.length}</b> 
 <i>${dateNormal}</i>
 `;
 
