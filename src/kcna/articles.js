@@ -295,7 +295,8 @@ export const uploadArticlesKCNA = async () => {
 
     //post pics if exist
     if (picArray && picArray.length) {
-      const postPicData = await postPicArrayTG(picArray);
+      const articlePicArray = await addCaptionToArticlePics(uploadObj);
+      const postPicData = await postPicArrayTG(articlePicArray);
       console.log("UPLOAD PIC DATA");
       console.log(postPicData);
     }
@@ -335,4 +336,32 @@ export const uploadArticleTitle = async (inputObj) => {
 
   const data = await tgSendMessage(params);
   return data;
+};
+
+export const addCaptionToArticlePics = async (inputObj) => {
+  if (!inputObj || !inputObj.picArray || !inputObj.picArray.length) return null;
+  const { picArray, dateNormal } = inputObj;
+
+  const picArrayWithCaption = [];
+  for (let i = 0; i < picArray.length; i++) {
+    const picObj = picArray[i];
+    const articlePicCaption = await buildArticlePicCaption(inputObj, i);
+    if (!articlePicCaption) continue;
+
+    picObj.caption = articlePicCaption;
+    picArrayWithCaption.push(picObj);
+  }
+  return picArrayWithCaption;
+};
+
+export const buildArticlePicCaption = async (inputObj, picIndex) => {
+  if (!inputObj) return null;
+  const { picArray, dateNormal } = inputObj;
+
+  const articlePicCaption = `
+<b>PIC ${picIndex + 1} OF ${picArray.length + 1}</b> 
+<i>${dateNormal}</i>
+`;
+
+  return articlePicCaption;
 };

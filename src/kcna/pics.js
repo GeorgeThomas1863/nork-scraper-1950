@@ -132,13 +132,13 @@ export const postPicArrayTG = async (inputArray) => {
 
 export const postPicTG = async (inputObj) => {
   if (!inputObj) return null;
-  const { savePath } = inputObj;
+  const { savePath, caption } = inputObj;
   const { tgChannelId } = CONFIG;
 
   const params = {
     chatId: tgChannelId,
     savePath: savePath,
-    caption: "TEST 123",
+    caption: caption,
     mode: "html",
   };
 
