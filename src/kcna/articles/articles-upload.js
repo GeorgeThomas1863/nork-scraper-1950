@@ -51,16 +51,19 @@ export const postArticleTG = async (inputObj) => {
   const uploadObj = { ...inputObj, ...tgInputs };
 
   const titleData = await postArticleTitleTG(uploadObj);
-  uploadObj.titleData = titleData;
+  console.log("TITLE DATA");
+  console.log(titleData);
 
   //post pics if exist
   if (picArray && picArray.length) {
     const articlePicsData = await postArticlePicsTG(uploadObj);
-    uploadObj.articlePicsData = articlePicsData;
+    console.log("ARTICLE PICS DATA");
+    console.log(articlePicsData);
   }
 
   const articleContentData = await postArticleContentTG(uploadObj);
-  uploadObj.articleContentData = articleContentData;
+  console.log("ARTICLE CONTENT DATA");
+  console.log(articleContentData);
 
   return uploadObj;
 };
