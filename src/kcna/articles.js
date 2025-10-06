@@ -464,7 +464,7 @@ export const postArticleChunks = async (inputObj, maxLength) => {
 
     const data = await tgSendMessage(params);
     if (!data) continue;
-    chunkObj.data = data;
+    chunkObj.chunkData = data;
 
     chunkArray.push(chunkObj);
   }
