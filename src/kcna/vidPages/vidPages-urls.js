@@ -18,19 +18,6 @@ export const scrapeVidPageURLsKCNA = async () => {
     console.log(e.message + "; URL: " + e.url + "; F BREAK: " + e.function);
     return null;
   }
-
-  // const vidPageURLs = await scrapeVidPageURLs();
-  // console.log("NEW VID PAGE URLS");
-  // console.log(vidPageURLs);
-
-  // const newVidPageModel = new dbModel({ keyExists: "url", keyEmpty: "vidURL" }, vidPages);
-  // const newVidPageArray = await newVidPageModel.findEmptyItems();
-
-  // const vidPageContentArray = await scrapeVidPageContent(newVidPageArray);
-  // console.log("VID PAGE CONTENT ARRAY");
-  // console.log(vidPageContentArray);
-
-  // return vidPageContentArray;
 };
 
 export const parseVidPageList = async (url) => {
@@ -58,6 +45,7 @@ export const parseVidPageList = async (url) => {
 
 export const extractVidPageListArray = async (inputArray) => {
   if (!inputArray || !inputArray.length) return null;
+  const { vidPages } = CONFIG;
 
   const vidPageURLArray = [];
   for (const vidPageElement of inputArray) {
