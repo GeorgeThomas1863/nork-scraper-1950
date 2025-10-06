@@ -314,9 +314,7 @@ export const buildArticleTitleText = async (inputObj) => {
 
 -----------------
 
-<b>DATE:</b> <i>${dateNormal}</i>
-<b>ARTICLE TYPE:</b> ${articleType}
-<b>ID:</b> ${articleId}
+<b>ARTICLE TYPE:</b> ${articleType} | <b>ID:</b> ${articleId} | <b>DATE:</b> <i>${dateNormal}</i>
 `;
 
   return titleText;
