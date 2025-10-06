@@ -1,5 +1,5 @@
-import CONFIG from "../../config/config.js";
-import dbModel from "../../models/db-model.js";
+import CONFIG from "../../../config/config.js";
+import dbModel from "../../../models/db-model.js";
 
 //UPDATE DB (with full pic data in each collection)
 export const updatePicDataKCNA = async () => {
