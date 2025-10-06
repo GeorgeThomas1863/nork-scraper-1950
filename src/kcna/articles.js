@@ -307,6 +307,8 @@ export const buildArticleTitleText = async (inputObj) => {
   const { title, dateNormal, articleType, articleId } = inputObj;
 
   const titleText = `🇰🇵 🇰🇵 🇰🇵
+
+-----------------
   
 <b>${title}</b>
 <i>${dateNormal}</i>
