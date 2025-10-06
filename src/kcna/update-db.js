@@ -142,14 +142,11 @@ export const updateVidPageThumbnail = async () => {
 
 export const updateThumbnailItem = async (inputObj) => {
   if (!inputObj || !inputObj.url || !inputObj.thumbnailURL) return null;
-  const { thumbnailURL } = inputObj;
+  const { thumbnailURL, url } = inputObj;
   const { vidPages } = CONFIG;
 
   const picData = await getPicData(thumbnailURL);
   if (!picData) return null;
-
-  console.log("!!!!! UPDATE THUMBNAILPIC DATA");
-  console.log(picData);
 
   const updateParams = {
     keyToLookup: "url",
@@ -160,7 +157,7 @@ export const updateThumbnailItem = async (inputObj) => {
 
   const updateVidPageModel = new dbModel(updateParams, vidPages);
   const storeData = await updateVidPageModel.updateObjInsert();
-  console.log("UPDATE DATA");
+  console.log("STORE DATA");
   console.log(storeData);
 
   //return picData of the thumbnail
@@ -220,9 +217,8 @@ export const updateVidDataKCNA = async () => {
 
 export const updateVidItem = async (inputObj) => {
   if (!inputObj || !inputObj.url || !inputObj.vidURL) return null;
-  const { vidPages } = CONFIG;
-
   const { url, vidURL } = inputObj;
+  const { vidPages } = CONFIG;
 
   const vidData = await getVidData(vidURL);
   if (!vidData) return null;
@@ -236,7 +232,7 @@ export const updateVidItem = async (inputObj) => {
 
   const updateVidPageModel = new dbModel(updateParams, vidPages);
   const storeData = await updateVidPageModel.updateObjInsert();
-  console.log("UPDATE DATA");
+  console.log("STORE DATA");
   console.log(storeData);
 
   return vidData;
