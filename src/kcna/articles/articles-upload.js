@@ -87,13 +87,13 @@ export const buildArticleTitleText = async (inputObj) => {
 
   const titleText = `🇰🇵 🇰🇵 🇰🇵
   
-  -----------------
+-----------------
     
-  <b>${title}</b>
+<b>${title}</b>
   
-  -----------------
+-----------------
   
-  <b>ARTICLE TYPE:</b> ${articleType} | <b>ID:</b> ${articleId} | <b>DATE:</b> <i>${dateNormal}</i>
+<b>ARTICLE TYPE:</b> ${articleType} | <b>ID:</b> ${articleId} | <b>DATE:</b> <i>${dateNormal}</i>
   `;
 
   return titleText;
