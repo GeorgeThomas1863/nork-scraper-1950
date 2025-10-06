@@ -295,7 +295,9 @@ export const uploadArticlesKCNA = async () => {
 
     //post pics if exist
     if (picArray && picArray.length) {
-      // const uploadPicData = await uploadPicArray(picArray);
+      const uploadPicData = await uploadPicArray(picArray);
+      console.log("UPLOAD PIC DATA");
+      console.log(uploadPicData);
     }
   }
 };

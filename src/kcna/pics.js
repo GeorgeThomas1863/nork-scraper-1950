@@ -4,6 +4,7 @@ import axios from "axios";
 
 import CONFIG from "../../config/config.js";
 import dbModel from "../../models/db-model.js";
+import { tgPostPicFS } from "../tg/tg-api.js";
 
 export const downloadPicsKCNA = async () => {
   const { pics, picPath } = CONFIG;
@@ -102,12 +103,45 @@ export const downloadPicFS = async (inputParams) => {
 //UPLOAD PICS TG SECTION
 
 //FINISH HERE
-export const uploadPicsKCNA = async () => {
-  const { pics } = CONFIG;
+// export const uploadPicsKCNA = async () => {
+//   const { pics } = CONFIG;
 
-  const picModel = new dbModel({ keyExists: "url", keyEmpty: "uploadTG" }, pics);
-  const picArray = await picModel.findEmptyItems();
-  if (!picArray || !picArray.length) return null;
+//   const picModel = new dbModel({ keyExists: "url", keyEmpty: "uploadTG" }, pics);
+//   const picArray = await picModel.findEmptyItems();
+//   if (!picArray || !picArray.length) return null;
+
+//   const uploadPicData = await uploadPicArray(picArray)
+// };
+
+export const uploadPicArray = async (inputArray) => {
+  if (!inputArray || !inputArray.length) return null;
+
+  const uploadPicDataArray = [];
+  for (const pic of inputArray) {
+    try {
+      const uploadPicData = await uploadPicTG(pic);
+      if (!uploadPicData) continue;
+      uploadPicDataArray.push(uploadPicData);
+    } catch (e) {
+      console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+    }
+  }
+
+  return uploadPicDataArray;
 };
 
-export const uploadPicArray = async (inputArray) => {};
+export const uploadPicTG = async (inputObj) => {
+  if (!inputObj) return null;
+  const { savePath } = inputObj;
+  const { tgChannelId } = CONFIG;
+
+  const params = {
+    chatId: tgChannelId,
+    savePath: savePath,
+    caption: "TEST 123",
+    mode: "html",
+  };
+
+  const data = await tgPostPicFS(params);
+  return data;
+};
