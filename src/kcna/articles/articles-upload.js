@@ -3,9 +3,9 @@ import { JSDOM } from "jsdom";
 import CONFIG from "../../config/config.js";
 import dbModel from "../../../models/db-model.js";
 import { tgSendMessage } from "../../tg-api.js";
-// import kcnaState from "../util/state.js";
-import { postPicArrayTG } from "../pics/pics.js";
-import { normalizeTGInputs } from "../util.js";
+// import kcnaState from "../../util/state.js";
+import { postPicArrayTG } from "../pics/pics-upload.js";
+import { normalizeTGInputs } from "../../util/util.js";
 
 export const uploadArticlesKCNA = async () => {
   const { articles, tgChannelId } = CONFIG;
