@@ -1,10 +1,10 @@
 import { JSDOM } from "jsdom";
 
-import CONFIG from "../../config/config.js";
+import CONFIG from "../../../config/config.js";
 import NORK from "../../../models/nork-model.js";
 import dbModel from "../../../models/db-model.js";
-import kcnaState from "../state.js";
-import { extractItemDate, lookupItemDate, getIdFromURL } from "../util.js";
+import kcnaState from "../util/state.js";
+import { extractItemDate, getIdFromURL } from "../util/util.js";
 
 export const scrapeVidPageURLsKCNA = async () => {
   const { vidPageListURL } = CONFIG;

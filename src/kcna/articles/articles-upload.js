@@ -3,7 +3,7 @@ import { JSDOM } from "jsdom";
 import CONFIG from "../../config/config.js";
 import dbModel from "../../../models/db-model.js";
 import { tgSendMessage } from "../../tg-api.js";
-// import kcnaState from "../state.js";
+// import kcnaState from "../util/state.js";
 import { postPicArrayTG } from "../pics/pics.js";
 import { normalizeTGInputs } from "../util.js";
 

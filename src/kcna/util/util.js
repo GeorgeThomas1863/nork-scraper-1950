@@ -1,5 +1,5 @@
 //helper functions
-import dbModel from "../../models/db-model.js";
+import dbModel from "../../../models/db-model.js";
 import kcnaState from "./state.js";
 
 export const extractItemDate = async (linkElement) => {
