@@ -113,24 +113,24 @@ export const downloadPicFS = async (inputParams) => {
 //   const uploadPicData = await uploadPicArray(picArray)
 // };
 
-export const uploadPicArray = async (inputArray) => {
+export const postPicArrayTG = async (inputArray) => {
   if (!inputArray || !inputArray.length) return null;
 
-  const uploadPicDataArray = [];
+  const postPicDataArray = [];
   for (const pic of inputArray) {
     try {
-      const uploadPicData = await uploadPicTG(pic);
-      if (!uploadPicData) continue;
-      uploadPicDataArray.push(uploadPicData);
+      const postPicData = await postPicTG(pic);
+      if (!postPicData) continue;
+      postPicDataArray.push(postPicData);
     } catch (e) {
       console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
     }
   }
 
-  return uploadPicDataArray;
+  return postPicDataArray;
 };
 
-export const uploadPicTG = async (inputObj) => {
+export const postPicTG = async (inputObj) => {
   if (!inputObj) return null;
   const { savePath } = inputObj;
   const { tgChannelId } = CONFIG;

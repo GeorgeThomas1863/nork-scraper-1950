@@ -208,3 +208,9 @@ export const extractPicSetPicArray = async (document, url) => {
 
   return picSetPicArray;
 };
+
+//--------------------------
+
+export const uploadPicSetsKCNA = async () => {
+  //BUILD HERE
+};

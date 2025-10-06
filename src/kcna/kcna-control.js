@@ -1,9 +1,9 @@
 import { logScrapeStartKCNA, logScrapeStopKCNA } from "./state.js";
 import { scrapeArticlesKCNA, uploadArticlesKCNA } from "./articles.js";
-import { scrapePicSetsKCNA } from "./picSets.js";
-import { scrapeVidPagesKCNA } from "./vidPages.js";
-import { downloadPicsKCNA, uploadPicsKCNA } from "./pics.js";
-import { downloadVidsKCNA, uploadVidsKCNA } from "./vids.js";
+import { downloadPicsKCNA } from "./pics.js";
+import { downloadVidsKCNA } from "./vids.js";
+import { scrapePicSetsKCNA, uploadPicSetsKCNA } from "./picSets.js";
+import { scrapeVidPagesKCNA, uploadVidPagesKCNA } from "./vidPages.js";
 import { updatePicDataKCNA, updateVidDataKCNA } from "./update-db.js";
 
 export const scrapeKCNA = async () => {
@@ -24,8 +24,8 @@ export const scrapeKCNA = async () => {
 
   //upload to TG
   await uploadArticlesKCNA();
-  await uploadPicsKCNA();
-  await uploadVidsKCNA();
+  await uploadPicSetsKCNA();
+  await uploadVidPagesKCNA();
 
   await logScrapeStopKCNA();
 };

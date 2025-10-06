@@ -5,7 +5,7 @@ import NORK from "../../models/nork-model.js";
 import dbModel from "../../models/db-model.js";
 import { tgSendMessage } from "../tg/tg-control.js";
 import kcnaState from "./state.js";
-import { uploadPicArray } from "./pics.js";
+import { postPicArrayTG } from "./pics.js";
 import { extractItemDate, getIdFromURL, normalizeTGInputs } from "./util.js";
 
 export const scrapeArticlesKCNA = async () => {
@@ -295,9 +295,9 @@ export const uploadArticlesKCNA = async () => {
 
     //post pics if exist
     if (picArray && picArray.length) {
-      const uploadPicData = await uploadPicArray(picArray);
+      const postPicData = await postPicArrayTG(picArray);
       console.log("UPLOAD PIC DATA");
-      console.log(uploadPicData);
+      console.log(postPicData);
     }
   }
 };

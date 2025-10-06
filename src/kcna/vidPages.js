@@ -280,3 +280,9 @@ export const parseVidScripts = async (inputArray) => {
 
   return null;
 };
+
+//-------------------------
+
+export const uploadVidPagesKCNA = async () => {
+  //build
+};

@@ -352,6 +352,3 @@ export const cleanupTempFiles = async (inputObj) => {
 
 //--------------------------
 
-export const uploadVidsKCNA = async () => {
-  //build
-};
