@@ -197,7 +197,7 @@ export const updateVidDataKCNA = async () => {
 
   console.log("UPDATING VID DATA");
 
-  const vidPageVidModel = new dbModel({ arrayKey: "vidData", keyEmpty: "vidSize" }, vidPages);
+  const vidPageVidModel = new dbModel({ keyExists: "url", arrayKey: "vidData", keyEmpty: "vidSize" }, vidPages);
   const vidPageDataArray = await vidPageVidModel.findEmptyItemsNested();
   if (!vidPageDataArray || !vidPageDataArray.length) return null;
 
