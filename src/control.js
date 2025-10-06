@@ -1,4 +1,4 @@
-import kcnaState from "./kcna/state.js";
+import kcnaState from "./kcna/util/state.js";
 import { scrapeKCNA } from "./kcna/kcna-control.js";
 
 export const handleAdminCommand = async (inputParams) => {
