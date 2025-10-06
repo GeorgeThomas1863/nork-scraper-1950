@@ -4,7 +4,7 @@ import CONFIG from "../../../config/config.js";
 import NORK from "../../../models/nork-model.js";
 import dbModel from "../../../models/db-model.js";
 import kcnaState from "../util/state.js";
-import { extractItemDate } from "../util/util.js";
+import { extractItemDate, getIdFromURL } from "../util/util.js";
 
 export const scrapePicSetURLsKCNA = async () => {
   const { picSetListURL } = CONFIG;
@@ -54,11 +54,13 @@ export const extractPicSetListArray = async (inputArray) => {
     const picSetLink = titleWrapper.getAttribute("href");
     const picSetDate = await extractItemDate(picSetElement);
     const picSetURL = "http://www.kcna.kp" + picSetLink;
+    const picSetId = await getIdFromURL(picSetURL);
 
     const params = {
       url: picSetURL,
       date: picSetDate,
       scrapeId: kcnaState.scrapeId,
+      picSetId: picSetId,
     };
 
     console.log("PIC SET LIST PARAMS");

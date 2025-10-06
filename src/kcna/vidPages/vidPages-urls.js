@@ -54,6 +54,7 @@ export const extractVidPageListArray = async (inputArray) => {
     const vidPageDate = await extractItemDate(vidPageElement);
     //thumbnail only on list page
     const thumbnailURL = await extractVidThumbnail(vidPageElement, vidPageDate);
+    const vidPageId = await getIdFromURL(vidPageURL);
 
     const vidPageURL = "http://www.kcna.kp" + vidPageLink;
     const params = {
@@ -61,6 +62,7 @@ export const extractVidPageListArray = async (inputArray) => {
       date: vidPageDate,
       thumbnailURL: thumbnailURL,
       scrapeId: kcnaState.scrapeId,
+      vidPageId: vidPageId,
     };
 
     console.log("VID PAGE LIST PARAMS");
