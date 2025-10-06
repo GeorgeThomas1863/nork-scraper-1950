@@ -64,10 +64,23 @@ export const getIdFromURL = async (url) => {
 export const normalizeTGInputs = async (url, date) => {
   if (!url || !date) return null;
 
+  const urlNormal = await normalizeURL(url);
+  const dateNormal = await normalizeDate(date);
+
   const returnObj = {
-    urlNormal: url.replace(/\./g, "[.]").replace(/:/g, "[:]").replace(/\?/g, "[?]"),
-    dateNormal: new Date(date).toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" }),
+    urlNormal: urlNormal,
+    dateNormal: dateNormal,
   };
 
   return returnObj;
+};
+
+export const normalizeURL = async (url) => {
+  if (!url) return null;
+  return url.replace(/\./g, "[.]").replace(/:/g, "[:]").replace(/\?/g, "[?]");
+};
+
+export const normalizeDate = async (date) => {
+  if (!date) return null;
+  return new Date(date).toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" });
 };

@@ -1,5 +1,7 @@
 import CONFIG from "../../../config/config.js";
 import dbModel from "../../../models/db-model.js";
+import { tgSendMessage } from "../../tg-api.js";
+import { postPicArrayTG } from "../pics/pics-upload.js";
 import { normalizeTGInputs } from "../util/util.js";
 
 export const uploadPicSetsKCNA = async () => {
@@ -55,10 +57,6 @@ export const postPicSetTG = async (inputObj) => {
   console.log("PIC SET PICS DATA");
   console.log(picSetPicData);
 
-  // const articleContentData = await postArticleContentTG(uploadObj);
-  // console.log("ARTICLE CONTENT DATA");
-  // console.log(articleContentData);
-
   return uploadObj;
 };
 
@@ -81,7 +79,7 @@ export const postPicSetTitleTG = async (inputObj) => {
 //FIX
 export const buildPicSetTitleText = async (inputObj) => {
   if (!inputObj) return null;
-  const { title, dateNormal, articleId, picArray } = inputObj;
+  const { title, dateNormal, picSetId, picArray, urlNormal } = inputObj;
 
   const picCount = picArray.length;
 
@@ -92,9 +90,47 @@ export const buildPicSetTitleText = async (inputObj) => {
 <b>${title}</b>
   
 -----------------
-  
-<b>${picCount} ITEM PIC SET</b> | <b>ID:</b> ${articleId} | <b>DATE:</b> <i>${dateNormal}</i>
+
+<b>${picCount} ITEM PIC SET</b> | <b>ID:</b> ${picSetId} | <b>DATE:</b> <i>${dateNormal}</i>
+<b>URL:</b> <i>${urlNormal}</i>
   `;
 
   return titleText;
+};
+
+export const postPicSetPicsTG = async (inputObj) => {
+  if (!inputObj || !inputObj.picArray || !inputObj.picArray.length) return null;
+  const { picArray } = inputObj;
+
+  //add caption to each pic
+  const picArrayWithCaption = [];
+  for (let i = 0; i < picArray.length; i++) {
+    const picObj = picArray[i];
+    picObj.picIndex = i + 1;
+    picObj.picCount = picArray.length;
+    const picSetPicCaption = await buildPicSetPicCaption(picObj);
+    if (!picSetPicCaption) continue;
+
+    picObj.caption = picSetPicCaption;
+    picArrayWithCaption.push(picObj);
+  }
+
+  const data = await postPicArrayTG(picArrayWithCaption);
+  return data;
+};
+
+export const buildPicSetPicCaption = async (inputObj) => {
+  if (!inputObj) return null;
+  const { picIndex, picCount, date, url } = inputObj;
+
+  //run again bc nested
+  const normalInputs = await normalizeTGInputs(url, date);
+  const { dateNormal, urlNormal } = normalInputs;
+
+  const picSetPicCaption = `
+<b>ARTICLE PIC: ${picIndex} OF ${picCount}</b> | <b>DATE:</b> <i>${dateNormal}</i> 
+<b>PIC URL:</b> <i>${urlNormal}</i>
+`;
+
+  return picSetPicCaption;
 };

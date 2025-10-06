@@ -86,7 +86,7 @@ export const postArticleTitleTG = async (inputObj) => {
 
 export const buildArticleTitleText = async (inputObj) => {
   if (!inputObj) return null;
-  const { title, dateNormal, articleType, articleId } = inputObj;
+  const { title, dateNormal, articleType, articleId, urlNormal } = inputObj;
 
   const titleText = `🇰🇵 🇰🇵 🇰🇵
   
@@ -97,6 +97,7 @@ export const buildArticleTitleText = async (inputObj) => {
 -----------------
   
 <b>ARTICLE TYPE:</b> ${articleType} | <b>ID:</b> ${articleId} | <b>DATE:</b> <i>${dateNormal}</i>
+<b>URL:</b> <i>${urlNormal}</i>
   `;
 
   return titleText;
@@ -110,7 +111,9 @@ export const postArticlePicsTG = async (inputObj) => {
   const picArrayWithCaption = [];
   for (let i = 0; i < picArray.length; i++) {
     const picObj = picArray[i];
-    const articlePicCaption = await buildArticlePicCaption(inputObj, i + 1);
+    picObj.picIndex = i + 1;
+    picObj.picCount = picArray.length;
+    const articlePicCaption = await buildArticlePicCaption(picObj);
     if (!articlePicCaption) continue;
 
     picObj.caption = articlePicCaption;
@@ -121,69 +124,28 @@ export const postArticlePicsTG = async (inputObj) => {
   return data;
 };
 
-export const buildArticlePicCaption = async (inputObj, picIndex) => {
+export const buildArticlePicCaption = async (inputObj) => {
   if (!inputObj) return null;
-  const { picArray, dateNormal } = inputObj;
+  const { picIndex, picCount, date, url } = inputObj;
+
+  //run again bc nested
+  const normalInputs = await normalizeTGInputs(url, date);
+  const { dateNormal, urlNormal } = normalInputs;
 
   const articlePicCaption = `
-  <b>ARTICLE PIC: ${picIndex} OF ${picArray.length}</b> 
-  <i>${dateNormal}</i>
-  `;
+<b>ARTICLE PIC: ${picIndex} OF ${picCount}</b> | <b>DATE:</b> <i>${dateNormal}</i> 
+<b>PIC URL:</b> <i>${urlNormal}</i>
+`;
 
   return articlePicCaption;
 };
 
 export const postArticleContentTG = async (inputObj) => {
   if (!inputObj || !inputObj.text) return null;
-  const { text, title, dateNormal, urlNormal } = inputObj;
+  const { text, title, dateNormal, urlNormal, tgChannelId } = inputObj;
   const { tgMaxLength } = CONFIG;
 
   const maxLength = tgMaxLength - title.length - dateNormal.length - urlNormal.length - 100;
-
-  if (text.length < maxLength) {
-    const articleShortData = await postArticleShort(inputObj);
-    return articleShortData;
-  }
-
-  const articleChunkData = await postArticleChunks(inputObj, maxLength);
-  return articleChunkData;
-};
-
-export const postArticleShort = async (inputObj) => {
-  if (!inputObj) return null;
-  const { tgChannelId } = inputObj;
-
-  const shortText = await buildShortText(inputObj);
-
-  const params = {
-    chat_id: tgChannelId,
-    text: shortText,
-    parse_mode: "HTML",
-  };
-
-  const data = await tgSendMessage(params);
-  return data;
-};
-
-export const buildShortText = async (inputObj) => {
-  if (!inputObj) return null;
-  const { text, urlNormal } = inputObj;
-
-  const shortText = `
-  <b>[ARTICLE TEXT]:</b>
-  
-  ${text}
-  
-  <b>URL:</b> <i>${urlNormal}</i>
-  `;
-
-  return shortText;
-};
-
-export const postArticleChunks = async (inputObj, maxLength) => {
-  if (!inputObj) return null;
-  const { text, tgChannelId } = inputObj;
-
   const chunkTotal = Math.ceil(text.length / maxLength);
 
   const chunkObj = { ...inputObj, chunkTotal };
@@ -206,7 +168,74 @@ export const postArticleChunks = async (inputObj, maxLength) => {
     chunkArray.push(chunkObj);
   }
   return chunkArray;
+
+  // if (text.length < maxLength) {
+  //   const articleShortData = await postArticleShort(inputObj);
+  //   return articleShortData;
+  // }
+
+  // const articleChunkData = await postArticleChunks(inputObj, maxLength);
+  // return articleChunkData;
 };
+
+// export const postArticleShort = async (inputObj) => {
+//   if (!inputObj) return null;
+//   const { tgChannelId } = inputObj;
+
+//   const shortText = await buildShortText(inputObj);
+
+//   const params = {
+//     chat_id: tgChannelId,
+//     text: shortText,
+//     parse_mode: "HTML",
+//   };
+
+//   const data = await tgSendMessage(params);
+//   return data;
+// };
+
+// export const buildShortText = async (inputObj) => {
+//   if (!inputObj) return null;
+//   const { text, urlNormal } = inputObj;
+
+//   const shortText = `
+//   <b>[ARTICLE TEXT]:</b>
+
+//   ${text}
+
+//   <b>URL:</b> <i>${urlNormal}</i>
+//   `;
+
+//   return shortText;
+// };
+
+// export const postArticleChunks = async (inputObj, maxLength) => {
+//   if (!inputObj) return null;
+//   const { text, tgChannelId } = inputObj;
+
+//   const chunkTotal = Math.ceil(text.length / maxLength);
+
+//   const chunkObj = { ...inputObj, chunkTotal };
+//   const chunkArray = [];
+//   for (let i = 0; i < chunkTotal; i++) {
+//     const chunk = text.substring(i * maxLength, (i + 1) * maxLength);
+//     const chunkText = await buildChunkText(chunk, chunkObj, i);
+//     if (!chunkText) continue;
+
+//     const params = {
+//       chat_id: tgChannelId,
+//       text: chunkText,
+//       parse_mode: "HTML",
+//     };
+
+//     const data = await tgSendMessage(params);
+//     if (!data) continue;
+//     chunkObj.chunkData = data;
+
+//     chunkArray.push(chunkObj);
+//   }
+//   return chunkArray;
+// };
 
 export const buildChunkText = async (chunk, inputObj, chunkIndex) => {
   if (!inputObj) return null;
