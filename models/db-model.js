@@ -202,12 +202,12 @@ class dbModel {
 
   //finds nested items (for picArray)
   async findEmptyItemsNested() {
-    const { arrayKey, keyEmpty } = this.dataObject;
+    const { keyExists, keyEmpty, arrayKey } = this.dataObject;
 
     const nestedPath = `${arrayKey}.${keyEmpty}`;
     const dataArray = await dbGet()
       .collection(this.collection)
-      .find({ $or: [{ [nestedPath]: { $exists: false } }, { [nestedPath]: "" }, { [nestedPath]: null }], [arrayKey]: { $exists: true } })
+      .find({ $or: [{ [nestedPath]: { $exists: false } }, { [nestedPath]: "" }, { [nestedPath]: null }], [keyExists]: { $exists: true } })
       .toArray();
     return dataArray;
   }

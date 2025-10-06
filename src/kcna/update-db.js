@@ -20,7 +20,7 @@ export const updatePicDataKCNA = async () => {
 export const updateArticlePics = async () => {
   const { articles } = CONFIG;
 
-  const articleDataModel = new dbModel({ arrayKey: "picArray", keyEmpty: "picSize" }, articles);
+  const articleDataModel = new dbModel({ keyExists: "url", arrayKey: "picArray", keyEmpty: "picSize" }, articles);
   const articleDataArray = await articleDataModel.findEmptyItemsNested();
   if (!articleDataArray || !articleDataArray.length) return null;
 
@@ -70,7 +70,7 @@ export const updateArticleItem = async (inputObj) => {
 export const updatePicSetPics = async () => {
   const { picSets } = CONFIG;
 
-  const picSetDataModel = new dbModel({ arrayKey: "picArray", keyEmpty: "picSize" }, picSets);
+  const picSetDataModel = new dbModel({ keyExists: "url", arrayKey: "picArray", keyEmpty: "picSize" }, picSets);
   const picSetDataArray = await picSetDataModel.findEmptyItemsNested();
   if (!picSetDataArray || !picSetDataArray.length) return null;
 
@@ -119,7 +119,7 @@ export const updatePicSetItem = async (inputObj) => {
 export const updateVidPageThumbnail = async () => {
   const { vidPages } = CONFIG;
 
-  const vidPageDataModel = new dbModel({ arrayKey: "thumbnailData", keyEmpty: "picSize" }, vidPages);
+  const vidPageDataModel = new dbModel({ keyExists: "url", arrayKey: "thumbnailData", keyEmpty: "picSize" }, vidPages);
   const vidPageDataArray = await vidPageDataModel.findEmptyItemsNested();
   if (!vidPageDataArray || !vidPageDataArray.length) return null;
 
