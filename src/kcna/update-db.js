@@ -4,44 +4,40 @@ import dbModel from "../../models/db-model.js";
 //UPDATE DB (with full pic data in each collection)
 export const updatePicDataKCNA = async () => {
   //returns array of data that needs to be updated
-  const collectionsToUpdate = await getCollectionsToUpdate();
+  // const collectionsToUpdate = await getCollectionsToUpdate();
 
   //for tracking
+  // const updateArray = [];
+  // const updateArticleData = await updateArticlePics(collectionsToUpdate[0]);
+  // const updatePicSetData = await updatePicSetPics(collectionsToUpdate[1]);
+  // const updateVidData = await updateVidPageThumbnail(collectionsToUpdate[2]);
+  // updateArray.push(updateArticleData, updatePicSetData, updateVidData);
+
   const updateArray = [];
-  const updateArticleData = await updateArticlePics(collectionsToUpdate[0]);
-  const updatePicSetData = await updatePicSetPics(collectionsToUpdate[1]);
-  const updateVidData = await updateVidPageThumbnail(collectionsToUpdate[2]);
+  const updateArticleData = await updateArticlePics();
+  const updatePicSetData = await updatePicSetPics();
+  const updateVidData = await updateVidPageThumbnail();
   updateArray.push(updateArticleData, updatePicSetData, updateVidData);
 
   return updateArray;
 };
 
-export const getCollectionsToUpdate = async () => {
-  const { articles, picSets, vidPages } = CONFIG;
-
-  const collectionArr = [articles, picSets, vidPages];
-
-  const collectionData = [];
-  for (const collection of collectionArr) {
-    const model = new dbModel("", collection);
-    const dataArray = await model.getAll();
-    if (!dataArray || !dataArray.length) continue;
-
-    collectionData.push(dataArray);
-  }
-
-  return collectionData;
-};
-
 //----------
 
 //update articles
-export const updateArticlePics = async (inputArray) => {
-  if (!inputArray || !inputArray.length) return null;
+export const updateArticlePics = async () => {
+  const { articles } = CONFIG;
+
+  const articleDataModel = new dbModel({ arrayKey: "picArray", keyEmpty: "picSize" }, articles);
+  const articleDataArray = await articleDataModel.findEmptyItemsNested();
+  if (!articleDataArray || !articleDataArray.length) return null;
+
+  console.log("ARTICLES TO UPDATE");
+  console.log(articleDataArray);
 
   //update articles
   const updateArticleArray = [];
-  for (const article of inputArray) {
+  for (const article of articleDataArray) {
     try {
       const updateArticleData = await updateArticleItem(article);
       updateArticleArray.push(updateArticleData);
@@ -79,11 +75,18 @@ export const updateArticleItem = async (inputObj) => {
 //-----------------------------
 
 //update pic sets
-export const updatePicSetPics = async (inputArray) => {
-  if (!inputArray || !inputArray.length) return null;
+export const updatePicSetPics = async () => {
+  const { picSets } = CONFIG;
+
+  const picSetDataModel = new dbModel({ arrayKey: "picArray", keyEmpty: "picSize" }, picSets);
+  const picSetDataArray = await picSetDataModel.findEmptyItemsNested();
+  if (!picSetDataArray || !picSetDataArray.length) return null;
+
+  console.log("PIC SETS TO UPDATE");
+  console.log(picSetDataArray);
 
   const updatePicSetArray = [];
-  for (const picSet of inputArray) {
+  for (const picSet of picSetDataArray) {
     try {
       const updatePicSetData = await updatePicSetItem(picSet);
       updatePicSetArray.push(updatePicSetData);
@@ -121,11 +124,18 @@ export const updatePicSetItem = async (inputObj) => {
 //--------------
 
 //update vid pages
-export const updateVidPageThumbnail = async (inputArray) => {
-  if (!inputArray || !inputArray.length) return null;
+export const updateVidPageThumbnail = async () => {
+  const { vidPages } = CONFIG;
+
+  const vidPageDataModel = new dbModel({ arrayKey: "thumbnailData", keyEmpty: "picSize" }, vidPages);
+  const vidPageDataArray = await vidPageDataModel.findEmptyItemsNested();
+  if (!vidPageDataArray || !vidPageDataArray.length) return null;
+
+  console.log("VID PAGES TO UPDATE");
+  console.log(vidPageDataArray);
 
   const updateVidPageArray = [];
-  for (const vidPage of inputArray) {
+  for (const vidPage of vidPageDataArray) {
     try {
       const updateVidPageData = await updateThumbnailItem(vidPage);
       if (!updateVidPageData) continue;
@@ -140,7 +150,7 @@ export const updateVidPageThumbnail = async (inputArray) => {
 
 export const updateThumbnailItem = async (inputObj) => {
   if (!inputObj || !inputObj.url || !inputObj.thumbnailURL) return null;
-  const { url, thumbnailURL } = inputObj;
+  const { thumbnailURL } = inputObj;
   const { vidPages } = CONFIG;
 
   const picData = await getPicData(thumbnailURL);
@@ -149,20 +159,20 @@ export const updateThumbnailItem = async (inputObj) => {
   console.log("!!!!! UPDATE THUMBNAILPIC DATA");
   console.log(picData);
 
-  // const updateParams = {
-  //   keyToLookup: "url",
-  //   itemValue: url,
-  //   insertKey: "thumbnailData",
-  //   updateObj: picData,
-  // };
+  const updateParams = {
+    keyToLookup: "url",
+    itemValue: url,
+    insertKey: "thumbnailData",
+    updateObj: picData,
+  };
 
-  // const updateVidPageModel = new dbModel(updateParams, vidPages);
-  // const storeData = await updateVidPageModel.updateObjInsert();
-  // console.log("UPDATE DATA");
-  // console.log(storeData);
+  const updateVidPageModel = new dbModel(updateParams, vidPages);
+  const storeData = await updateVidPageModel.updateObjInsert();
+  console.log("UPDATE DATA");
+  console.log(storeData);
 
-  // //return picData of the thumbnail
-  // return picData;
+  //return picData of the thumbnail
+  return picData;
 };
 
 //------
@@ -196,11 +206,12 @@ export const getPicData = async (url) => {
 export const updateVidDataKCNA = async () => {
   const { vidPages } = CONFIG;
 
-  const vidPagesModel = new dbModel("", vidPages);
-  const vidPagesArray = await vidPagesModel.getAll();
+  const vidPageVidModel = new dbModel({ arrayKey: "vidData", keyEmpty: "vidSize" }, vidPages);
+  const vidPageDataArray = await vidPageVidModel.findEmptyItemsNested();
+  if (!vidPageDataArray || !vidPageDataArray.length) return null;
 
   const updateVidPageArray = [];
-  for (const vidPage of vidPagesArray) {
+  for (const vidPage of vidPageDataArray) {
     try {
       const updateVidPageData = await updateVidItem(vidPage);
       if (!updateVidPageData) continue;

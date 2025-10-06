@@ -200,6 +200,18 @@ class dbModel {
     return dataArray;
   }
 
+  //finds nested items (for picArray)
+  async findEmptyItemsNested() {
+    const { arrayKey, keyEmpty } = this.dataObject;
+
+    const nestedPath = `${arrayKey}.${keyEmpty}`;
+    const dataArray = await dbGet()
+      .collection(this.collection)
+      .find({ $or: [{ [nestedPath]: { $exists: false } }, { [nestedPath]: "" }, { [nestedPath]: null }], [arrayKey]: { $exists: true } })
+      .toArray();
+    return dataArray;
+  }
+
   //-------------
 
   //DELETE STUFF
