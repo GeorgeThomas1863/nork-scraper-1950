@@ -9,6 +9,11 @@ export const downloadPicsKCNA = async () => {
   const { pics, picPath } = CONFIG;
   const picModel = new dbModel({ keyExists: "url", keyEmpty: "picSize" }, pics);
   const picArray = await picModel.findEmptyItems();
+
+  console.log("!!!!!!!")
+  console.log("DOWNLOAD PIC ARRAY");
+  console.log(picArray);
+
   if (!picArray || !picArray.length) return null;
 
   const downloadPicArray = [];
