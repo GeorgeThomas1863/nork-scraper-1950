@@ -1,3 +1,133 @@
+import CONFIG from "../../../config/config.js";
+import dbModel from "../../../models/db-model.js";
+import { tgSendMessage } from "../../tg-api.js";
+import { postPicArrayTG } from "../pics/pics-upload.js";
+import { normalizeTGInputs } from "../util/util.js";
+
 export const uploadVidPagesKCNA = async () => {
-  //build
+  const { vidPages, tgChannelId } = CONFIG;
+  const vidPageModel = new dbModel({ keyExists: "url", keyEmpty: "tgChannelId" }, vidPages);
+  const vidPageArray = await vidPageModel.findEmptyItems();
+  if (!vidPageArray || !vidPageArray.length) return null;
+
+  const vidPagePostDataArray = [];
+  for (const vidPage of vidPageArray) {
+    try {
+      const { url } = vidPage;
+
+      //add channelId HERE
+      vidPage.tgChannelId = tgChannelId;
+
+      //post article
+      const vidPagePostData = await postVidPageTG(vidPage);
+      if (!vidPagePostData) continue;
+      vidPagePostDataArray.push(vidPagePostData);
+
+      console.log("VID PAGE POST DATA");
+      console.log(vidPagePostData);
+
+      //store data
+      const storeModel = new dbModel({ keyToLookup: "url", itemValue: url, updateObj: vidPagePostData }, vidPages);
+      const storeData = await storeModel.updateObjItem();
+      console.log("STORE DATA");
+      console.log(storeData);
+    } catch (e) {
+      console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+    }
+  }
+
+  return vidPagePostDataArray;
 };
+
+export const postVidPageTG = async (inputObj) => {
+  if (!inputObj) return null;
+  const { url, date } = inputObj;
+
+  //normalize url and date
+  const tgInputs = await normalizeTGInputs(url, date);
+  const uploadObj = { ...inputObj, ...tgInputs };
+
+  //post thumbnail as title
+  const thumbnailData = await postThumbnailTG(uploadObj);
+  console.log("PIC SET PICS DATA");
+  console.log(picSetPicData);
+
+  return uploadObj;
+};
+
+//HERE
+
+// export const postThumbnailTG = async (inputObj) => {
+//   if (!inputObj) return null;
+//   const { tgChannelId } = inputObj;
+
+//   const titleText = await buildPicSetTitleText(inputObj);
+
+//   const params = {
+//     chat_id: tgChannelId,
+//     text: titleText,
+//     parse_mode: "HTML",
+//   };
+
+//   const data = await tgSendMessage(params);
+//   return data;
+// };
+
+// //FIX
+// export const buildPicSetTitleText = async (inputObj) => {
+//   if (!inputObj) return null;
+//   const { title, dateNormal, picSetId, picArray, urlNormal } = inputObj;
+
+//   const picCount = picArray.length;
+
+//   const titleText = `🇰🇵 🇰🇵 🇰🇵
+  
+// -----------------
+    
+// <b>${title}</b>
+  
+// -----------------
+
+// <b>${picCount} ITEM PIC SET</b> | <b>ID:</b> ${picSetId} | <b>DATE:</b> <i>${dateNormal}</i>
+// <b>URL:</b> <i>${urlNormal}</i>
+//   `;
+
+//   return titleText;
+// };
+
+// export const postPicSetPicsTG = async (inputObj) => {
+//   if (!inputObj || !inputObj.picArray || !inputObj.picArray.length) return null;
+//   const { picArray } = inputObj;
+
+//   //add caption to each pic
+//   const picArrayWithCaption = [];
+//   for (let i = 0; i < picArray.length; i++) {
+//     const picObj = picArray[i];
+//     picObj.picIndex = i + 1;
+//     picObj.picCount = picArray.length;
+//     const picSetPicCaption = await buildPicSetPicCaption(picObj);
+//     if (!picSetPicCaption) continue;
+
+//     picObj.caption = picSetPicCaption;
+//     picArrayWithCaption.push(picObj);
+//   }
+
+//   const data = await postPicArrayTG(picArrayWithCaption);
+//   return data;
+// };
+
+// export const buildPicSetPicCaption = async (inputObj) => {
+//   if (!inputObj) return null;
+//   const { picIndex, picCount, date, url } = inputObj;
+
+//   //run again bc nested
+//   const normalInputs = await normalizeTGInputs(url, date);
+//   const { dateNormal, urlNormal } = normalInputs;
+
+//   const picSetPicCaption = `
+// <b>ARTICLE PIC: ${picIndex} OF ${picCount}</b> | <b>DATE:</b> <i>${dateNormal}</i> 
+// <b>PIC URL:</b> <i>${urlNormal}</i>
+// `;
+
+//   return picSetPicCaption;
+// };
