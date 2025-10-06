@@ -285,22 +285,35 @@ export const uploadArticlesKCNA = async () => {
     //normalize url and date
     const tgInputs = await normalizeTGInputs(url, date);
     const uploadObj = { ...article, ...tgInputs };
-    const titleText = await buildArticleTitleText(uploadObj);
-    uploadObj.titleText = titleText;
 
     //channel to upload to
     uploadObj.tgChannelId = tgChannelId;
 
-    const uploadTitleData = await uploadArticleTitle(uploadObj);
+    await postArticleTitleTG(uploadObj);
 
     //post pics if exist
     if (picArray && picArray.length) {
-      const articlePicArray = await addCaptionToArticlePics(uploadObj);
-      const postPicData = await postPicArrayTG(articlePicArray);
-      console.log("UPLOAD PIC DATA");
-      console.log(postPicData);
+      await postArticlePicsTG(uploadObj);
     }
+
+    await postArticleContentTG(uploadObj);
   }
+};
+
+export const postArticleTitleTG = async (inputObj) => {
+  if (!inputObj) return null;
+  const { tgChannelId } = inputObj;
+
+  const titleText = await buildArticleTitleText(inputObj);
+
+  const params = {
+    chat_id: tgChannelId,
+    text: titleText,
+    parse_mode: "HTML",
+  };
+
+  const data = await tgSendMessage(params);
+  return data;
 };
 
 export const buildArticleTitleText = async (inputObj) => {
@@ -321,37 +334,23 @@ export const buildArticleTitleText = async (inputObj) => {
   return titleText;
 };
 
-export const uploadArticleTitle = async (inputObj) => {
-  if (!inputObj) return null;
-  const { tgChannelId, titleText } = inputObj;
-
-  const params = {
-    chat_id: tgChannelId,
-    text: titleText,
-    parse_mode: "HTML",
-  };
-
-  console.log("ARTICLE TITLE PARAMS");
-  console.log(params);
-
-  const data = await tgSendMessage(params);
-  return data;
-};
-
-export const addCaptionToArticlePics = async (inputObj) => {
+export const postArticlePicsTG = async (inputObj) => {
   if (!inputObj || !inputObj.picArray || !inputObj.picArray.length) return null;
-  const { picArray, dateNormal } = inputObj;
+  const { picArray } = inputObj;
 
+  //add caption to each pic
   const picArrayWithCaption = [];
   for (let i = 0; i < picArray.length; i++) {
     const picObj = picArray[i];
-    const articlePicCaption = await buildArticlePicCaption(inputObj, i);
+    const articlePicCaption = await buildArticlePicCaption(inputObj, i + 1);
     if (!articlePicCaption) continue;
 
     picObj.caption = articlePicCaption;
     picArrayWithCaption.push(picObj);
   }
-  return picArrayWithCaption;
+
+  const data = await postPicArrayTG(picArrayWithCaption);
+  return data;
 };
 
 export const buildArticlePicCaption = async (inputObj, picIndex) => {
@@ -359,9 +358,16 @@ export const buildArticlePicCaption = async (inputObj, picIndex) => {
   const { picArray, dateNormal } = inputObj;
 
   const articlePicCaption = `
-<b>ARTICLE PIC: ${picIndex + 1} OF ${picArray.length}</b> 
+<b>ARTICLE PIC: ${picIndex} OF ${picArray.length}</b> 
 <i>${dateNormal}</i>
 `;
 
   return articlePicCaption;
+};
+
+export const postArticleContentTG = async (inputObj) => {
+  if (!inputObj || !inputObj.text) return null;
+
+  console.log("ARTICLE CONTENT OBJ");
+  console.log(inputObj);
 };
