@@ -367,7 +367,91 @@ export const buildArticlePicCaption = async (inputObj, picIndex) => {
 
 export const postArticleContentTG = async (inputObj) => {
   if (!inputObj || !inputObj.text) return null;
+  const { text, title, dateNormal, urlNormal } = inputObj;
+  const { tgMaxLength } = CONFIG;
 
-  console.log("ARTICLE CONTENT OBJ");
-  console.log(inputObj);
+  const maxLength = tgMaxLength - title.length - dateNormal.length - urlNormal.length - 100;
+
+  if (text.length < maxLength) {
+    const articleShortData = await postArticleShort(inputObj);
+    return articleShortData;
+  }
+
+  const articleChunkData = await postArticleChunks(inputObj, maxLength);
+  return articleChunkData;
+};
+
+export const postArticleShort = async (inputObj) => {
+  if (!inputObj) return null;
+  const { tgChannelId } = inputObj;
+
+  const shortText = await buildShortText(inputObj);
+
+  const params = {
+    chat_id: tgChannelId,
+    text: shortText,
+    parse_mode: "HTML",
+  };
+
+  const data = await tgSendMessage(params);
+  return data;
+};
+
+export const buildShortText = async (inputObj) => {
+  if (!inputObj) return null;
+  const { text, urlNormal } = inputObj;
+
+  const shortText = `
+<b>[ARTICLE TEXT]:</b>
+
+${text}
+
+<i>${urlNormal}</i>
+`;
+
+  return shortText;
+};
+
+export const postArticleChunks = async (inputObj, maxLength) => {
+  if (!inputObj) return null;
+  const { text, tgChannelId } = inputObj;
+
+  const chunkTotal = Math.ceil(text.length / maxLength);
+
+  const chunkObj = { ...inputObj, chunkTotal };
+  const chunkArray = [];
+  for (let i = 0; i < chunkTotal; i++) {
+    const chunk = text.substring(i * maxLength, (i + 1) * maxLength);
+    const chunkText = await buildChunkText(chunk, chunkObj, i);
+    if (!chunkText) continue;
+
+    const params = {
+      chat_id: tgChannelId,
+      text: chunkText,
+      parse_mode: "HTML",
+    };
+
+    const data = await tgSendMessage(params);
+    if (!data) continue;
+    chunkObj.data = data;
+
+    chunkArray.push(chunkObj);
+  }
+  return chunkArray;
+};
+
+export const buildChunkText = async (chunk, inputObj, chunkIndex) => {
+  if (!inputObj) return null;
+  const { urlNormal, chunkTotal } = inputObj;
+
+  switch (chunkIndex) {
+    case 0:
+      return "<b>[ARTICLE TEXT]:</b>" + "\n\n" + chunk;
+
+    case chunkTotal - 1:
+      return chunk + "\n\n" + "<i>" + urlNormal + "</i>";
+
+    default:
+      return chunk;
+  }
 };
