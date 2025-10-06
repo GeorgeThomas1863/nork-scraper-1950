@@ -3,7 +3,7 @@ import { JSDOM } from "jsdom";
 import CONFIG from "../../config/config.js";
 import NORK from "../../models/nork-model.js";
 import dbModel from "../../models/db-model.js";
-import { tgSendMessage } from "../tg/tg-api.js";
+import { tgSendMessage } from "../tg/tg-control.js";
 import kcnaState from "./state.js";
 import { uploadPicArray } from "./pics.js";
 import { extractItemDate, getIdFromURL, normalizeTGInputs } from "./util.js";
