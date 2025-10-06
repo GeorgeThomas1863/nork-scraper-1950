@@ -289,14 +289,20 @@ export const uploadArticlesKCNA = async () => {
     //channel to upload to
     uploadObj.tgChannelId = tgChannelId;
 
-    await postArticleTitleTG(uploadObj);
+    const titleData = await postArticleTitleTG(uploadObj);
+    console.log("TITLE DATA");
+    console.log(titleData);
 
     //post pics if exist
     if (picArray && picArray.length) {
-      await postArticlePicsTG(uploadObj);
+      const articlePicsData = await postArticlePicsTG(uploadObj);
+      console.log("ARTICLE PICS DATA");
+      console.log(articlePicsData);
     }
 
-    await postArticleContentTG(uploadObj);
+    const articleContentData = await postArticleContentTG(uploadObj);
+    console.log("ARTICLE CONTENT DATA");
+    console.log(articleContentData);
   }
 };
 
