@@ -4,7 +4,6 @@ import axios from "axios";
 
 import CONFIG from "../../config/config.js";
 import dbModel from "../../models/db-model.js";
-import { updateVidDataKCNA } from "./update-db.js";
 
 export const downloadVidsKCNA = async () => {
   const { vids, vidPath } = CONFIG;
@@ -38,8 +37,6 @@ export const downloadVidsKCNA = async () => {
 
   console.log("FINISHED VIDEO DOWNLOAD");
   console.log(`DOWNLOADED ${downloadVidArray.length} VIDS`);
-
-  await updateVidDataKCNA();
 
   return downloadVidArray;
 };
