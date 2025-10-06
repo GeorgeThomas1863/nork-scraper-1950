@@ -4,41 +4,42 @@ import CONFIG from "../../config/config.js";
 import NORK from "../../../models/nork-model.js";
 import dbModel from "../../../models/db-model.js";
 import kcnaState from "../state.js";
-import { extractItemDate, lookupItemDate, getIdFromURL } from "../util.js";
+import { getIdFromURL } from "../util.js";
 
 export const scrapePicSetContentKCNA = async () => {
-  if (!inputArray || !inputArray.length) return null;
-
+  const { picSets } = CONFIG;
 
   const newPicSetModel = new dbModel({ keyExists: "url", keyEmpty: "picArray" }, picSets);
   const newPicSetArray = await newPicSetModel.findEmptyItems();
+  if (!newPicSetArray || !newPicSetArray.length) return null;
 
-  // const picSetContentArray = await scrapePicSetContent(newPicSetArray);
-  // console.log("PIC SET CONTENT ARRAY");
-  console.log(picSetContentArray);
-  const picSetContentArray = [];
+  const picSetContentData = await parseNewPicSetArray(newPicSetArray);
+  return picSetContentData;
+};
+
+export const parseNewPicSetArray = async (inputArray) => {
+  if (!inputArray || !inputArray.length) return null;
+
+  const newPicSetArray = [];
   for (const picSet of inputArray) {
-    const { url } = picSet;
+    const { url, date } = picSet;
     try {
-      const picSetContent = await parsePicSetContent(url);
+      const picSetContent = await parsePicSetContent(url, date);
       if (!picSetContent) continue;
       console.log("PIC SET CONTENT");
       console.log(picSetContent);
 
-      picSetContentArray.push(picSetContent);
+      newPicSetArray.push(picSetContent);
     } catch (e) {
       console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
     }
   }
-  return picSetContentArray;
+  return newPicSetArray;
 };
 
-export const parsePicSetContent = async (url) => {
+export const parsePicSetContent = async (url, date) => {
   if (!url) return null;
   const { picSets } = CONFIG;
-
-  // console.log("CONTENT URL");
-  // console.log(url);
 
   const kcna = new NORK({ url });
   const html = await kcna.getHTML();
@@ -54,7 +55,7 @@ export const parsePicSetContent = async (url) => {
   const document = dom.window.document;
 
   const picSetTitle = await extractPicSetTitle(document);
-  const picSetPicArray = await extractPicSetPicArray(document, url);
+  const picSetPicArray = await extractPicSetPicArray(document, date);
 
   const storeParams = {
     title: picSetTitle,
@@ -77,7 +78,7 @@ export const extractPicSetTitle = async (document) => {
   return null;
 };
 
-export const extractPicSetPicArray = async (document, url) => {
+export const extractPicSetPicArray = async (document, date) => {
   const { pics } = CONFIG;
 
   const picElementArray = document.querySelectorAll(".content img");
@@ -90,23 +91,22 @@ export const extractPicSetPicArray = async (document, url) => {
       const picSetPicURL = "http://www.kcna.kp" + picSrc;
       picSetPicArray.push(picSetPicURL);
 
-      const picDate = await lookupItemDate(url, "picSets");
-
-      //store url to picDB (so dont have to do again); build params
+      //store urls to picDB (so dont have to do again); build params
       const picId = await getIdFromURL(picSetPicURL);
       const storeParams = {
         picId: picId,
         url: picSetPicURL,
         scrapeId: kcnaState.scrapeId,
-        date: picDate,
+        date: date,
       };
 
-      console.log("!!!!!!!!!!!!!");
-      console.log("STORE PARAMS");
+      console.log("STORE PIC PARAMS");
       console.log(storeParams);
 
       const storePicModel = new dbModel(storeParams, pics);
-      await storePicModel.storeUniqueURL();
+      const storeData = await storePicModel.storeUniqueURL();
+      console.log("STORE PIC DATA");
+      console.log(storeData);
     } catch (e) {
       console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
     }

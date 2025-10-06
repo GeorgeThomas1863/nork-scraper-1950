@@ -1,15 +1,15 @@
 import { logScrapeStartKCNA, logScrapeStopKCNA } from "./util/state.js";
 
 import { scrapeArticleURLsKCNA } from "./articles/articles-urls.js";
-import { scrapeArticleContentKCNA } from "./articles/articles-download.js";
+import { scrapeArticleContentKCNA } from "./articles/articles-content.js";
 import { uploadArticlesKCNA } from "./articles/articles-upload.js";
 
 import { scrapePicSetURLsKCNA } from "./pics/picSets-urls.js";
-import { scrapePicSetContentKCNA } from "./pics/picSets-download.js";
+import { scrapePicSetContentKCNA } from "./pics/picSets-content.js";
 import { uploadPicSetsKCNA } from "./pics/picSets-upload.js";
 
 import { scrapeVidPageURLsKCNA } from "./vids/vidPages-urls.js";
-import { scrapeVidPageContentKCNA } from "./vids/vidPages-download.js";
+import { scrapeVidPageContentKCNA } from "./vids/vidPages-content.js";
 import { uploadVidPagesKCNA } from "./vids/vidPages-upload.js";
 
 import { downloadPicsKCNA } from "./pics/pics-download.js";

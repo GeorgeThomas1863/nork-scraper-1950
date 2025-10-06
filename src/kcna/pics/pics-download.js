@@ -4,7 +4,6 @@ import axios from "axios";
 
 import CONFIG from "../../config/config.js";
 import dbModel from "../../../models/db-model.js";
-import { tgPostPicFS } from "../../tg-api.js";
 
 export const downloadPicsKCNA = async () => {
   const { pics, picPath } = CONFIG;

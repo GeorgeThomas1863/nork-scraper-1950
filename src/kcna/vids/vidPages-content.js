@@ -4,38 +4,46 @@ import CONFIG from "../../config/config.js";
 import NORK from "../../../models/nork-model.js";
 import dbModel from "../../../models/db-model.js";
 import kcnaState from "../state.js";
-import { extractItemDate, lookupItemDate, getIdFromURL } from "../util.js";
+import { getIdFromURL } from "../util.js";
 
-export const scrapeVidPageContent = async (inputArray) => {
+export const scrapeVidPageContentKCNA = async () => {
+  const { vidPages } = CONFIG;
+  const newVidPageModel = new dbModel({ keyExists: "url", keyEmpty: "vidURL" }, vidPages);
+  const newVidPageArray = await newVidPageModel.findEmptyItems();
+  if (!newVidPageArray || !newVidPageArray.length) return null;
+
+  const vidPageContentData = await parseNewVidPageArray(newVidPageArray);
+  return vidPageContentData;
+};
+
+export const parseNewVidPageArray = async (inputArray) => {
   if (!inputArray || !inputArray.length) return null;
+  const { vidPages } = CONFIG;
 
-  const vidPageContentArray = [];
+  const newVidPageArray = [];
   for (const vidPage of inputArray) {
-    const { url } = vidPage;
+    const { url, date } = vidPage;
     try {
-      const vidPageContent = await parseVidPageContent(url);
+      const vidPageContent = await parseVidPageContent(url, date);
       if (!vidPageContent) continue;
       console.log("VID PAGE CONTENT");
       console.log(vidPageContent);
 
-      vidPageContentArray.push(vidPageContent);
+      newVidPageArray.push(vidPageContent);
     } catch (e) {
       console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
     }
   }
-  return vidPageContentArray;
+  return newVidPageArray;
 };
 
-export const parseVidPageContent = async (url) => {
+export const parseVidPageContent = async (url, date) => {
   if (!url) return null;
   const { vidPages } = CONFIG;
 
   try {
     const kcna = new NORK({ url });
     const html = await kcna.getHTML();
-
-    // console.log("VID PAGE HTML");
-    // console.log(html);
 
     if (!html) {
       const error = new Error("FAILED TO GET VID PAGE ITEM HTML ");
@@ -48,7 +56,7 @@ export const parseVidPageContent = async (url) => {
     const document = dom.window.document;
 
     const vidPageTitle = await extractVidPageTitle(document);
-    const vidURL = await extractVidURL(document, url);
+    const vidURL = await extractVidURL(document, date);
 
     const storeParams = {
       title: vidPageTitle,
@@ -75,7 +83,7 @@ export const extractVidPageTitle = async (document) => {
   return null;
 };
 
-export const extractVidURL = async (document, url) => {
+export const extractVidURL = async (document, date) => {
   const { vids } = CONFIG;
   if (!document) return null;
 
@@ -96,17 +104,15 @@ export const extractVidURL = async (document, url) => {
     throw error;
   }
 
-  const vidURL = "http://www.kcna.kp" + vidLink;
-  const vidDate = await lookupItemDate(url, "vidPages");
-
   try {
     //store url to vidDB (so dont have to do again); build params
+    const vidURL = "http://www.kcna.kp" + vidLink;
     const vidId = await getIdFromURL(vidURL);
     const storeParams = {
       vidId: vidId,
       url: vidURL,
       scrapeId: kcnaState.scrapeId,
-      date: vidDate,
+      date: date,
     };
 
     const storeVidModel = new dbModel(storeParams, vids);
