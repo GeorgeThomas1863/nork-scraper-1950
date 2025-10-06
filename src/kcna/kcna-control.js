@@ -19,8 +19,8 @@ export const scrapeKCNA = async () => {
   await downloadVidsKCNA();
 
   //update db
-  await updatePicDataKCNA();
-  await updateVidDataKCNA();
+  // await updatePicDataKCNA();
+  // await updateVidDataKCNA();
 
   //upload to TG
   await uploadArticlesKCNA();
