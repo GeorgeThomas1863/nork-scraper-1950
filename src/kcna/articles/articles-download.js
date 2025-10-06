@@ -6,18 +6,18 @@ import dbModel from "../../../models/db-model.js";
 import kcnaState from "../state.js";
 import { getIdFromURL } from "../util.js";
 
-export const downloadArticlesKCNA = async () => {
+export const scrapeArticleContentKCNA = async () => {
   const { articles } = CONFIG;
   //find new article urls by those without text content
   const newArticleModel = new dbModel({ keyExists: "url", keyEmpty: "text" }, articles);
   const newArticleArray = await newArticleModel.findEmptyItems();
   if (!newArticleArray || !newArticleArray.length) return null;
 
-  const articleContentData = await downloadNewArticleArray(newArticleArray);
+  const articleContentData = await parseNewArticleArray(newArticleArray);
   return articleContentData;
 };
 
-export const downloadNewArticleArray = async (inputArray) => {
+export const parseNewArticleArray = async (inputArray) => {
   if (!inputArray || !inputArray.length) return null;
 
   const newArticleArray = [];

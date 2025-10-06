@@ -6,9 +6,16 @@ import dbModel from "../../../models/db-model.js";
 import kcnaState from "../state.js";
 import { extractItemDate, lookupItemDate, getIdFromURL } from "../util.js";
 
-export const scrapePicSetContent = async (inputArray) => {
+export const scrapePicSetContentKCNA = async () => {
   if (!inputArray || !inputArray.length) return null;
 
+
+  const newPicSetModel = new dbModel({ keyExists: "url", keyEmpty: "picArray" }, picSets);
+  const newPicSetArray = await newPicSetModel.findEmptyItems();
+
+  // const picSetContentArray = await scrapePicSetContent(newPicSetArray);
+  // console.log("PIC SET CONTENT ARRAY");
+  console.log(picSetContentArray);
   const picSetContentArray = [];
   for (const picSet of inputArray) {
     const { url } = picSet;

@@ -1,16 +1,21 @@
-import { logScrapeStartKCNA, logScrapeStopKCNA } from "./state.js";
+import { logScrapeStartKCNA, logScrapeStopKCNA } from "./util/state.js";
+
 import { scrapeArticleURLsKCNA } from "./articles/articles-urls.js";
-import { downloadArticlesKCNA } from "./articles/articles-download.js";
+import { scrapeArticleContentKCNA } from "./articles/articles-download.js";
 import { uploadArticlesKCNA } from "./articles/articles-upload.js";
 
 import { scrapePicSetURLsKCNA } from "./pics/picSets-urls.js";
-import { scrapeVidPageURLsKCNA } from "./vids/vidPages-urls.js";
+import { scrapePicSetContentKCNA } from "./pics/picSets-download.js";
+import { uploadPicSetsKCNA } from "./pics/picSets-upload.js";
 
-import { downloadPicsKCNA } from "./pics/pics.js";
-import { downloadVidsKCNA } from "./vids/vids.js";
-import { scrapePicSetsKCNA, uploadPicSetsKCNA } from "./pics/picSets.js";
-import { scrapeVidPagesKCNA, uploadVidPagesKCNA } from "./vids/vidPages.js";
-import { updatePicDataKCNA, updateVidDataKCNA } from "./update-db.js";
+import { scrapeVidPageURLsKCNA } from "./vids/vidPages-urls.js";
+import { scrapeVidPageContentKCNA } from "./vids/vidPages-download.js";
+import { uploadVidPagesKCNA } from "./vids/vidPages-upload.js";
+
+import { downloadPicsKCNA } from "./pics/pics-download.js";
+import { downloadVidsKCNA } from "./vids/vids-download.js";
+
+import { updatePicDataKCNA, updateVidDataKCNA } from "./util/update-db.js";
 
 export const scrapeKCNA = async () => {
   await logScrapeStartKCNA();
@@ -20,8 +25,12 @@ export const scrapeKCNA = async () => {
   await scrapePicSetURLsKCNA();
   await scrapeVidPageURLsKCNA();
 
-  //download media to server and updates db
-  await downloadArticlesKCNA();
+  //download content
+  await scrapeArticleContentKCNA();
+  await scrapePicSetContentKCNA();
+  await scrapeVidPageContentKCNA();
+
+  //download media
   await downloadPicsKCNA();
   await downloadVidsKCNA();
 
