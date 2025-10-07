@@ -97,6 +97,11 @@ export const extractVidURL = async (document, date) => {
   }
 
   const vidLink = await parseVidScripts(scriptArray);
+
+  console.log("!!!!!!!!!!!!!");
+  console.log("VID LINK");
+  console.log(vidLink);
+
   if (!vidLink) {
     const error = new Error("CANT VID URL FROM SCRIPTS");
     error.url = url;
