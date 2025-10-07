@@ -109,26 +109,27 @@ export const extractVidURL = async (document, date) => {
     throw error;
   }
 
-  try {
-    //store url to vidDB (so dont have to do again); build params
-    const vidURL = "http://www.kcna.kp" + vidLink;
-    const vidId = await getIdFromURL(vidURL);
-    const storeParams = {
-      vidId: vidId,
-      url: vidURL,
-      scrapeId: kcnaState.scrapeId,
-      date: date,
-    };
+  //store url to vidDB (so dont have to do again); build params
+  const vidURL = "http://www.kcna.kp" + vidLink;
+  const vidId = await getIdFromURL(vidURL);
 
+  const storeParams = {
+    vidId: vidId,
+    url: vidURL,
+    scrapeId: kcnaState.scrapeId,
+    date: date,
+  };
+
+  try {
     const storeVidModel = new dbModel(storeParams, vids);
     const storeData = await storeVidModel.storeUniqueURL();
     console.log("STORE DATA");
     console.log(storeData);
-
-    return vidURL;
   } catch (e) {
     console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
   }
+
+  return vidURL;
 };
 
 export const parseVidScripts = async (inputArray) => {
