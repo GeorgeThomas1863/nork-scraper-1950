@@ -1,6 +1,6 @@
 import CONFIG from "../../../config/config.js";
 import dbModel from "../../../models/db-model.js";
-import { tgSendMessage } from "../../tg-api.js";
+import { tgPostPicFS } from "../../tg-api.js";
 import { normalizeTGInputs } from "../util/util.js";
 
 import { exec } from "child_process";
