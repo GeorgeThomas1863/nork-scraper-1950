@@ -128,8 +128,8 @@ export const buildPicSetPicCaption = async (inputObj) => {
   const { dateNormal, urlNormal } = normalInputs;
 
   const picSetPicCaption = `
-<b>ARTICLE PIC: ${picIndex} OF ${picCount}</b> | <b>DATE:</b> <i>${dateNormal}</i> 
-<b>PIC URL:</b> <i>${urlNormal}</i>
+<b>PIC ${picIndex} OF ${picCount} PIC SET</b> | <b>DATE:</b> <i>${dateNormal}</i> | <b>PIC URL:</b> 
+<i>${urlNormal}</i>
 `;
 
   return picSetPicCaption;
