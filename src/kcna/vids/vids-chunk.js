@@ -1,4 +1,5 @@
 import path from "path";
+import fs from "fs";
 import { exec } from "child_process";
 import { promisify } from "util";
 import { stat } from "fs/promises";
@@ -18,6 +19,12 @@ export const chunkVidFS = async (inputObj) => {
   for (let i = 0; i < chunkArray.length; i++) {
     const chunk = chunkArray[i];
     const { chunkPath } = chunk;
+
+    const chunkExists = fs.existsSync(chunkPath);
+    if (chunkExists) {
+      console.log(`Chunk ${chunkPath} already exists`);
+      continue;
+    }
 
     const command = await buildChunkCommand(chunk);
 
@@ -79,47 +86,3 @@ export const buildChunkCommand = async (inputObj) => {
 
   return command;
 };
-
-// export const buildFileArray = async (inputObj) => {
-//   if (!inputObj) return null;
-//   const { tmpDir, chunkPath } = inputObj;
-
-//   const fileArray = await readdir(tmpDir);
-//   if (!fileArray || !fileArray.length) return null;
-
-//   //prob not needed
-//   const sortArray = fileArray.filter((chunk) => chunk.startsWith(chunkPath) && chunk.endsWith(".mp4")).sort();
-
-//   return sortArray;
-// };
-
-// export const buildChunkArray = async (inputObj) => {
-//   if (!inputObj) return null;
-//   const { tmpDir, chunkPath, totalChunks } = inputObj;
-
-//   const fileArray = await readdir(tmpDir);
-//   if (!fileArray || !fileArray.length) return null;
-
-//   //prob not needed
-//   const sortArray = fileArray.filter((chunk) => chunk.startsWith(chunkPath) && chunk.endsWith(".mp4")).sort();
-
-//   const chunkArray = [];
-//   for (let i = 0; i < sortArray.length; i++) {
-//     const chunkPath = path.join(tmpDir, sortArray[i]);
-//     if (!chunkPath) continue;
-//     chunkArray.push(chunkPath);
-//   }
-
-//   return chunkArray;
-// };
-
-// export const runChunkCommand = async (inputObj) => {
-//   if (!inputObj) return null;
-//   const { savePath, chunkPath, totalChunks, uploadVidChunkSize } = inputObj;
-
-//   const command = `ffmpeg -i "${savePath}" -c copy -map 0 -f segment -segment_size ${uploadVidChunkSize} -reset_timestamps 1 -break_non_keyframes 1 "${chunkPath}"`;
-//   console.log(`Chunking video into ${totalChunks} 10MB segments...`);
-//   const commandData = await execAsync(command);
-
-//   return commandData;
-// };
