@@ -2,6 +2,8 @@ import { exec } from "child_process";
 import { promisify } from "util";
 import { stat } from "fs/promises";
 
+import CONFIG from "../../../config/config.js";
+
 const execAsync = promisify(exec);
 
 export const chunkVidFS = async (inputObj) => {
