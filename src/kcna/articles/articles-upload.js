@@ -80,9 +80,6 @@ export const postArticleTitleTG = async (inputObj) => {
     parse_mode: "HTML",
   };
 
-  console.log("TITLE PARAMS");
-  console.log(params);
-
   const data = await tgSendMessage(params);
   return data;
 };
