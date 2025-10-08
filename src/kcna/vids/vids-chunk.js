@@ -40,7 +40,9 @@ export const chunkVidFS = async (inputObj) => {
 
   await Promise.all(promiseArray);
 
-  return chunkArray;
+  const returnObj = { ...inputObj, chunkArray };
+
+  return returnObj;
 };
 
 export const buildChunkArray = async (inputObj) => {

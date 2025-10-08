@@ -5,7 +5,7 @@ import { normalizeTGInputs } from "../util/util.js";
 import { chunkVidFS } from "../vids/vids-chunk.js";
 
 export const uploadVidPagesKCNA = async () => {
-  const { vidPages, tgChannelId } = CONFIG;
+  const { vidPages } = CONFIG;
   const vidPageModel = new dbModel({ keyExists: "url", keyEmpty: "tgChannelId" }, vidPages);
   const vidPageArray = await vidPageModel.findEmptyItems();
   if (!vidPageArray || !vidPageArray.length) return null;
@@ -14,9 +14,6 @@ export const uploadVidPagesKCNA = async () => {
   for (const vidPage of vidPageArray) {
     try {
       const { url } = vidPage;
-
-      //add channelId HERE
-      vidPage.tgChannelId = tgChannelId;
 
       //post article
       const vidPagePostData = await postVidPageTG(vidPage);
@@ -51,11 +48,8 @@ export const postVidPageTG = async (inputObj) => {
   //add channelId HERE
   uploadObj.tgChannelId = tgChannelId;
 
-  console.log("UPLOAD OBJ");
-  console.log(uploadObj);
-
   const chunkVidData = await chunkVidFS(uploadObj);
-  console.log("CHUNK VID ARRAY");
+  console.log("CHUNK VID DATA");
   console.log(chunkVidData);
 
   // post thumbnail as title
