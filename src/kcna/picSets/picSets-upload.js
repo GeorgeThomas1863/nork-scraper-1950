@@ -87,7 +87,7 @@ export const buildPicSetTitleText = async (inputObj) => {
   
 -----------------
     
-<b>${title}</b>
+<b>PIC SET TITLED: ${title}</b>
   
 -----------------
 

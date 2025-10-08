@@ -9,28 +9,39 @@ const execAsync = promisify(exec);
 export const chunkVidFS = async (inputObj) => {
   if (!inputObj) return null;
   const { vidData } = inputObj;
-  const { vidId, vidSize } = vidData;
+  const { vidId, vidSize, savePath } = vidData;
   const { tmpPath, uploadVidChunkSize } = CONFIG;
 
   const vidSeconds = await calcVidSeconds(vidData);
+  const totalChunks = Math.ceil(vidSize / uploadVidChunkSize);
 
-  console.log("VID SECONDS");
-  console.log(vidSeconds);
+  const chunkSeconds = Math.ceil(vidSeconds / totalChunks);
 
-  //   const totalChunks = Math.ceil(vidSize / uploadVidChunkSize);
-  //   const chunkPath = path.join(tmpPath, `${vidId}_chunk_%d.mp4`);
+  const chunkObj = { ...vidData, tmpDir: tmpPath, chunkPath, totalChunks, uploadVidChunkSize, chunkSeconds, vidSeconds };
 
-  //   const chunkObj = { ...vidData, tmpDir: tmpPath, chunkPath: chunkPath, totalChunks: totalChunks, uploadVidChunkSize: uploadVidChunkSize };
+  const promiseArray = [];
+  for (let i = 0; i < totalChunks; i++) {
+    const chunk = totalChunks[i];
+    const chunkPath = path.join(tmpPath, `${vidId}_chunk_${i + 1}.mp4`);
+    const startTime = i * chunkSeconds;
+    const endTime = startTime + chunkSeconds;
 
-  //   const commandData = await runChunkCommand(chunkObj);
-  //   console.log("COMMAND DATA");
-  //   console.log(commandData);
+    const command = `ffmpeg -i "${savePath}" -ss ${startTime} -t ${chunkSeconds} -c copy -avoid_negative_ts make_zero "${chunkPath}"`;
+    console.log(`Creating ${chunkPath}...`);
 
-  //   const chunkArray = await buildChunkArray(chunkObj);
-  //   console.log("CHUNK ARRAY");
-  //   console.log(chunkArray);
+    promiseArray.push(
+      (async () => {
+        await execAsync(command);
+        const stats = await stat(chunkPath);
+        const sizeMB = (stats.size / (1024 * 1024)).toFixed(2);
+        console.log(`✓ ${chunkPath} created (${sizeMB} MB)`);
+      })()
+    );
+  }
 
-  // return chunkArray;
+  await Promise.all(promiseArray);
+
+  return chunkObj;
 };
 
 export const calcVidSeconds = async (inputObj) => {
@@ -44,15 +55,17 @@ export const calcVidSeconds = async (inputObj) => {
   return vidSeconds;
 };
 
-// export const runChunkCommand = async (inputObj) => {
+// export const buildFileArray = async (inputObj) => {
 //   if (!inputObj) return null;
-//   const { savePath, chunkPath, totalChunks, uploadVidChunkSize } = inputObj;
+//   const { tmpDir, chunkPath } = inputObj;
 
-//   const command = `ffmpeg -i "${savePath}" -c copy -map 0 -f segment -segment_size ${uploadVidChunkSize} -reset_timestamps 1 -break_non_keyframes 1 "${chunkPath}"`;
-//   console.log(`Chunking video into ${totalChunks} 10MB segments...`);
-//   const commandData = await execAsync(command);
+//   const fileArray = await readdir(tmpDir);
+//   if (!fileArray || !fileArray.length) return null;
 
-//   return commandData;
+//   //prob not needed
+//   const sortArray = fileArray.filter((chunk) => chunk.startsWith(chunkPath) && chunk.endsWith(".mp4")).sort();
+
+//   return sortArray;
 // };
 
 // export const buildChunkArray = async (inputObj) => {
@@ -73,4 +86,15 @@ export const calcVidSeconds = async (inputObj) => {
 //   }
 
 //   return chunkArray;
+// };
+
+// export const runChunkCommand = async (inputObj) => {
+//   if (!inputObj) return null;
+//   const { savePath, chunkPath, totalChunks, uploadVidChunkSize } = inputObj;
+
+//   const command = `ffmpeg -i "${savePath}" -c copy -map 0 -f segment -segment_size ${uploadVidChunkSize} -reset_timestamps 1 -break_non_keyframes 1 "${chunkPath}"`;
+//   console.log(`Chunking video into ${totalChunks} 10MB segments...`);
+//   const commandData = await execAsync(command);
+
+//   return commandData;
 // };

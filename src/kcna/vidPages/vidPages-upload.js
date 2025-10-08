@@ -104,7 +104,7 @@ export const buildThumbnailCaption = async (inputObj) => {
 
 -----------------
       
-<b>${title}</b>
+<b>VID TITLED: ${title}</b>
     
 -----------------
 

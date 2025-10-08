@@ -92,7 +92,7 @@ export const buildArticleTitleText = async (inputObj) => {
   
 -----------------
     
-<b>${title}</b>
+<b>ARTICLE TITLED: ${title}</b>
   
 -----------------
   
