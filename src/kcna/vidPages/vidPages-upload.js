@@ -1,7 +1,6 @@
 import CONFIG from "../../../config/config.js";
 import dbModel from "../../../models/db-model.js";
 import { tgSendMessage } from "../../tg-api.js";
-import { postPicArrayTG } from "../pics/pics-upload.js";
 import { normalizeTGInputs } from "../util/util.js";
 
 export const uploadVidPagesKCNA = async () => {
@@ -42,39 +41,69 @@ export const uploadVidPagesKCNA = async () => {
 export const postVidPageTG = async (inputObj) => {
   if (!inputObj) return null;
   const { url, date } = inputObj;
+  const { tgChannelId } = CONFIG;
 
   //normalize url and date
   const tgInputs = await normalizeTGInputs(url, date);
   const uploadObj = { ...inputObj, ...tgInputs };
 
+  //add channelId HERE
+  uploadObj.tgChannelId = tgChannelId;
+
   console.log("UPLOAD OBJ");
   console.log(uploadObj);
 
-  //post thumbnail as title
-  // const thumbnailData = await postThumbnailTG(uploadObj);
-  // console.log("PIC SET PICS DATA");
-  // console.log(picSetPicData);
+  // post thumbnail as title
+  const thumbnailData = await postThumbnailTG(uploadObj);
+  console.log("THUMBNAIL DATA");
+  console.log(thumbnailData);
+
+  const vidPostData = await postVidTG(uploadObj);
+  console.log("VID POST DATA");
+  console.log(vidPostData);
 
   return uploadObj;
 };
 
 //HERE
 
-// export const postThumbnailTG = async (inputObj) => {
-//   if (!inputObj) return null;
-//   const { tgChannelId } = inputObj;
+export const postThumbnailTG = async (inputObj) => {
+  if (!inputObj) return null;
+  const { tgChannelId, thumbnailData } = inputObj;
 
-//   const titleText = await buildPicSetTitleText(inputObj);
+  const thumbnailCaption = await buildThumbnailCaption(inputObj);
 
-//   const params = {
-//     chat_id: tgChannelId,
-//     text: titleText,
-//     parse_mode: "HTML",
-//   };
+  const params = {
+    chatId: tgChannelId,
+    savePath: thumbnailData.savePath,
+    caption: thumbnailCaption,
+    mode: "html",
+  };
 
-//   const data = await tgSendMessage(params);
-//   return data;
-// };
+  const data = await tgPostPicFS(params);
+  return data;
+};
+
+export const buildThumbnailCaption = async (inputObj) => {
+  if (!inputObj) return null;
+  const { title, dateNormal, thumbnailData } = inputObj;
+
+  const captionText = `🇰🇵 🇰🇵 🇰🇵
+
+-----------------
+      
+<b>${title}</b>
+    
+-----------------
+
+<b>THUMBNAIL ID:</b> ${thumbnailData.picId} | <b>DATE:</b> <i>${dateNormal}</i> | <b>THUMBNAIL URL:</b> 
+<i>${thumbnailData.url}</i>
+    `;
+
+  return captionText;
+};
+
+export const postVidTG = async (inputObj) => {};
 
 // //FIX
 // export const buildPicSetTitleText = async (inputObj) => {
