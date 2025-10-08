@@ -133,8 +133,8 @@ export const buildArticlePicCaption = async (inputObj) => {
   const { dateNormal, urlNormal } = normalInputs;
 
   const articlePicCaption = `
-<b>ARTICLE PIC: ${picIndex} OF ${picCount}</b> | <b>DATE:</b> <i>${dateNormal}</i> 
-<b>PIC URL:</b> <i>${urlNormal}</i>
+<b>ARTICLE PIC: ${picIndex} OF ${picCount}</b> | <b>DATE:</b> <i>${dateNormal}</i> | <b>PIC URL:</b>
+<i>${urlNormal}</i>
 `;
 
   return articlePicCaption;
