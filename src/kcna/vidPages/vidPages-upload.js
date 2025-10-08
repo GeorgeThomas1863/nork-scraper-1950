@@ -47,10 +47,13 @@ export const postVidPageTG = async (inputObj) => {
   const tgInputs = await normalizeTGInputs(url, date);
   const uploadObj = { ...inputObj, ...tgInputs };
 
+  console.log("UPLOAD OBJ");
+  console.log(uploadObj);
+
   //post thumbnail as title
-  const thumbnailData = await postThumbnailTG(uploadObj);
-  console.log("PIC SET PICS DATA");
-  console.log(picSetPicData);
+  // const thumbnailData = await postThumbnailTG(uploadObj);
+  // console.log("PIC SET PICS DATA");
+  // console.log(picSetPicData);
 
   return uploadObj;
 };
@@ -81,11 +84,11 @@ export const postVidPageTG = async (inputObj) => {
 //   const picCount = picArray.length;
 
 //   const titleText = `🇰🇵 🇰🇵 🇰🇵
-  
+
 // -----------------
-    
+
 // <b>${title}</b>
-  
+
 // -----------------
 
 // <b>${picCount} ITEM PIC SET</b> | <b>ID:</b> ${picSetId} | <b>DATE:</b> <i>${dateNormal}</i>
@@ -125,7 +128,7 @@ export const postVidPageTG = async (inputObj) => {
 //   const { dateNormal, urlNormal } = normalInputs;
 
 //   const picSetPicCaption = `
-// <b>ARTICLE PIC: ${picIndex} OF ${picCount}</b> | <b>DATE:</b> <i>${dateNormal}</i> 
+// <b>ARTICLE PIC: ${picIndex} OF ${picCount}</b> | <b>DATE:</b> <i>${dateNormal}</i>
 // <b>PIC URL:</b> <i>${urlNormal}</i>
 // `;
 
