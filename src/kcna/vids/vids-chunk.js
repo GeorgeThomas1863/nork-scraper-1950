@@ -18,7 +18,7 @@ export const chunkVidFS = async (inputObj) => {
 
   const chunkSeconds = Math.ceil(vidSeconds / totalChunks);
 
-  const chunkObj = { ...vidData, tmpDir: tmpPath, chunkPath, totalChunks, uploadVidChunkSize, chunkSeconds, vidSeconds };
+  const chunkObj = { ...vidData, tmpDir: tmpPath, totalChunks, uploadVidChunkSize, chunkSeconds, vidSeconds };
 
   const promiseArray = [];
   for (let i = 0; i < totalChunks; i++) {
