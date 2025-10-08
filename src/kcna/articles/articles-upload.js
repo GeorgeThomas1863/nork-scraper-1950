@@ -80,6 +80,9 @@ export const postArticleTitleTG = async (inputObj) => {
     parse_mode: "HTML",
   };
 
+  console.log("TITLE PARAMS");
+  console.log(params);
+
   const data = await tgSendMessage(params);
   return data;
 };
@@ -168,74 +171,7 @@ export const postArticleContentTG = async (inputObj) => {
     chunkArray.push(chunkObj);
   }
   return chunkArray;
-
-  // if (text.length < maxLength) {
-  //   const articleShortData = await postArticleShort(inputObj);
-  //   return articleShortData;
-  // }
-
-  // const articleChunkData = await postArticleChunks(inputObj, maxLength);
-  // return articleChunkData;
 };
-
-// export const postArticleShort = async (inputObj) => {
-//   if (!inputObj) return null;
-//   const { tgChannelId } = inputObj;
-
-//   const shortText = await buildShortText(inputObj);
-
-//   const params = {
-//     chat_id: tgChannelId,
-//     text: shortText,
-//     parse_mode: "HTML",
-//   };
-
-//   const data = await tgSendMessage(params);
-//   return data;
-// };
-
-// export const buildShortText = async (inputObj) => {
-//   if (!inputObj) return null;
-//   const { text, urlNormal } = inputObj;
-
-//   const shortText = `
-//   <b>[ARTICLE TEXT]:</b>
-
-//   ${text}
-
-//   <b>URL:</b> <i>${urlNormal}</i>
-//   `;
-
-//   return shortText;
-// };
-
-// export const postArticleChunks = async (inputObj, maxLength) => {
-//   if (!inputObj) return null;
-//   const { text, tgChannelId } = inputObj;
-
-//   const chunkTotal = Math.ceil(text.length / maxLength);
-
-//   const chunkObj = { ...inputObj, chunkTotal };
-//   const chunkArray = [];
-//   for (let i = 0; i < chunkTotal; i++) {
-//     const chunk = text.substring(i * maxLength, (i + 1) * maxLength);
-//     const chunkText = await buildChunkText(chunk, chunkObj, i);
-//     if (!chunkText) continue;
-
-//     const params = {
-//       chat_id: tgChannelId,
-//       text: chunkText,
-//       parse_mode: "HTML",
-//     };
-
-//     const data = await tgSendMessage(params);
-//     if (!data) continue;
-//     chunkObj.chunkData = data;
-
-//     chunkArray.push(chunkObj);
-//   }
-//   return chunkArray;
-// };
 
 export const buildChunkText = async (chunk, inputObj, chunkIndex) => {
   if (!inputObj) return null;
