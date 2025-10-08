@@ -90,16 +90,6 @@ export const downloadVidFS = async (inputParams) => {
   //defining returnObj as downloadObj without 2 items (which are renamed to remove them bc already defined in function)
   const { chunksPending: _, chunksCompleted: __, chunkArrayDefault: ___, ...returnObj } = downloadObj;
 
-  // console.log("STORE OBJ");
-  // console.log(storeObj);
-
-  //store e
-  // const storeModel = new dbModel({ keyToLookup: "url", itemValue: url, updateObj: storeObj }, vids);
-  // const storeData = await storeModel.updateObjItem();
-
-  // console.log("STORE DATA");
-  // console.log(storeData);
-
   return returnObj;
 };
 

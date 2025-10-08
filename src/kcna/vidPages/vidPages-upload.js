@@ -4,13 +4,6 @@ import { tgPostPicFS } from "../../tg-api.js";
 import { normalizeTGInputs } from "../util/util.js";
 import { chunkVidFS } from "../vids/vids-chunk.js";
 
-import { exec } from "child_process";
-import { promisify } from "util";
-import { access, mkdir, readdir, unlink } from "fs/promises";
-import path from "path";
-
-const execAsync = promisify(exec);
-
 export const uploadVidPagesKCNA = async () => {
   const { vidPages, tgChannelId } = CONFIG;
   const vidPageModel = new dbModel({ keyExists: "url", keyEmpty: "tgChannelId" }, vidPages);
@@ -61,20 +54,20 @@ export const postVidPageTG = async (inputObj) => {
   console.log("UPLOAD OBJ");
   console.log(uploadObj);
 
-  const chunkVidArray = await chunkVidFS(uploadObj);
+  const chunkVidData = await chunkVidFS(uploadObj);
   console.log("CHUNK VID ARRAY");
-  console.log(chunkVidArray);
+  console.log(chunkVidData);
 
   // post thumbnail as title
-  const thumbnailData = await postThumbnailTG(uploadObj);
-  console.log("THUMBNAIL DATA");
-  console.log(thumbnailData);
+  // const thumbnailData = await postThumbnailTG(uploadObj);
+  // console.log("THUMBNAIL DATA");
+  // console.log(thumbnailData);
 
   // const vidPostData = await postVidTG(uploadObj);
   // console.log("VID POST DATA");
   // console.log(vidPostData);
 
-  return uploadObj;
+  // return uploadObj;
 };
 
 //HERE
