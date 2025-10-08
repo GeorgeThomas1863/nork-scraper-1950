@@ -117,11 +117,11 @@ export const buildThumbnailCaption = async (inputObj) => {
 export const chunkVidFS = async (inputObj) => {
   if (!inputObj) return null;
   const { vidData } = inputObj;
-  const { vidName, savePath, vidSize } = vidData;
+  const { vidId, vidSize } = vidData;
   const { tmpPath, uploadVidChunkSize } = CONFIG;
 
   const totalChunks = Math.ceil(vidSize / uploadVidChunkSize);
-  const chunkPath = path.join(tmpPath, `${vidName}_chunk_%d.mp4`);
+  const chunkPath = path.join(tmpPath, `${vidId}_chunk_%d.mp4`);
 
   const chunkObj = { ...vidData, tmpDir: tmpPath, chunkPath: chunkPath, totalChunks: totalChunks, uploadVidChunkSize: uploadVidChunkSize };
 
