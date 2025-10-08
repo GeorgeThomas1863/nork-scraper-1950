@@ -1,12 +1,12 @@
 import CONFIG from "../../../config/config.js";
 import dbModel from "../../../models/db-model.js";
-import { tgPostPicFS } from "../../tg-api.js";
 import { normalizeTGInputs } from "../util/util.js";
 import { chunkVidFS } from "../vids/vids-chunk.js";
+import { postVidThumbnailTG } from "../vids/vids-upload.js";
 
 export const uploadVidPagesKCNA = async () => {
-  const { vidPages } = CONFIG;
-  const vidPageModel = new dbModel({ keyExists: "url", keyEmpty: "tgChannelId" }, vidPages);
+  const { vidPages, tgChannelId } = CONFIG;
+  const vidPageModel = new dbModel({ keyExists: "url", keyEmpty: "chunkArray" }, vidPages);
   const vidPageArray = await vidPageModel.findEmptyItems();
   if (!vidPageArray || !vidPageArray.length) return null;
 
@@ -14,6 +14,9 @@ export const uploadVidPagesKCNA = async () => {
   for (const vidPage of vidPageArray) {
     try {
       const { url } = vidPage;
+
+      //add channelId HERE
+      vidPage.tgChannelId = tgChannelId;
 
       //post article
       const vidPagePostData = await postVidPageTG(vidPage);
@@ -43,19 +46,15 @@ export const postVidPageTG = async (inputObj) => {
 
   //normalize url and date
   const tgInputs = await normalizeTGInputs(url, date);
-  const uploadObj = { ...inputObj, ...tgInputs };
+  const chunkVidObj = { ...inputObj, ...tgInputs };
 
-  //add channelId HERE
-  uploadObj.tgChannelId = tgChannelId;
-
-  const chunkVidData = await chunkVidFS(uploadObj);
-  console.log("CHUNK VID DATA");
-  console.log(chunkVidData);
+  const uploadObj = await chunkVidFS(chunkVidObj);
+  if (!uploadObj || !uploadObj.chunkArray || !uploadObj.chunkArray.length) return null;
 
   // post thumbnail as title
-  // const thumbnailData = await postThumbnailTG(uploadObj);
-  // console.log("THUMBNAIL DATA");
-  // console.log(thumbnailData);
+  const thumbnailData = await postVidThumbnailTG(uploadObj);
+  console.log("THUMBNAIL DATA");
+  console.log(thumbnailData);
 
   // const vidPostData = await postVidTG(uploadObj);
   // console.log("VID POST DATA");
@@ -65,42 +64,6 @@ export const postVidPageTG = async (inputObj) => {
 };
 
 //HERE
-
-export const postThumbnailTG = async (inputObj) => {
-  if (!inputObj) return null;
-  const { tgChannelId, thumbnailData } = inputObj;
-
-  const thumbnailCaption = await buildThumbnailCaption(inputObj);
-
-  const params = {
-    chatId: tgChannelId,
-    savePath: thumbnailData.savePath,
-    caption: thumbnailCaption,
-    mode: "html",
-  };
-
-  const data = await tgPostPicFS(params);
-  return data;
-};
-
-export const buildThumbnailCaption = async (inputObj) => {
-  if (!inputObj) return null;
-  const { title, dateNormal, thumbnailData } = inputObj;
-
-  const captionText = `🇰🇵 🇰🇵 🇰🇵
-
------------------
-      
-<b>VID TITLED: ${title}</b>
-    
------------------
-
-<b>THUMBNAIL ID:</b> ${thumbnailData.picId} | <b>DATE:</b> <i>${dateNormal}</i> | <b>THUMBNAIL URL:</b> 
-<i>${thumbnailData.url}</i>
-    `;
-
-  return captionText;
-};
 
 // export const postVidTG = async (inputObj) => {};
 
