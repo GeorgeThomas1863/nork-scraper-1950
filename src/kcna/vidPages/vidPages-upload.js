@@ -3,6 +3,13 @@ import dbModel from "../../../models/db-model.js";
 import { tgSendMessage } from "../../tg-api.js";
 import { normalizeTGInputs } from "../util/util.js";
 
+import { exec } from "child_process";
+import { promisify } from "util";
+import { access, mkdir, readdir, unlink } from "fs/promises";
+import path from "path";
+
+const execAsync = promisify(exec);
+
 export const uploadVidPagesKCNA = async () => {
   const { vidPages, tgChannelId } = CONFIG;
   const vidPageModel = new dbModel({ keyExists: "url", keyEmpty: "tgChannelId" }, vidPages);
@@ -58,9 +65,13 @@ export const postVidPageTG = async (inputObj) => {
   console.log("THUMBNAIL DATA");
   console.log(thumbnailData);
 
-  const vidPostData = await postVidTG(uploadObj);
-  console.log("VID POST DATA");
-  console.log(vidPostData);
+  const chunkVidArray = await chunkVidFS(uploadObj);
+  console.log("CHUNK VID ARRAY");
+  console.log(chunkVidArray);
+
+  // const vidPostData = await postVidTG(uploadObj);
+  // console.log("VID POST DATA");
+  // console.log(vidPostData);
 
   return uploadObj;
 };
@@ -103,7 +114,60 @@ export const buildThumbnailCaption = async (inputObj) => {
   return captionText;
 };
 
-export const postVidTG = async (inputObj) => {};
+export const chunkVidFS = async (inputObj) => {
+  if (!inputObj) return null;
+  const { vidData } = inputObj;
+  const { vidName, savePath, vidSize } = vidData;
+  const { tmpPath, uploadVidChunkSize } = CONFIG;
+
+  const totalChunks = Math.ceil(vidSize / uploadVidChunkSize);
+  const chunkPath = path.join(tmpPath, `${vidName}_chunk_%d.mp4`);
+
+  const chunkObj = { ...vidData, tmpDir: tmpPath, chunkPath: chunkPath, totalChunks: totalChunks, uploadVidChunkSize: uploadVidChunkSize };
+
+  const commandData = await runChunkCommand(chunkObj);
+  console.log("COMMAND DATA");
+  console.log(commandData);
+
+  const chunkArray = await buildChunkArray(chunkObj);
+  console.log("CHUNK ARRAY");
+  console.log(chunkArray);
+
+  // return chunkArray;
+};
+
+export const runChunkCommand = async (inputObj) => {
+  if (!inputObj) return null;
+  const { savePath, chunkPath, totalChunks, uploadVidChunkSize } = inputObj;
+
+  const command = `ffmpeg -i "${savePath}" -c copy -map 0 -f segment -segment_size ${uploadVidChunkSize} -reset_timestamps 1 -break_non_keyframes 1 "${chunkPath}"`;
+  console.log(`Chunking video into ${totalChunks} 10MB segments...`);
+  const commandData = await execAsync(command);
+
+  return commandData;
+};
+
+export const buildChunkArray = async (inputObj) => {
+  if (!inputObj) return null;
+  const { tmpDir, chunkPath, totalChunks } = inputObj;
+
+  const fileArray = await readdir(tmpDir);
+  if (!fileArray || !fileArray.length) return null;
+
+  //prob not needed
+  const sortArray = fileArray.filter((chunk) => chunk.startsWith(chunkPath) && chunk.endsWith(".mp4")).sort();
+
+  const chunkArray = [];
+  for (let i = 0; i < sortArray.length; i++) {
+    const chunkPath = path.join(tmpDir, sortArray[i]);
+    if (!chunkPath) continue;
+    chunkArray.push(chunkPath);
+  }
+
+  return chunkArray;
+};
+
+// export const postVidTG = async (inputObj) => {};
 
 // //FIX
 // export const buildPicSetTitleText = async (inputObj) => {
