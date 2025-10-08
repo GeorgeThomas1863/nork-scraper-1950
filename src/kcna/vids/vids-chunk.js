@@ -21,10 +21,10 @@ export const chunkVidFS = async (inputObj) => {
 
   const promiseArray = [];
   for (let i = 0; i < totalChunks; i++) {
-    const chunk = totalChunks[i];
+    // const chunk = totalChunks[i];
     const chunkPath = path.join(tmpPath, `${vidId}_chunk_${i + 1}.mp4`);
     const startTime = i * chunkSeconds;
-    const endTime = startTime + chunkSeconds;
+    // const endTime = startTime + chunkSeconds;
 
     const command = `ffmpeg -i "${savePath}" -ss ${startTime} -t ${chunkSeconds} -c copy -avoid_negative_ts make_zero "${chunkPath}"`;
     console.log(`Creating ${chunkPath}...`);
