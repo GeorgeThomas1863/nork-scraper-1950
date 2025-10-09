@@ -8,6 +8,8 @@ import { getIdFromURL } from "../util/util.js";
 
 export const scrapeVidPageContentKCNA = async () => {
   const { vidPages } = CONFIG;
+  if (!kcnaState.scrapeActive) return null;
+
   const newVidPageModel = new dbModel({ keyExists: "url", keyEmpty: "vidURL" }, vidPages);
   const newVidPageArray = await newVidPageModel.findEmptyItems();
   if (!newVidPageArray || !newVidPageArray.length) return null;
@@ -18,10 +20,11 @@ export const scrapeVidPageContentKCNA = async () => {
 
 export const parseNewVidPageArray = async (inputArray) => {
   if (!inputArray || !inputArray.length) return null;
-  const { vidPages } = CONFIG;
 
   const newVidPageArray = [];
   for (const vidPage of inputArray) {
+    if (!kcnaState.scrapeActive) return newVidPageArray;
+
     const { url, date } = vidPage;
     try {
       const vidPageContent = await parseVidPageContent(url, date);
@@ -131,6 +134,8 @@ export const parseVidScripts = async (inputArray) => {
   if (!inputArray || !inputArray.length) return null;
 
   for (const script of inputArray) {
+    if (!kcnaState.scrapeActive) return null;
+
     const content = script.textContent;
     if (content && content.includes("type='video/mp4'")) {
       //regex looking for the vid type mp4

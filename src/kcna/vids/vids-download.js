@@ -4,9 +4,12 @@ import axios from "axios";
 
 import CONFIG from "../../../config/config.js";
 import dbModel from "../../../models/db-model.js";
+import kcnaState from "../util/state.js";
 
 export const downloadVidsKCNA = async () => {
   const { vids, vidPath } = CONFIG;
+  if (!kcnaState.scrapeActive) return null;
+
   const vidModel = new dbModel({ keyExists: "url", keyEmpty: "vidSize" }, vids);
   const vidArray = await vidModel.findEmptyItems();
   if (!vidArray || !vidArray.length) return null;
@@ -16,6 +19,8 @@ export const downloadVidsKCNA = async () => {
 
   const downloadVidArray = [];
   for (const vidItem of vidArray) {
+    if (!kcnaState.scrapeActive) return downloadVidArray;
+
     try {
       const { vidId, url } = vidItem;
       vidItem.vidName = vidId + ".mp4";
@@ -98,6 +103,8 @@ export const downloadChunksWithRetries = async (inputObj) => {
   const { vidRetries } = CONFIG;
 
   for (let i = 0; i < vidRetries; i++) {
+    if (!kcnaState.scrapeActive) return null;
+
     inputObj.chunksPending = await downloadPendingChunkArray(inputObj);
 
     if (inputObj.chunksPending.length === 0) {
@@ -122,6 +129,8 @@ export const downloadPendingChunkArray = async (inputObj) => {
   const failedDownloadArray = [];
 
   for (let i = 0; i < chunksPending.length; i += downloadVidConcurrent) {
+    if (!kcnaState.scrapeActive) return null;
+
     const batchArray = chunksPending.slice(i, i + downloadVidConcurrent);
     const failedObj = await downloadChunksBatch(inputObj, batchArray);
     failedDownloadArray.push(...failedObj);
@@ -136,6 +145,8 @@ export const downloadChunksBatch = async (inputObj, inputArray) => {
 
   const promiseArray = [];
   for (let i = 0; i < inputArray.length; i++) {
+    if (!kcnaState.scrapeActive) return null;
+
     const chunk = inputArray[i];
     const chunkObj = { ...chunk, ...inputObj };
     const promise = downloadVidChunk(chunkObj);
@@ -146,6 +157,8 @@ export const downloadChunksBatch = async (inputObj, inputArray) => {
 
   const failedChunks = [];
   for (let i = 0; i < results.length; i++) {
+    if (!kcnaState.scrapeActive) return null;
+
     const resultItem = results[i];
     const chunk = inputArray[i];
 
@@ -166,6 +179,8 @@ export const downloadChunksBatch = async (inputObj, inputArray) => {
 export const downloadVidChunk = async (inputObj) => {
   if (!inputObj) return null;
   const { url, chunkIndex, chunkPath, startByte, endByte } = inputObj;
+
+  if (!kcnaState.scrapeActive) return null;
 
   try {
     const res = await axios({
@@ -247,6 +262,8 @@ export const buildChunkArrayDefault = async (vidId, vidSize) => {
   const totalVidChunks = Math.ceil(vidSize / downloadVidChunkSize);
   const chunkArray = [];
   for (let i = 0; i < totalVidChunks; i++) {
+    if (!kcnaState.scrapeActive) return chunkArray;
+
     const chunkName = `${vidId}_chunk_${i + 1}.mp4`;
     const chunkPath = path.join(tmpPath, chunkName);
     const startByte = i * downloadVidChunkSize;
@@ -273,6 +290,8 @@ export const getChunksCompleted = async (inputArray) => {
   //loop through and see if any chunks already downloaded
   const completedChunkArray = [];
   for (let i = 0; i < inputArray.length; i++) {
+    if (!kcnaState.scrapeActive) return completedChunkArray;
+
     const chunk = inputArray[i];
     const { chunkPath, chunkSize } = chunk;
 
@@ -300,6 +319,8 @@ export const mergeChunks = async (inputObj) => {
   const writeStream = fs.createWriteStream(savePath);
 
   for (let i = 0; i < chunkArrayDefault.length; i++) {
+    if (!kcnaState.scrapeActive) return true;
+
     const chunk = chunkArrayDefault[i];
     const { chunkPath, chunkIndex } = chunk;
     if (!fs.existsSync(chunkPath)) continue;
@@ -330,6 +351,8 @@ export const cleanupTempFiles = async (inputObj) => {
   const { chunkArrayDefault } = inputObj;
 
   for (let i = 0; i < chunkArrayDefault.length; i++) {
+    if (!kcnaState.scrapeActive) return true;
+
     const chunk = chunkArrayDefault[i];
     const { chunkPath } = chunk;
     if (fs.existsSync(chunkPath)) {

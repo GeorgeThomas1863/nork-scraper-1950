@@ -9,6 +9,8 @@ import { extractItemDate, getIdFromURL } from "../util/util.js";
 export const scrapeVidPageURLsKCNA = async () => {
   const { vidPageListURL } = CONFIG;
 
+  if (!kcnaState.scrapeActive) return null;
+
   const vidPageURLData = [];
   try {
     const vidPageListData = await parseVidPageList(vidPageListURL);
@@ -49,6 +51,8 @@ export const extractVidPageListArray = async (inputArray) => {
 
   const vidPageURLArray = [];
   for (const vidPageElement of inputArray) {
+    if (!kcnaState.scrapeActive) return vidPageURLArray;
+
     const vidLinkElement = vidPageElement.querySelector(".img a");
     const vidPageLink = vidLinkElement.getAttribute("href");
     const vidPageDate = await extractItemDate(vidPageElement);

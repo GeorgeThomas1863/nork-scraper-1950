@@ -1,9 +1,11 @@
 import CONFIG from "../../../config/config.js";
 import dbModel from "../../../models/db-model.js";
+import kcnaState from "./state.js";
 
 //UPDATE DB (with full pic data in each collection)
 export const updatePicDataKCNA = async () => {
   console.log("UPDATING PIC DATA");
+  if (!kcnaState.scrapeActive) return null;
 
   const updateArray = [];
   const updateArticleData = await updateArticlePics();
@@ -30,6 +32,8 @@ export const updateArticlePics = async () => {
   //update articles
   const updateArticleArray = [];
   for (const article of articleDataArray) {
+    if (!kcnaState.scrapeActive) return updateArticleArray;
+
     try {
       const updateArticleData = await updateArticleItem(article);
       updateArticleArray.push(updateArticleData);
@@ -79,6 +83,8 @@ export const updatePicSetPics = async () => {
 
   const updatePicSetArray = [];
   for (const picSet of picSetDataArray) {
+    if (!kcnaState.scrapeActive) return updatePicSetArray;
+
     try {
       const updatePicSetData = await updatePicSetItem(picSet);
       updatePicSetArray.push(updatePicSetData);
@@ -128,6 +134,8 @@ export const updateVidPageThumbnail = async () => {
 
   const updateVidPageArray = [];
   for (const vidPage of vidPageDataArray) {
+    if (!kcnaState.scrapeActive) return updateVidPageArray;
+
     try {
       const updateVidPageData = await updateThumbnailItem(vidPage);
       if (!updateVidPageData) continue;
@@ -171,6 +179,8 @@ export const rebuildPicArray = async (inputArray) => {
 
   const rebuiltPicArray = [];
   for (const url of inputArray) {
+    if (!kcnaState.scrapeActive) return rebuiltPicArray;
+
     const picData = await getPicData(url);
     if (!picData) continue;
 
@@ -203,6 +213,8 @@ export const updateVidDataKCNA = async () => {
 
   const updateVidPageArray = [];
   for (const vidPage of vidPageDataArray) {
+    if (!kcnaState.scrapeActive) return updateVidPageArray;
+
     try {
       const updateVidPageData = await updateVidItem(vidPage);
       if (!updateVidPageData) continue;

@@ -1,12 +1,15 @@
 import CONFIG from "../../../config/config.js";
 import dbModel from "../../../models/db-model.js";
 import { tgSendMessage } from "../../tg/tg-api.js";
+import kcnaState from "../util/state.js";
 // import kcnaState from "../../util/state.js";
 import { postPicArrayTG } from "../pics/pics-upload.js";
 import { normalizeTGInputs, sortArrayByDate } from "../util/util.js";
 
 export const uploadArticlesKCNA = async () => {
   const { articles, tgChannelId } = CONFIG;
+  if (!kcnaState.scrapeActive) return null;
+
   const articleModel = new dbModel({ keyExists: "url", keyEmpty: "tgChannelId" }, articles);
   const articleArray = await articleModel.findEmptyItems();
   if (!articleArray || !articleArray.length) return null;
@@ -15,6 +18,8 @@ export const uploadArticlesKCNA = async () => {
 
   const articlePostDataArray = [];
   for (const article of articleArraySorted) {
+    if (!kcnaState.scrapeActive) return articlePostDataArray;
+
     try {
       const { url } = article;
 
@@ -110,6 +115,8 @@ export const postArticlePicsTG = async (inputObj) => {
   //add caption to each pic
   const picArrayWithCaption = [];
   for (let i = 0; i < picArray.length; i++) {
+    if (!kcnaState.scrapeActive) return picArrayWithCaption;
+
     const picObj = picArray[i];
     picObj.picIndex = i + 1;
     picObj.picCount = picArray.length;
@@ -151,6 +158,8 @@ export const postArticleContentTG = async (inputObj) => {
   const chunkObj = { ...inputObj, chunkTotal };
   const chunkArray = [];
   for (let i = 0; i < chunkTotal; i++) {
+    if (!kcnaState.scrapeActive) return chunkArray;
+
     const chunk = text.substring(i * maxLength, (i + 1) * maxLength);
     const chunkText = await buildChunkText(chunk, chunkObj, i);
     if (!chunkText) continue;

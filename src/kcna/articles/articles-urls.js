@@ -12,6 +12,8 @@ export const scrapeArticleURLsKCNA = async () => {
 
   const articleURLData = [];
   for (const type of articleTypeArr) {
+    if (!kcnaState.scrapeActive) return articleURLData;
+
     try {
       const articleListTypeData = await parseArticleListByType(type);
       if (!articleListTypeData) continue;
@@ -56,6 +58,8 @@ export const extractArticleListArray = async (inputArray, type) => {
 
   const articleListArray = [];
   for (const linkElement of inputArray) {
+    if (!kcnaState.scrapeActive) return articleListArray;
+
     const articleLink = linkElement.getAttribute("href");
     const articleDate = await extractItemDate(linkElement);
     const articleURL = "http://www.kcna.kp" + articleLink;

@@ -9,7 +9,10 @@ import { extractItemDate, getIdFromURL } from "../util/util.js";
 export const scrapePicSetURLsKCNA = async () => {
   const { picSetListURL } = CONFIG;
 
+  if (!kcnaState.scrapeActive) return null;
+
   const picSetURLData = [];
+
   try {
     const picSetListData = await parsePicSetList(picSetListURL);
     if (!picSetListData) return null;
@@ -50,6 +53,8 @@ export const extractPicSetListArray = async (inputArray) => {
 
   const picSetURLArray = [];
   for (const picSetElement of inputArray) {
+    if (!kcnaState.scrapeActive) return picSetURLArray;
+
     const titleWrapper = picSetElement.querySelector(".title a");
     const picSetLink = titleWrapper.getAttribute("href");
     const picSetDate = await extractItemDate(picSetElement);

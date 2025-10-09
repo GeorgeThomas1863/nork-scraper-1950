@@ -50,6 +50,8 @@ export const sortArrayByDate = async (inputArray) => {
   //return null on blank input
   if (!inputArray || !inputArray.length) return null;
 
+  if (!kcnaState.scrapeActive) return null;
+
   // Create a copy of the array to avoid modifying the original
   const sortArray = [...inputArray];
 

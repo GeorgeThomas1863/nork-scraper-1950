@@ -4,9 +4,12 @@ import axios from "axios";
 
 import CONFIG from "../../../config/config.js";
 import dbModel from "../../../models/db-model.js";
+import kcnaState from "../util/state.js";
 
 export const downloadPicsKCNA = async () => {
   const { pics, picPath } = CONFIG;
+  if (!kcnaState.scrapeActive) return null;
+
   const picModel = new dbModel({ keyExists: "url", keyEmpty: "picSize" }, pics);
   const picArray = await picModel.findEmptyItems();
 
@@ -14,6 +17,8 @@ export const downloadPicsKCNA = async () => {
 
   const downloadPicArray = [];
   for (const picItem of picArray) {
+    if (!kcnaState.scrapeActive) return downloadPicArray;
+
     try {
       const { picId, url } = picItem;
       picItem.picName = picId + ".jpg";
@@ -56,6 +61,8 @@ export const downloadPicFS = async (inputParams) => {
   const { url, savePath, picName } = inputParams;
   const { picProgressSize } = CONFIG;
 
+  if (!kcnaState.scrapeActive) return null;
+
   const res = await axios({
     method: "get",
     url: url,
@@ -76,6 +83,8 @@ export const downloadPicFS = async (inputParams) => {
   const stream = res.data.pipe(writer);
 
   res.data.on("data", (chunk) => {
+    if (!kcnaState.scrapeActive) return;
+
     // Log progress in KB every 100KB
     downloadedSize += chunk.length;
     if (downloadedSize % picProgressSize < chunk.length) {

@@ -8,6 +8,7 @@ import { getIdFromURL } from "../util/util.js";
 
 export const scrapePicSetContentKCNA = async () => {
   const { picSets } = CONFIG;
+  if (!kcnaState.scrapeActive) return null;
 
   const newPicSetModel = new dbModel({ keyExists: "url", keyEmpty: "picArray" }, picSets);
   const newPicSetArray = await newPicSetModel.findEmptyItems();
@@ -22,6 +23,8 @@ export const parseNewPicSetArray = async (inputArray) => {
 
   const newPicSetArray = [];
   for (const picSet of inputArray) {
+    if (!kcnaState.scrapeActive) return newPicSetArray;
+
     const { url, date } = picSet;
     try {
       const picSetContent = await parsePicSetContent(url, date);
@@ -86,6 +89,8 @@ export const extractPicSetPicArray = async (document, date) => {
   const picSetPicArray = [];
   for (const picElement of picElementArray) {
     try {
+      if (!kcnaState.scrapeActive) return picSetPicArray;
+
       const picSrc = picElement.getAttribute("src");
       if (!picSrc) continue;
       const picSetPicURL = "http://www.kcna.kp" + picSrc;

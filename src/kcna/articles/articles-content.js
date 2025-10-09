@@ -8,6 +8,8 @@ import { getIdFromURL } from "../util/util.js";
 
 export const scrapeArticleContentKCNA = async () => {
   const { articles } = CONFIG;
+  if (!kcnaState.scrapeActive) return null;
+
   //find new article urls by those without text content
   const newArticleModel = new dbModel({ keyExists: "url", keyEmpty: "text" }, articles);
   const newArticleArray = await newArticleModel.findEmptyItems();
@@ -22,6 +24,8 @@ export const parseNewArticleArray = async (inputArray) => {
 
   const newArticleArray = [];
   for (const article of inputArray) {
+    if (!kcnaState.scrapeActive) return newArticleArray;
+
     const { url, date } = article;
     try {
       const articleContent = await parseArticleContent(url, date);
@@ -136,6 +140,8 @@ export const extractArticlePicArray = async (url, date) => {
     const picArray = [];
     const imgArray = document.querySelectorAll("img");
     for (let i = 0; i < imgArray.length; i++) {
+      if (!kcnaState.scrapeActive) return picArray;
+
       try {
         const imgSrc = imgArray[i].getAttribute("src");
         if (!imgSrc) continue;
@@ -153,8 +159,7 @@ export const extractArticlePicArray = async (url, date) => {
           date: date,
         };
 
-        console.log("!!!!!!!!!!!!!");
-        console.log("STORE PARAMS");
+        console.log("ARTICLE PIC STORE PARAMS");
         console.log(storeParams);
 
         const storePicModel = new dbModel(storeParams, pics);

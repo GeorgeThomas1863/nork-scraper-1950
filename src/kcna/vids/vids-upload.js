@@ -1,9 +1,12 @@
 import { tgPostPicFS, tgPostVidFS } from "../../tg/tg-api.js";
 import { deleteVidChunks } from "./vids-chunk.js";
+import kcnaState from "../util/state.js";
 
 export const postVidThumbnailTG = async (inputObj) => {
   if (!inputObj) return null;
   const { tgChannelId, thumbnailData } = inputObj;
+
+  if (!kcnaState.scrapeActive) return null;
 
   const thumbnailCaption = await buildVidThumbnailCaption(inputObj);
 
@@ -47,6 +50,8 @@ export const postVidChunkArrayTG = async (inputObj) => {
 
   const vidPostDataArray = [];
   for (let i = 0; i < chunkArray.length; i++) {
+    if (!kcnaState.scrapeActive) return vidPostDataArray;
+
     const chunk = chunkArray[i];
     chunk.chunkIndex = i + 1;
     chunk.chunkCount = chunkArray.length;

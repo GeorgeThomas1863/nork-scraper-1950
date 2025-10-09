@@ -3,9 +3,12 @@ import dbModel from "../../../models/db-model.js";
 import { tgSendMessage } from "../../tg/tg-api.js";
 import { postPicArrayTG } from "../pics/pics-upload.js";
 import { normalizeTGInputs, sortArrayByDate } from "../util/util.js";
+import kcnaState from "../util/state.js";
 
 export const uploadPicSetsKCNA = async () => {
   const { picSets, tgChannelId } = CONFIG;
+  if (!kcnaState.scrapeActive) return null;
+
   const picSetModel = new dbModel({ keyExists: "url", keyEmpty: "tgChannelId" }, picSets);
   const picSetArray = await picSetModel.findEmptyItems();
   if (!picSetArray || !picSetArray.length) return null;
@@ -14,6 +17,8 @@ export const uploadPicSetsKCNA = async () => {
 
   const picSetPostDataArray = [];
   for (const picSet of picSetArraySorted) {
+    if (!kcnaState.scrapeActive) return picSetPostDataArray;
+
     try {
       const { url } = picSet;
 
@@ -43,7 +48,7 @@ export const uploadPicSetsKCNA = async () => {
 
 export const postPicSetTG = async (inputObj) => {
   if (!inputObj) return null;
-  const { url, date, picArray } = inputObj;
+  const { url, date } = inputObj;
 
   //normalize url and date
   const tgInputs = await normalizeTGInputs(url, date);
@@ -107,6 +112,8 @@ export const postPicSetPicsTG = async (inputObj) => {
   //add caption to each pic
   const picArrayWithCaption = [];
   for (let i = 0; i < picArray.length; i++) {
+    if (!kcnaState.scrapeActive) return picArrayWithCaption;
+
     const picObj = picArray[i];
     picObj.picIndex = i + 1;
     picObj.picCount = picArray.length;

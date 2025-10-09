@@ -1,11 +1,14 @@
 import CONFIG from "../../../config/config.js";
 import { tgPostPicFS } from "../../tg/tg-api.js";
+import kcnaState from "../util/state.js";
 
 export const postPicArrayTG = async (inputArray) => {
   if (!inputArray || !inputArray.length) return null;
 
   const postPicDataArray = [];
   for (const pic of inputArray) {
+    if (!kcnaState.scrapeActive) return postPicDataArray;
+
     try {
       const postPicData = await postPicTG(pic);
       if (!postPicData) continue;
@@ -22,6 +25,8 @@ export const postPicTG = async (inputObj) => {
   if (!inputObj) return null;
   const { savePath, caption } = inputObj;
   const { tgChannelId } = CONFIG;
+
+  if (!kcnaState.scrapeActive) return null;
 
   const params = {
     chatId: tgChannelId,

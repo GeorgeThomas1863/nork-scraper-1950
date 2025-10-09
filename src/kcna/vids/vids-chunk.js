@@ -5,6 +5,7 @@ import { promisify } from "util";
 import { stat } from "fs/promises";
 
 import CONFIG from "../../../config/config.js";
+import kcnaState from "../util/state.js";
 
 const execAsync = promisify(exec);
 
@@ -12,11 +13,15 @@ export const chunkVidFS = async (inputObj) => {
   if (!inputObj) return null;
   const { vidData } = inputObj;
 
+  if (!kcnaState.scrapeActive) return null;
+
   const chunkArray = await buildChunkArray(vidData);
   if (!chunkArray || !chunkArray.length) return inputObj;
 
   const promiseArray = [];
   for (let i = 0; i < chunkArray.length; i++) {
+    if (!kcnaState.scrapeActive) return promiseArray;
+
     const chunk = chunkArray[i];
     const { chunkPath } = chunk;
 
@@ -56,6 +61,8 @@ export const buildChunkArray = async (inputObj) => {
 
   const chunkArray = [];
   for (let i = 0; i < totalChunks; i++) {
+    if (!kcnaState.scrapeActive) return chunkArray;
+
     const chunkName = `${vidId}_chunk_${i + 1}.mp4`;
     const chunkPath = path.join(tmpPath, chunkName);
     const startTime = i * chunkSeconds;
@@ -97,6 +104,8 @@ export const deleteVidChunks = async (inputArray) => {
   console.log(inputArray);
 
   for (let i = 0; i < inputArray.length; i++) {
+    if (!kcnaState.scrapeActive) return true;
+
     const chunk = inputArray[i];
     const { chunkPath } = chunk;
     const chunkExists = fs.existsSync(chunkPath);

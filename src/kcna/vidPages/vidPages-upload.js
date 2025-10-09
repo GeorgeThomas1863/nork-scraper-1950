@@ -3,9 +3,12 @@ import dbModel from "../../../models/db-model.js";
 import { normalizeTGInputs, sortArrayByDate } from "../util/util.js";
 import { chunkVidFS } from "../vids/vids-chunk.js";
 import { postVidThumbnailTG, postVidChunkArrayTG } from "../vids/vids-upload.js";
+import kcnaState from "../util/state.js";
 
 export const uploadVidPagesKCNA = async () => {
   const { vidPages, tgChannelId } = CONFIG;
+  if (!kcnaState.scrapeActive) return null;
+
   const vidPageModel = new dbModel({ keyExists: "url", keyEmpty: "chunksUploaded" }, vidPages);
   const vidPageArray = await vidPageModel.findEmptyItems();
   if (!vidPageArray || !vidPageArray.length) return null;
@@ -14,6 +17,8 @@ export const uploadVidPagesKCNA = async () => {
 
   const vidPagePostDataArray = [];
   for (const vidPage of vidPageArraySorted) {
+    if (!kcnaState.scrapeActive) return vidPagePostDataArray;
+
     try {
       const { url } = vidPage;
 
@@ -54,8 +59,6 @@ export const postVidPageTG = async (inputObj) => {
 
   // post thumbnail as title
   await postVidThumbnailTG(uploadObj);
-  // console.log("THUMBNAIL DATA");
-  // console.log(thumbnailData);
 
   const vidPostData = await postVidChunkArrayTG(uploadObj);
   if (!vidPostData || !vidPostData.length) return vidChunkObj;

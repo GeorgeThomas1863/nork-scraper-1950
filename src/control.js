@@ -13,6 +13,9 @@ export const handleAdminCommand = async (inputParams) => {
     case "admin-start-scrape":
       return await runNewScrape(inputParams);
 
+    case "admin-stop-scrape":
+      return await runStopScrape(inputParams);
+
     default:
       return null;
   }
@@ -31,6 +34,19 @@ export const runNewScrape = async (inputParams) => {
 
     case "watch":
       return await scrapeWatch();
+
+    default:
+      return null;
+  }
+};
+
+export const runStopScrape = async (inputParams) => {
+  const { site } = inputParams;
+
+  switch (site) {
+    case "kcna":
+      kcnaState.scrapeActive = false;
+      return { data: "STOPPING KCNA SCRAPE" };
 
     default:
       return null;
