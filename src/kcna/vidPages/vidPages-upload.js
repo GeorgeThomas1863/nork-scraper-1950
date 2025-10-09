@@ -2,7 +2,7 @@ import CONFIG from "../../../config/config.js";
 import dbModel from "../../../models/db-model.js";
 import { normalizeTGInputs } from "../util/util.js";
 import { chunkVidFS } from "../vids/vids-chunk.js";
-import { postVidThumbnailTG, postVidTG } from "../vids/vids-upload.js";
+import { postVidThumbnailTG, postVidChunkArrayTG } from "../vids/vids-upload.js";
 
 export const uploadVidPagesKCNA = async () => {
   const { vidPages, tgChannelId } = CONFIG;
@@ -56,9 +56,9 @@ export const postVidPageTG = async (inputObj) => {
   console.log("THUMBNAIL DATA");
   console.log(thumbnailData);
 
-  const vidPostData = await postVidTG(uploadObj);
-  console.log("VID POST DATA");
-  console.log(vidPostData);
+  const vidPostData = await postVidChunkArrayTG(uploadObj);
+  // console.log("VID POST DATA");
+  // console.log(vidPostData);
 
   // return uploadObj;
 };

@@ -43,27 +43,53 @@ export const tgPostPicFS = async (inputParams) => {
   return data;
 };
 
-// export const tgEditMessageCaption = async (inputParams) => {
-//   //   if (!state.active) return null;
-//   //   const { editChannelId, messageId, caption } = inputParams;
-//   const token = tokenArray[tokenIndex];
+export const tgPostVidFS = async (inputParams) => {
+  if (!inputParams) return null;
+  const { chunkPath } = inputParams;
 
-//   //   const params = {
-//   //     chat_id: editChannelId,
-//   //     message_id: messageId,
-//   //     caption: caption,
-//   //   };
+  const token = tokenArray[tokenIndex];
+  const url = `https://api.telegram.org/bot${token}/sendVideo`;
 
-//   const url = `https://api.telegram.org/bot${token}/editMessageCaption`;
-//   const data = await tgPostReq(url, inputParams);
+  const vidChunkForm = await buildVidChunkForm(inputParams);
 
-//   const checkData = await checkToken(data);
+  console.log(`STARTING UPLOAD OF ${chunkPath}...`);
 
-//   //try again
-//   if (!checkData) return await tgEditMessageCaption(inputParams);
+  const data = await tgPostVidReq(url, vidChunkForm);
 
-//   return data;
-// };
+  const checkData = await checkToken(data);
+
+  if (!checkData) return await tgPostVidFS(inputParams);
+
+  return data;
+};
+
+export const buildVidChunkForm = async (inputObj) => {
+  if (!inputObj) return null;
+  const { chunkPath, tgChannelId, chunkName } = inputObj;
+
+  const readStream = fs.createReadStream(chunkPath);
+
+  // Create form data for this chunk
+  const formData = new FormData();
+  formData.append("chat_id", tgChannelId);
+  formData.append("video", readStream, {
+    filename: chunkName,
+  });
+
+  //set setting for auto play / streaming
+  formData.append("supports_streaming", "true");
+  formData.append("width", "1280");
+  formData.append("height", "720");
+
+  if (!formData || !readStream) {
+    const error = new Error("BUILD VID FORM FUCKED");
+    error.content = "FORM DATA: " + formData;
+    error.function = "buildVidForm";
+    throw error;
+  }
+
+  return formData;
+};
 
 //-----------------------
 
@@ -109,6 +135,23 @@ export const tgPostPicReq = async (url, form) => {
   }
 };
 
+export const tgPostVidReq = async (url, form) => {
+  if (!url || !form) return null;
+
+  try {
+    const res = await axios.post(url, vidChunkForm, {
+      headers: vidChunkForm.getHeaders(),
+      maxBodyLength: Infinity,
+      maxContentLength: Infinity,
+    });
+    return res.data;
+  } catch (e) {
+    console.log(e.response.data);
+    //axios throws error on 429, so need to return
+    return e.response.data;
+  }
+};
+
 export const checkToken = async (data) => {
   //   if (!state.active) return null;
   if (data && data.ok) return true;
@@ -124,3 +167,68 @@ export const checkToken = async (data) => {
   console.log("CANT GET UPDATES TRYING NEW FUCKING BOT. TOKEN INDEX:" + tokenIndex);
   return null;
 };
+
+// export const tgPostVidChunkFS = async (inputParams) => {
+//   if (!inputParams) return null;
+//   const { chatId, savePath, caption, mode } = inputParams;
+
+//   const token = tokenArray[tokenIndex];
+//   const url = `https://api.telegram.org/bot${token}/sendVideo`;
+
+//   const vidChunkForm = await buildVidChunkForm(inputParams);
+
+//   const totalLength = await new Promise((resolve, reject) => {
+//     vidChunkForm.getLength((err, length) => {
+//       if (err) reject(err);
+//       else resolve(length);
+//     });
+//   });
+
+//   const totalMB = (totalLength / (1024 * 1024)).toFixed(2);
+//   const startTime = Date.now();
+
+//   console.log(`STARTING UPLOAD OF ${totalMB}MB VIDEO...`);
+
+//   // Progress logger every 5 seconds
+//   const progressInterval = setInterval(() => {
+//     const elapsed = (Date.now() - startTime) / 1000;
+//     console.log(`Seconds Elapsed: ${elapsed.toFixed(1)}s`);
+//   }, 5000); // Every 2 seconds
+
+//   try {
+//     const res = await axios.post(url, vidChunkForm, {
+//       headers: vidChunkForm.getHeaders(),
+//       maxBodyLength: Infinity,
+//       maxContentLength: Infinity,
+//     });
+
+//     clearInterval(progressInterval);
+//     const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+//     const avgSpeed = (totalMB / duration).toFixed(2);
+//     console.log(`Upload completed! ${totalMB}MB in ${duration}s (avg: ${avgSpeed} MB/s)`);
+
+//     // console.log("!!!!!!RES");
+//     // console.log(res.data);
+
+//     return res.data;
+//   } catch (e) {
+//     clearInterval(progressInterval);
+//     console.log("ERROR");
+//     console.log(e);
+
+//     if (e.response && e.response.data) {
+//       //check token
+//       const checkModel = new TgReq({ data: e.response.data });
+//       const checkData = await checkModel.checkToken();
+
+//       if (checkData) {
+//         const inputData = this.dataObject;
+//         const retryModel = new TgReq(inputData);
+//         const retryData = await retryModel.tgVidFS(TgReq.tokenIndex);
+//         return retryData;
+//       }
+//     } else {
+//       return e;
+//     }
+//   }
+// };

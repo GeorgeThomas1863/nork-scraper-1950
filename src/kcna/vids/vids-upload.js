@@ -1,4 +1,5 @@
-import { tgPostPicFS } from "../../tg-api.js";
+import fs from "fs";
+import { tgPostPicFS, tgPostVidFS } from "../../tg-api.js";
 
 export const postVidThumbnailTG = async (inputObj) => {
   if (!inputObj) return null;
@@ -40,39 +41,15 @@ export const buildVidThumbnailCaption = async (inputObj) => {
 
 //----------------------------
 
-export const postVidTG = async (inputObj) => {
-  if (!inputObj) return null;
+export const postVidChunkArrayTG = async (inputObj) => {
+  if (!inputObj || !inputObj.chunkArray || !inputObj.chunkArray.length) return null;
+  const { chunkArray, tgChannelId } = inputObj;
 
-  const vidForm = await buildVidForm(inputObj);
-};
+  for (const chunk of chunkArray) {
+    const postChunkObj = { ...chunk, tgChannelId };
+    const vidPostData = await tgPostVidFS(postChunkObj);
 
-export const buildVidForm = async (inputObj) => {
-  if (!inputObj) return null;
-  //   const { uploadPath, tgUploadId, uploadFileName } = inputObj;
-
-  console.log("BUILD VID FORM INPUT OBJ");
-  console.log(inputObj);
-
-  //   const readStream = fs.createReadStream(uploadPath);
-
-  //   // Create form data for this chunk
-  //   const formData = new FormData();
-  //   formData.append("chat_id", tgUploadId);
-  //   formData.append("video", readStream, {
-  //     filename: uploadFileName,
-  //   });
-
-  //   //set setting for auto play / streaming
-  //   formData.append("supports_streaming", "true");
-  //   formData.append("width", "1280");
-  //   formData.append("height", "720");
-
-  //   if (!formData || !readStream) {
-  //     const error = new Error("BUILD VID FORM FUCKED");
-  //     error.content = "FORM DATA: " + formData;
-  //     error.function = "buildVidForm";
-  //     throw error;
-  //   }
-
-  //   return formData;
+    console.log("VID POST DATA");
+    console.log(vidPostData);
+  }
 };

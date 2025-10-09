@@ -56,10 +56,11 @@ export const buildChunkArray = async (inputObj) => {
 
   const chunkArray = [];
   for (let i = 0; i < totalChunks; i++) {
-    const chunkPath = path.join(tmpPath, `${vidId}_chunk_${i + 1}.mp4`);
+    const chunkName = `${vidId}_chunk_${i + 1}.mp4`;
+    const chunkPath = path.join(tmpPath, chunkName);
     const startTime = i * chunkSeconds;
 
-    const chunkObj = { ...inputObj, chunkPath, startTime, chunkSeconds };
+    const chunkObj = { ...inputObj, chunkName, chunkPath, startTime, chunkSeconds };
     if (!chunkObj) continue;
 
     chunkArray.push(chunkObj);
