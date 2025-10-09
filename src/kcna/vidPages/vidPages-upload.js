@@ -6,7 +6,7 @@ import { postVidThumbnailTG, postVidChunkArrayTG } from "../vids/vids-upload.js"
 
 export const uploadVidPagesKCNA = async () => {
   const { vidPages, tgChannelId } = CONFIG;
-  const vidPageModel = new dbModel({ keyExists: "url", keyEmpty: "chunkArray" }, vidPages);
+  const vidPageModel = new dbModel({ keyExists: "url", keyEmpty: "chunksUploaded" }, vidPages);
   const vidPageArray = await vidPageModel.findEmptyItems();
   if (!vidPageArray || !vidPageArray.length) return null;
 
@@ -18,7 +18,7 @@ export const uploadVidPagesKCNA = async () => {
       //add channelId HERE
       vidPage.tgChannelId = tgChannelId;
 
-      //post article
+      //post vidPage
       const vidPagePostData = await postVidPageTG(vidPage);
       if (!vidPagePostData) continue;
       vidPagePostDataArray.push(vidPagePostData);
@@ -45,9 +45,9 @@ export const postVidPageTG = async (inputObj) => {
 
   //normalize url and date
   const tgInputs = await normalizeTGInputs(url, date);
-  const chunkVidObj = { ...inputObj, ...tgInputs };
+  const vidChunkObj = { ...inputObj, ...tgInputs };
 
-  const uploadObj = await chunkVidFS(chunkVidObj);
+  const uploadObj = await chunkVidFS(vidChunkObj);
   if (!uploadObj) return null;
 
   // post thumbnail as title
@@ -56,10 +56,13 @@ export const postVidPageTG = async (inputObj) => {
   console.log(thumbnailData);
 
   const vidPostData = await postVidChunkArrayTG(uploadObj);
-  console.log("VID POST DATA");
-  console.log(vidPostData);
+  if (!vidPostData || !vidPostData.length) return vidChunkObj;
 
-  // return uploadObj;
+  vidChunkObj.chunksUploaded = vidPostData.length;
+  console.log("VID POSTS UPLOADED");
+  console.log(vidPostData.length);
+
+  return vidChunkObj;
 };
 
 //HERE

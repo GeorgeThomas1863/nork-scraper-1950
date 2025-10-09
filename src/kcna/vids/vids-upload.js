@@ -45,6 +45,7 @@ export const postVidChunkArrayTG = async (inputObj) => {
   if (!inputObj || !inputObj.chunkArray || !inputObj.chunkArray.length) return null;
   const { chunkArray, tgChannelId, dateNormal, urlNormal } = inputObj;
 
+  const vidPostDataArray = [];
   for (let i = 0; i < chunkArray.length; i++) {
     const chunk = chunkArray[i];
     chunk.chunkIndex = i + 1;
@@ -55,18 +56,23 @@ export const postVidChunkArrayTG = async (inputObj) => {
     const vidChunkCaption = await buildVidChunkCaption(postChunkObj);
     postChunkObj.caption = vidChunkCaption;
     const vidPostData = await tgPostVidFS(postChunkObj);
+    if (!vidPostData) continue;
 
-    // console.log("VID POST DATA");
-    // console.log(vidPostData);
+    console.log("VID POST DATA");
+    console.log(vidPostData);
+
+    vidPostDataArray.push(vidPostData);
   }
+
+  return vidPostDataArray;
 };
 
 export const buildVidChunkCaption = async (inputObj) => {
   if (!inputObj) return null;
   const { chunkIndex, chunkCount, dateNormal, urlNormal } = inputObj;
 
-//   console.log("INPUT OBJ CAPTION");
-//   console.log(inputObj);
+  //   console.log("INPUT OBJ CAPTION");
+  //   console.log(inputObj);
 
   const captionText = `
 <b>VID CHUNK ${chunkIndex} OF ${chunkCount}</b> | <b>DATE:</b> <i>${dateNormal}</i> | <b>VID URL:</b> 
