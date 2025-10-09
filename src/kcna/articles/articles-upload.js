@@ -5,7 +5,7 @@ import dbModel from "../../../models/db-model.js";
 import { tgSendMessage } from "../../tg-api.js";
 // import kcnaState from "../../util/state.js";
 import { postPicArrayTG } from "../pics/pics-upload.js";
-import { normalizeTGInputs } from "../util/util.js";
+import { normalizeTGInputs, sortArrayByDate } from "../util/util.js";
 
 export const uploadArticlesKCNA = async () => {
   const { articles, tgChannelId } = CONFIG;
@@ -13,8 +13,10 @@ export const uploadArticlesKCNA = async () => {
   const articleArray = await articleModel.findEmptyItems();
   if (!articleArray || !articleArray.length) return null;
 
+  const articleArraySorted = await sortArrayByDate(articleArray);
+
   const articlePostDataArray = [];
-  for (const article of articleArray) {
+  for (const article of articleArraySorted) {
     try {
       const { url } = article;
 

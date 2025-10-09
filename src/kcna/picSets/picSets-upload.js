@@ -2,7 +2,7 @@ import CONFIG from "../../../config/config.js";
 import dbModel from "../../../models/db-model.js";
 import { tgSendMessage } from "../../tg-api.js";
 import { postPicArrayTG } from "../pics/pics-upload.js";
-import { normalizeTGInputs } from "../util/util.js";
+import { normalizeTGInputs, sortArrayByDate } from "../util/util.js";
 
 export const uploadPicSetsKCNA = async () => {
   const { picSets, tgChannelId } = CONFIG;
@@ -10,8 +10,10 @@ export const uploadPicSetsKCNA = async () => {
   const picSetArray = await picSetModel.findEmptyItems();
   if (!picSetArray || !picSetArray.length) return null;
 
+  const picSetArraySorted = await sortArrayByDate(picSetArray);
+
   const picSetPostDataArray = [];
-  for (const picSet of picSetArray) {
+  for (const picSet of picSetArraySorted) {
     try {
       const { url } = picSet;
 

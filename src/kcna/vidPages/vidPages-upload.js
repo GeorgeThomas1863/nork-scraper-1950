@@ -1,6 +1,6 @@
 import CONFIG from "../../../config/config.js";
 import dbModel from "../../../models/db-model.js";
-import { normalizeTGInputs } from "../util/util.js";
+import { normalizeTGInputs, sortArrayByDate } from "../util/util.js";
 import { chunkVidFS } from "../vids/vids-chunk.js";
 import { postVidThumbnailTG, postVidChunkArrayTG } from "../vids/vids-upload.js";
 
@@ -10,8 +10,10 @@ export const uploadVidPagesKCNA = async () => {
   const vidPageArray = await vidPageModel.findEmptyItems();
   if (!vidPageArray || !vidPageArray.length) return null;
 
+  const vidPageArraySorted = await sortArrayByDate(vidPageArray);
+
   const vidPagePostDataArray = [];
-  for (const vidPage of vidPageArray) {
+  for (const vidPage of vidPageArraySorted) {
     try {
       const { url } = vidPage;
 
@@ -23,8 +25,8 @@ export const uploadVidPagesKCNA = async () => {
       if (!vidPagePostData) continue;
       vidPagePostDataArray.push(vidPagePostData);
 
-      console.log("VID PAGE POST DATA");
-      console.log(vidPagePostData);
+      // console.log("VID PAGE POST DATA");
+      // console.log(vidPagePostData);
 
       //store data
       const storeModel = new dbModel({ keyToLookup: "url", itemValue: url, updateObj: vidPagePostData }, vidPages);
@@ -51,9 +53,9 @@ export const postVidPageTG = async (inputObj) => {
   if (!uploadObj) return null;
 
   // post thumbnail as title
-  const thumbnailData = await postVidThumbnailTG(uploadObj);
-  console.log("THUMBNAIL DATA");
-  console.log(thumbnailData);
+  await postVidThumbnailTG(uploadObj);
+  // console.log("THUMBNAIL DATA");
+  // console.log(thumbnailData);
 
   const vidPostData = await postVidChunkArrayTG(uploadObj);
   if (!vidPostData || !vidPostData.length) return vidChunkObj;
