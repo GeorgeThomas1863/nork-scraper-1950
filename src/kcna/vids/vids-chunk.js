@@ -13,7 +13,7 @@ export const chunkVidFS = async (inputObj) => {
   const { vidData } = inputObj;
 
   const chunkArray = await buildChunkArray(vidData);
-  if (!chunkArray || !chunkArray.length) return null;
+  if (!chunkArray || !chunkArray.length) return inputObj;
 
   const promiseArray = [];
   for (let i = 0; i < chunkArray.length; i++) {

@@ -42,7 +42,6 @@ export const uploadVidPagesKCNA = async () => {
 export const postVidPageTG = async (inputObj) => {
   if (!inputObj) return null;
   const { url, date } = inputObj;
-  const { tgChannelId } = CONFIG;
 
   //normalize url and date
   const tgInputs = await normalizeTGInputs(url, date);
