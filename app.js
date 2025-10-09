@@ -1,6 +1,12 @@
-//CURRENT STEP: CHUNK WORKING, NOW UPLOAD
+//CURRENT STEP: KCNA SCRAPE FULLY WORKING, NOW ADD IN STOP MECHANISM
 
-//ADD THE SCRAPE STOP LOGIC / CHECK TO EVERYTHING
+//TODO:
+
+//SEND BACK STATUS ITEMS TO DISPLAYER; BUILD ROUTE LISTENER ON DISPLAYER
+
+//GET NAENARA PICS
+
+//GET WATCH PICS
 
 import CONFIG from "./config/config.js";
 import express from "express";
@@ -8,8 +14,6 @@ import cors from "cors";
 
 import routes from "./routes/router.js";
 import { dbConnect } from "./config/db.js";
-
-// import { scrapeNewKCNA } from "./src/scrape-control.js";
 
 //FIRST CONNECT TO DB
 await dbConnect();
