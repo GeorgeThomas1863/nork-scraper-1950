@@ -139,8 +139,8 @@ export const tgPostVidReq = async (url, form) => {
   if (!url || !form) return null;
 
   try {
-    const res = await axios.post(url, vidChunkForm, {
-      headers: vidChunkForm.getHeaders(),
+    const res = await axios.post(url, form, {
+      headers: form.getHeaders(),
       maxBodyLength: Infinity,
       maxContentLength: Infinity,
     });
