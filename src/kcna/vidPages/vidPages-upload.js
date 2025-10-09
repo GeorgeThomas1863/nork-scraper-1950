@@ -48,7 +48,7 @@ export const postVidPageTG = async (inputObj) => {
   const chunkVidObj = { ...inputObj, ...tgInputs };
 
   const uploadObj = await chunkVidFS(chunkVidObj);
-  if (!uploadObj || !uploadObj.chunkArray || !uploadObj.chunkArray.length) return null;
+  if (!uploadObj) return null;
 
   // post thumbnail as title
   const thumbnailData = await postVidThumbnailTG(uploadObj);
