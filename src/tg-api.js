@@ -22,19 +22,13 @@ export const tgSendMessage = async (inputParams) => {
 
 export const tgPostPicFS = async (inputParams) => {
   if (!inputParams) return null;
-  const { chatId, savePath, caption, mode } = inputParams;
 
   const token = tokenArray[tokenIndex];
   const url = `https://api.telegram.org/bot${token}/sendPhoto`;
 
-  //build form
-  const form = new FormData();
-  form.append("chat_id", chatId);
-  form.append("photo", fs.createReadStream(savePath));
-  form.append("caption", caption);
-  form.append("parse_mode", mode);
+  const picForm = await buildPicForm(inputParams);
 
-  const data = await tgPostPicReq(url, form);
+  const data = await tgPostPicReq(url, picForm);
 
   const checkData = await checkToken(data);
 
@@ -61,34 +55,6 @@ export const tgPostVidFS = async (inputParams) => {
   if (!checkData) return await tgPostVidFS(inputParams);
 
   return data;
-};
-
-export const buildVidChunkForm = async (inputObj) => {
-  if (!inputObj) return null;
-  const { chunkPath, tgChannelId, chunkName } = inputObj;
-
-  const readStream = fs.createReadStream(chunkPath);
-
-  // Create form data for this chunk
-  const formData = new FormData();
-  formData.append("chat_id", tgChannelId);
-  formData.append("video", readStream, {
-    filename: chunkName,
-  });
-
-  //set setting for auto play / streaming
-  formData.append("supports_streaming", "true");
-  formData.append("width", "1280");
-  formData.append("height", "720");
-
-  if (!formData || !readStream) {
-    const error = new Error("BUILD VID FORM FUCKED");
-    error.content = "FORM DATA: " + formData;
-    error.function = "buildVidForm";
-    throw error;
-  }
-
-  return formData;
 };
 
 //-----------------------
@@ -168,67 +134,57 @@ export const checkToken = async (data) => {
   return null;
 };
 
-// export const tgPostVidChunkFS = async (inputParams) => {
-//   if (!inputParams) return null;
-//   const { chatId, savePath, caption, mode } = inputParams;
+//---------------------------
 
-//   const token = tokenArray[tokenIndex];
-//   const url = `https://api.telegram.org/bot${token}/sendVideo`;
+export const buildPicForm = async (inputObj) => {
+  if (!inputObj) return null;
+  const { chatId, savePath, caption, mode } = inputObj;
 
-//   const vidChunkForm = await buildVidChunkForm(inputParams);
+  //build form
+  const form = new FormData();
+  form.append("chat_id", chatId);
+  form.append("photo", fs.createReadStream(savePath));
+  form.append("caption", caption);
+  form.append("parse_mode", mode);
 
-//   const totalLength = await new Promise((resolve, reject) => {
-//     vidChunkForm.getLength((err, length) => {
-//       if (err) reject(err);
-//       else resolve(length);
-//     });
-//   });
+  if (!form || !fs.createReadStream(savePath)) {
+    const error = new Error("BUILD PIC FORM FUCKED");
+    error.content = "FORM DATA: " + form;
+    error.function = "buildPicForm";
+    throw error;
+  }
 
-//   const totalMB = (totalLength / (1024 * 1024)).toFixed(2);
-//   const startTime = Date.now();
+  return form;
+};
 
-//   console.log(`STARTING UPLOAD OF ${totalMB}MB VIDEO...`);
+export const buildVidChunkForm = async (inputObj) => {
+  if (!inputObj) return null;
+  const { chunkPath, tgChannelId, chunkName, caption, mode } = inputObj;
 
-//   // Progress logger every 5 seconds
-//   const progressInterval = setInterval(() => {
-//     const elapsed = (Date.now() - startTime) / 1000;
-//     console.log(`Seconds Elapsed: ${elapsed.toFixed(1)}s`);
-//   }, 5000); // Every 2 seconds
+  const readStream = fs.createReadStream(chunkPath);
 
-//   try {
-//     const res = await axios.post(url, vidChunkForm, {
-//       headers: vidChunkForm.getHeaders(),
-//       maxBodyLength: Infinity,
-//       maxContentLength: Infinity,
-//     });
+  // Create form data for this chunk
+  const form = new FormData();
+  form.append("chat_id", tgChannelId);
+  form.append("video", readStream, {
+    filename: chunkName,
+  });
 
-//     clearInterval(progressInterval);
-//     const duration = ((Date.now() - startTime) / 1000).toFixed(1);
-//     const avgSpeed = (totalMB / duration).toFixed(2);
-//     console.log(`Upload completed! ${totalMB}MB in ${duration}s (avg: ${avgSpeed} MB/s)`);
+  //caption
+  form.append("caption", caption);
+  form.append("parse_mode", mode);
 
-//     // console.log("!!!!!!RES");
-//     // console.log(res.data);
+  //set setting for auto play / streaming
+  form.append("supports_streaming", "true");
+  form.append("width", "1280");
+  form.append("height", "720");
 
-//     return res.data;
-//   } catch (e) {
-//     clearInterval(progressInterval);
-//     console.log("ERROR");
-//     console.log(e);
+  if (!form || !readStream) {
+    const error = new Error("BUILD VID FORM FUCKED");
+    error.content = "FORM DATA: " + form;
+    error.function = "buildVidChunkForm";
+    throw error;
+  }
 
-//     if (e.response && e.response.data) {
-//       //check token
-//       const checkModel = new TgReq({ data: e.response.data });
-//       const checkData = await checkModel.checkToken();
-
-//       if (checkData) {
-//         const inputData = this.dataObject;
-//         const retryModel = new TgReq(inputData);
-//         const retryData = await retryModel.tgVidFS(TgReq.tokenIndex);
-//         return retryData;
-//       }
-//     } else {
-//       return e;
-//     }
-//   }
-// };
+  return form;
+};

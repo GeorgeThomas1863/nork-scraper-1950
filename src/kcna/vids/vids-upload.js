@@ -43,13 +43,34 @@ export const buildVidThumbnailCaption = async (inputObj) => {
 
 export const postVidChunkArrayTG = async (inputObj) => {
   if (!inputObj || !inputObj.chunkArray || !inputObj.chunkArray.length) return null;
-  const { chunkArray, tgChannelId } = inputObj;
+  const { chunkArray, tgChannelId, dateNormal, urlNormal } = inputObj;
 
-  for (const chunk of chunkArray) {
-    const postChunkObj = { ...chunk, tgChannelId };
+  for (let i = 0; i < chunkArray.length; i++) {
+    const chunk = chunkArray[i];
+    chunk.chunkIndex = i + 1;
+    chunk.chunkCount = chunkArray.length;
+    chunk.mode = "html";
+
+    const postChunkObj = { ...chunk, tgChannelId, dateNormal, urlNormal };
+    const vidChunkCaption = await buildVidChunkCaption(postChunkObj);
+    postChunkObj.caption = vidChunkCaption;
     const vidPostData = await tgPostVidFS(postChunkObj);
 
-    console.log("VID POST DATA");
-    console.log(vidPostData);
+    // console.log("VID POST DATA");
+    // console.log(vidPostData);
   }
+};
+
+export const buildVidChunkCaption = async (inputObj) => {
+  if (!inputObj) return null;
+  const { chunkIndex, chunkCount, dateNormal, urlNormal } = inputObj;
+
+  console.log("INPUT OBJ");
+  console.log(inputObj);
+
+  const captionText = `
+<b>VID CHUNK ${chunkIndex} OF ${chunkCount}</b> | <b>DATE:</b> <i>${dateNormal}</i> | <b>VID URL:</b> 
+<i>${urlNormal}</i>`;
+
+  return captionText;
 };
