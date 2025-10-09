@@ -89,3 +89,21 @@ export const buildChunkCommand = async (inputObj) => {
 
   return command;
 };
+
+//---------------------
+
+export const deleteVidChunks = async (inputArray) => {
+  console.log("DELETE VIDS INPUT ARRAY");
+  console.log(inputArray);
+
+  for (let i = 0; i < inputArray.length; i++) {
+    const chunk = inputArray[i];
+    const { chunkPath } = chunk;
+    const chunkExists = fs.existsSync(chunkPath);
+    if (!chunkExists) continue;
+
+    fs.unlinkSync(chunkPath);
+  }
+
+  return true;
+};

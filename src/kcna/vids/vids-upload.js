@@ -1,5 +1,6 @@
 import fs from "fs";
 import { tgPostPicFS, tgPostVidFS } from "../../tg-api.js";
+import { deleteVidChunks } from "./vids-chunk.js";
 
 export const postVidThumbnailTG = async (inputObj) => {
   if (!inputObj) return null;
@@ -20,7 +21,7 @@ export const postVidThumbnailTG = async (inputObj) => {
 
 export const buildVidThumbnailCaption = async (inputObj) => {
   if (!inputObj) return null;
-  const { title, dateNormal, chunkArray, vidPageId, url } = inputObj;
+  const { title, dateNormal, chunkArray, vidPageId, urlNormal } = inputObj;
 
   const chunkCount = chunkArray.length;
 
@@ -33,7 +34,7 @@ export const buildVidThumbnailCaption = async (inputObj) => {
 -----------------
   
 <b>${chunkCount} CHUNK VID</b> | <b>VID PAGE ID:</b> ${vidPageId} | <b>DATE:</b> <i>${dateNormal}</i> | <b>URL:</b> 
-<i>${url}</i>
+<i>${urlNormal}</i>
       `;
 
   return captionText;
@@ -64,15 +65,14 @@ export const postVidChunkArrayTG = async (inputObj) => {
     vidPostDataArray.push(vidPostData);
   }
 
+  await deleteVidChunks(chunkArray);
+
   return vidPostDataArray;
 };
 
 export const buildVidChunkCaption = async (inputObj) => {
   if (!inputObj) return null;
   const { chunkIndex, chunkCount, dateNormal, urlNormal } = inputObj;
-
-  //   console.log("INPUT OBJ CAPTION");
-  //   console.log(inputObj);
 
   const captionText = `
 <b>VID CHUNK ${chunkIndex} OF ${chunkCount}</b> | <b>DATE:</b> <i>${dateNormal}</i> | <b>VID URL:</b> 
