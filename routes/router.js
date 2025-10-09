@@ -1,7 +1,7 @@
 import express from "express";
 
 import CONFIG from "../config/config.js";
-import { apiIncomingController, apiOutgoingController } from "../controllers/api.js";
+import { apiIncomingController, apiOutgoingController } from "../controllers/api-controller.js";
 
 const router = express.Router();
 
