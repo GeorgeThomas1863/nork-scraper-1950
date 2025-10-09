@@ -1,8 +1,13 @@
 import express from "express";
-import { apiRoute } from "../controllers/api.js";
+
+import CONFIG from "../config/config.js";
+import { apiIncomingController, apiOutgoingController } from "../controllers/api.js";
 
 const router = express.Router();
 
-router.post("/nork", apiRoute);
+router.post(CONFIG.apiIncomingRoute, apiIncomingController);
+router.post(CONFIG.apiOutgoingRoute, apiOutgoingController);
+
+// router.post("/nork", apiIncomingRoute);
 
 export default router;

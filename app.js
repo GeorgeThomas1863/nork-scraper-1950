@@ -25,7 +25,7 @@ app.use(express.json());
 
 app.use(
   cors({
-    origin: ["http://localhost:" + CONFIG.displayPort],
+    origin: [`http://localhost:${CONFIG.displayPort}`],
     methods: ["GET", "POST"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })

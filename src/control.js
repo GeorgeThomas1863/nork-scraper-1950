@@ -1,11 +1,11 @@
+import axios from "axios";
+
+import CONFIG from "../config/config.js";
 import kcnaState from "./kcna/util/state.js";
 import { scrapeKCNA } from "./kcna/kcna-control.js";
 
-export const handleAdminCommand = async (inputParams) => {
+export const handleIncomingAPI = async (inputParams) => {
   const { command } = inputParams;
-
-  console.log("API DATA");
-  console.log(inputParams);
 
   //prob not necessary to track data
 
@@ -19,6 +19,17 @@ export const handleAdminCommand = async (inputParams) => {
     default:
       return null;
   }
+};
+
+export const handleOutgoingAPI = async (inputParams) => {
+  const { apiOutgoingRoute } = CONFIG;
+  const url = `https://localhost:${apiOutgoingRoute}`;
+
+  const res = await axios.post(url, inputParams);
+  console.log("API OUTGOING RESPONSE");
+  console.log(res.data);
+
+  return res.data;
 };
 
 //check which site should be targeted
