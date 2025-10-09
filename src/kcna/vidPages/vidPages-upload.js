@@ -56,8 +56,8 @@ export const postVidPageTG = async (inputObj) => {
   console.log(thumbnailData);
 
   const vidPostData = await postVidChunkArrayTG(uploadObj);
-  // console.log("VID POST DATA");
-  // console.log(vidPostData);
+  console.log("VID POST DATA");
+  console.log(vidPostData);
 
   // return uploadObj;
 };

@@ -65,8 +65,8 @@ export const buildVidChunkCaption = async (inputObj) => {
   if (!inputObj) return null;
   const { chunkIndex, chunkCount, dateNormal, urlNormal } = inputObj;
 
-  console.log("INPUT OBJ");
-  console.log(inputObj);
+//   console.log("INPUT OBJ CAPTION");
+//   console.log(inputObj);
 
   const captionText = `
 <b>VID CHUNK ${chunkIndex} OF ${chunkCount}</b> | <b>DATE:</b> <i>${dateNormal}</i> | <b>VID URL:</b> 
