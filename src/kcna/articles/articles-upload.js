@@ -1,6 +1,6 @@
 import CONFIG from "../../../config/config.js";
 import dbModel from "../../../models/db-model.js";
-import { tgSendMessage } from "../../tg-api.js";
+import { tgSendMessage } from "../../tg/tg-api.js";
 // import kcnaState from "../../util/state.js";
 import { postPicArrayTG } from "../pics/pics-upload.js";
 import { normalizeTGInputs, sortArrayByDate } from "../util/util.js";
