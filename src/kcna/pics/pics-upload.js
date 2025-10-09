@@ -1,5 +1,5 @@
 import CONFIG from "../../../config/config.js";
-import { tgPostPicFS } from "../../tg-api.js";
+import { tgPostPicFS } from "../../tg/tg-api.js";
 
 export const postPicArrayTG = async (inputArray) => {
   if (!inputArray || !inputArray.length) return null;

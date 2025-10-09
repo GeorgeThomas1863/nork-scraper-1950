@@ -1,7 +1,7 @@
 import axios from "axios";
 import fs from "fs";
 import FormData from "form-data";
-import tokenArray from "../config/tg-bot.js";
+import tokenArray from "../../config/tg-bot.js";
 
 let tokenIndex = 0;
 

@@ -1,5 +1,3 @@
-import { JSDOM } from "jsdom";
-
 import CONFIG from "../../../config/config.js";
 import dbModel from "../../../models/db-model.js";
 import { tgSendMessage } from "../../tg-api.js";

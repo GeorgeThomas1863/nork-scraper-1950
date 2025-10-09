@@ -1,5 +1,4 @@
-import fs from "fs";
-import { tgPostPicFS, tgPostVidFS } from "../../tg-api.js";
+import { tgPostPicFS, tgPostVidFS } from "../../tg/tg-api.js";
 import { deleteVidChunks } from "./vids-chunk.js";
 
 export const postVidThumbnailTG = async (inputObj) => {
