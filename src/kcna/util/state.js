@@ -1,5 +1,6 @@
 import CONFIG from "../../../config/config.js";
 import dbModel from "../../../models/db-model.js";
+import { updateDisplayerKCNA } from "./api.js";
 
 const kcnaState = {
   scrapeId: null,
@@ -8,6 +9,11 @@ const kcnaState = {
 
   scrapeStartTime: null,
   scrapeEndTime: null,
+  scrapeLengthSeconds: null,
+  scrapeLengthMinutes: null,
+  scrapeError: null,
+  scrapeMessage: null,
+  scrapeStep: null,
 };
 
 export const logScrapeStartKCNA = async () => {
@@ -29,6 +35,11 @@ export const logScrapeStartKCNA = async () => {
   kcnaState.scrapeId = newScrapeId;
   kcnaState.scrapeEndTime = null;
   kcnaState.scrapeStartTime = newScrapeStartTime;
+  kcnaState.scrapeActive = true;
+  kcnaState.scrapeStep = "start";
+  kcnaState.scrapeMessage = "STARTING NEW SCRAPE KCNA";
+
+  await updateDisplayerKCNA(kcnaState);
 
   //update the log
   const updateModel = new dbModel({ keyToLookup: "scrapeStartTime", itemValue: newScrapeStartTime, updateObj: kcnaState }, log);

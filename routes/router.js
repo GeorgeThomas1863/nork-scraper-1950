@@ -1,7 +1,7 @@
 import express from "express";
 
 import CONFIG from "../config/config.js";
-import { apiEndpointController, apiSendController } from "../controllers/api-controller.js";
+import { apiEndpointController } from "../controllers/api-controller.js";
 
 const router = express.Router();
 
@@ -9,7 +9,7 @@ const router = express.Router();
 router.post(CONFIG.apiScraper, apiEndpointController);
 
 //send data to displayer
-router.post("/send-data-route", apiSendController);
+// router.post("/send-data-route", apiSendController);
 
 // router.post("/nork", apiIncomingRoute);
 

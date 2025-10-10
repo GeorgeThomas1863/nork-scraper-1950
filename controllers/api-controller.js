@@ -21,25 +21,25 @@ export const apiEndpointController = async (req, res) => {
   }
 };
 
-export const apiSendController = async (req, res) => {
-  const { apiDisplayer, displayPort } = CONFIG;
+// export const apiSendController = async (req, res) => {
+//   const { apiDisplayer, displayPort } = CONFIG;
 
-  try {
-    const inputParams = req.body;
-    console.log("API OUTGOING DATA");
-    console.log(inputParams);
+//   try {
+//     const inputParams = req.body;
+//     console.log("API OUTGOING DATA");
+//     console.log(inputParams);
 
-    const url = `https://localhost:${displayPort}${apiDisplayer}`;
+//     const url = `https://localhost:${displayPort}${apiDisplayer}`;
 
-    const apiRes = await axios.post(url, inputParams);
-    if (!apiRes) return null;
-    const data = apiRes.data;
+//     const apiRes = await axios.post(url, inputParams);
+//     if (!apiRes) return null;
+//     const data = apiRes.data;
 
-    console.log("API OUTGOING RESPONSE");
-    console.log(data);
-    return res.json(data);
-  } catch (e) {
-    console.error(e);
-    return res.status(500).json({ e: "SCRAPER FAILED TO GET OUTGOING DATA RES" });
-  }
-};
+//     console.log("API OUTGOING RESPONSE");
+//     console.log(data);
+//     return res.json(data);
+//   } catch (e) {
+//     console.error(e);
+//     return res.status(500).json({ e: "SCRAPER FAILED TO GET OUTGOING DATA RES" });
+//   }
+// };
