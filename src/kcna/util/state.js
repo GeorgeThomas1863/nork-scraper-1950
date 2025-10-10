@@ -3,6 +3,7 @@ import dbModel from "../../../models/db-model.js";
 import { updateDisplayerKCNA } from "./api.js";
 
 const kcnaState = {
+  source: "scraper",
   scrapeId: null,
   scrapeActive: false,
   schedulerActive: false,
