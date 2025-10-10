@@ -8,7 +8,7 @@ export const updateDisplayerKCNA = async (inputParams) => {
   console.log(inputParams);
 
   try {
-    const url = `https://localhost:${displayPort}${apiDisplayer}`;
+    const url = `http://localhost:${displayPort}${apiDisplayer}`;
 
     const res = await axios.post(url, inputParams);
     const data = res.data;
