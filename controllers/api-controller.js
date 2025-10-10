@@ -1,4 +1,4 @@
-import { handleIncomingAPI, handleOutgoingAPI } from "../src/control.js";
+import { handleIncomingAPI } from "../src/control.js";
 // import { scrapeState } from "../src/state.js";
 
 //api receive endpoint for scraper
