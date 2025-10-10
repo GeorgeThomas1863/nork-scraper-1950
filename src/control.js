@@ -21,16 +21,16 @@ export const handleIncomingAPI = async (inputParams) => {
   }
 };
 
-export const handleOutgoingAPI = async (inputParams) => {
-  const { apiOutgoingRoute } = CONFIG;
-  const url = `https://localhost:${apiOutgoingRoute}`;
+// export const handleOutgoingAPI = async (inputParams) => {
+//   const { apiOutgoingRoute } = CONFIG;
+//   const url = `https://localhost:${apiOutgoingRoute}`;
 
-  const res = await axios.post(url, inputParams);
-  console.log("API OUTGOING RESPONSE");
-  console.log(res.data);
+//   const res = await axios.post(url, inputParams);
+//   console.log("API OUTGOING RESPONSE");
+//   console.log(res.data);
 
-  return res.data;
-};
+//   return res.data;
+// };
 
 //check which site should be targeted
 export const runNewScrape = async (inputParams) => {

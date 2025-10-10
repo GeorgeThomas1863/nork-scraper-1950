@@ -1,12 +1,15 @@
 import express from "express";
 
 import CONFIG from "../config/config.js";
-import { apiReceiveController, apiSendController } from "../controllers/api-controller.js";
+import { apiEndpointController, apiSendController } from "../controllers/api-controller.js";
 
 const router = express.Router();
 
-router.post(CONFIG.apiScraperReceiveRoute, apiReceiveController);
-router.post(CONFIG.apiScraperSendRoute, apiSendController);
+//api receive endpoint
+router.post(CONFIG.apiScraper, apiEndpointController);
+
+//send data to displayer
+router.post("/send-data-route", apiSendController);
 
 // router.post("/nork", apiIncomingRoute);
 
