@@ -1,9 +1,11 @@
 import CONFIG from "../../../config/config.js";
 import dbModel from "../../../models/db-model.js";
+import kcnaState from "../util/state.js";
+
 import { normalizeTGInputs, sortArrayByDate } from "../util/util.js";
 import { chunkVidFS } from "../vids/vids-chunk.js";
 import { postVidThumbnailTG, postVidChunkArrayTG } from "../vids/vids-upload.js";
-import kcnaState from "../util/state.js";
+import { updateDisplayerKCNA } from "../util/api.js";
 
 export const uploadVidPagesKCNA = async () => {
   const { vidPages, tgChannelId } = CONFIG;
@@ -42,6 +44,10 @@ export const uploadVidPagesKCNA = async () => {
       console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
     }
   }
+
+  kcnaState.scrapeStep = "VID PAGES UPLOAD KCNA";
+  kcnaState.scrapeMessage = `FINISHED UPLOADING ${vidPagePostDataArray.length} NEW VID PAGES TO TG`;
+  await updateDisplayerKCNA(kcnaState);
 
   return vidPagePostDataArray;
 };

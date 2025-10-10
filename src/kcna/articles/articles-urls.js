@@ -4,12 +4,15 @@ import CONFIG from "../../../config/config.js";
 import NORK from "../../../models/nork-model.js";
 import dbModel from "../../../models/db-model.js";
 import kcnaState from "../util/state.js";
+
 import { extractItemDate, getIdFromURL } from "../util/util.js";
+import { updateDisplayerKCNA } from "../util/api.js";
 
 //ARTICLE URL SECTION
 export const scrapeArticleURLsKCNA = async () => {
   const { articleTypeArr } = CONFIG;
 
+  let articleCount = 0;
   const articleURLData = [];
   for (const type of articleTypeArr) {
     if (!kcnaState.scrapeActive) return articleURLData;
@@ -19,10 +22,15 @@ export const scrapeArticleURLsKCNA = async () => {
       if (!articleListTypeData) continue;
 
       articleURLData.push(articleListTypeData);
+      articleCount += articleListTypeData.length;
     } catch (e) {
       console.log(e.message + "; URL: " + e.url + "; F BREAK: " + e.function);
     }
   }
+
+  kcnaState.scrapeStep = "ARTICLES URLS KCNA";
+  kcnaState.scrapeMessage = `FINISHED SCRAPING ${articleCount} NEW ARTICLE URLS`;
+  await updateDisplayerKCNA(kcnaState);
 
   return articleURLData;
 };

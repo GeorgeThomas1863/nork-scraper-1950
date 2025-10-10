@@ -1,9 +1,11 @@
 import CONFIG from "../../../config/config.js";
 import dbModel from "../../../models/db-model.js";
+import kcnaState from "../util/state.js";
+
 import { tgSendMessage } from "../../tg/tg-api.js";
 import { postPicArrayTG } from "../pics/pics-upload.js";
 import { normalizeTGInputs, sortArrayByDate } from "../util/util.js";
-import kcnaState from "../util/state.js";
+import { updateDisplayerKCNA } from "../util/api.js";
 
 export const uploadPicSetsKCNA = async () => {
   const { picSets, tgChannelId } = CONFIG;
@@ -42,6 +44,10 @@ export const uploadPicSetsKCNA = async () => {
       console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
     }
   }
+  
+  kcnaState.scrapeStep = "PIC SETS UPLOAD KCNA";
+  kcnaState.scrapeMessage = `FINISHED UPLOADING ${picSetPostDataArray.length} NEW PIC SETS TO TG`;
+  await updateDisplayerKCNA(kcnaState);
 
   return picSetPostDataArray;
 };

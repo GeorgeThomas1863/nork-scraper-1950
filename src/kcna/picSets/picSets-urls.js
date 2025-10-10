@@ -4,7 +4,9 @@ import CONFIG from "../../../config/config.js";
 import NORK from "../../../models/nork-model.js";
 import dbModel from "../../../models/db-model.js";
 import kcnaState from "../util/state.js";
+
 import { extractItemDate, getIdFromURL } from "../util/util.js";
+import { updateDisplayerKCNA } from "../util/api.js";
 
 export const scrapePicSetURLsKCNA = async () => {
   const { picSetListURL } = CONFIG;
@@ -12,7 +14,6 @@ export const scrapePicSetURLsKCNA = async () => {
   if (!kcnaState.scrapeActive) return null;
 
   const picSetURLData = [];
-
   try {
     const picSetListData = await parsePicSetList(picSetListURL);
     if (!picSetListData) return null;
@@ -22,6 +23,12 @@ export const scrapePicSetURLsKCNA = async () => {
     console.log(e.message + "; URL: " + e.url + "; F BREAK: " + e.function);
     return null;
   }
+
+  kcnaState.scrapeStep = "PIC SETS URLS KCNA";
+  kcnaState.scrapeMessage = `FINISHED SCRAPING ${picSetURLData.length} NEW PIC SET URLS`;
+  await updateDisplayerKCNA(kcnaState);
+
+  return picSetURLData;
 };
 
 export const parsePicSetList = async (url) => {

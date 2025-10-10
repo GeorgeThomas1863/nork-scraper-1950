@@ -1,10 +1,11 @@
 import CONFIG from "../../../config/config.js";
 import dbModel from "../../../models/db-model.js";
-import { tgSendMessage } from "../../tg/tg-api.js";
 import kcnaState from "../util/state.js";
-// import kcnaState from "../../util/state.js";
+
+import { tgSendMessage } from "../../tg/tg-api.js";
 import { postPicArrayTG } from "../pics/pics-upload.js";
 import { normalizeTGInputs, sortArrayByDate } from "../util/util.js";
+import { updateDisplayerKCNA } from "../util/api.js";
 
 export const uploadArticlesKCNA = async () => {
   const { articles, tgChannelId } = CONFIG;
@@ -43,6 +44,10 @@ export const uploadArticlesKCNA = async () => {
       console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
     }
   }
+
+  kcnaState.scrapeStep = "ARTICLES UPLOAD KCNA";
+  kcnaState.scrapeMessage = `FINISHED UPLOADING ${articlePostDataArray.length} NEW ARTICLES TO TG`;
+  await updateDisplayerKCNA(kcnaState);
 
   return articlePostDataArray;
 };

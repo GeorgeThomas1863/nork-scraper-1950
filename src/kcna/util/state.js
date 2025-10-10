@@ -55,13 +55,18 @@ export const logScrapeStartKCNA = async () => {
 
 export const logScrapeStopKCNA = async () => {
   const { log } = CONFIG;
-  //build
+
   const scrapeEndTime = new Date();
   const scrapeLengthSeconds = (scrapeEndTime - kcnaState.scrapeStartTime) / 1000;
   const scrapeLengthMinutes = Math.floor(scrapeLengthSeconds / 60);
+
   kcnaState.scrapeEndTime = scrapeEndTime;
   kcnaState.scrapeLengthSeconds = scrapeLengthSeconds;
   kcnaState.scrapeLengthMinutes = scrapeLengthMinutes;
+  kcnaState.scrapeActive = false;
+  kcnaState.scrapeStep = "DONE";
+  kcnaState.scrapeMessage = "FINISHED KCNA SCRAPE";
+  await updateDisplayerKCNA(kcnaState);
 
   const updateModel = new dbModel({ keyToLookup: "scrapeId", itemValue: kcnaState.scrapeId, updateObj: kcnaState }, log);
   const updateData = await updateModel.updateObjItem();
@@ -71,7 +76,7 @@ export const logScrapeStopKCNA = async () => {
   console.log("KCNA STATE");
   console.log(kcnaState);
 
-  console.log("STOPPING KCNA SCRAPE AT " + scrapeEndTime);
+  console.log("FINISHED KCNA SCRAPE AT " + scrapeEndTime);
   console.log(`SCRAPE LENGTH: ${scrapeLengthMinutes} minutes and ${(scrapeLengthSeconds % 60).toFixed(2)} seconds`);
   return true;
 };

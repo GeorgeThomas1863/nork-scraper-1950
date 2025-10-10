@@ -4,7 +4,9 @@ import CONFIG from "../../../config/config.js";
 import NORK from "../../../models/nork-model.js";
 import dbModel from "../../../models/db-model.js";
 import kcnaState from "../util/state.js";
+
 import { getIdFromURL } from "../util/util.js";
+import { updateDisplayerKCNA } from "../util/api.js";
 
 export const scrapePicSetContentKCNA = async () => {
   const { picSets } = CONFIG;
@@ -37,6 +39,11 @@ export const parseNewPicSetArray = async (inputArray) => {
       console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
     }
   }
+
+  kcnaState.scrapeStep = "PIC SETS CONTENT KCNA";
+  kcnaState.scrapeMessage = `FINISHED SCRAPING CONTENT FOR ${newPicSetArray.length} NEW PIC SETS`;
+  await updateDisplayerKCNA(kcnaState);
+
   return newPicSetArray;
 };
 

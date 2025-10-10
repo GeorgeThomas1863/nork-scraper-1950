@@ -4,7 +4,9 @@ import CONFIG from "../../../config/config.js";
 import NORK from "../../../models/nork-model.js";
 import dbModel from "../../../models/db-model.js";
 import kcnaState from "../util/state.js";
+
 import { extractItemDate, getIdFromURL } from "../util/util.js";
+import { updateDisplayerKCNA } from "../util/api.js";
 
 export const scrapeVidPageURLsKCNA = async () => {
   const { vidPageListURL } = CONFIG;
@@ -20,6 +22,12 @@ export const scrapeVidPageURLsKCNA = async () => {
     console.log(e.message + "; URL: " + e.url + "; F BREAK: " + e.function);
     return null;
   }
+
+  kcnaState.scrapeStep = "VID PAGES URLS KCNA";
+  kcnaState.scrapeMessage = `FINISHED SCRAPING ${vidPageURLData.length} NEW VID PAGE URLS`;
+  await updateDisplayerKCNA(kcnaState);
+
+  return vidPageURLData;
 };
 
 export const parseVidPageList = async (url) => {
