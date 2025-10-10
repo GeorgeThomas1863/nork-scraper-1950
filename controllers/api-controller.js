@@ -1,7 +1,7 @@
 import { handleIncomingAPI, handleOutgoingAPI } from "../src/control.js";
 // import { scrapeState } from "../src/state.js";
 
-export const apiIncomingController = async (req, res) => {
+export const apiReceiveController = async (req, res) => {
   const inputParams = req.body;
 
   console.log("API INCOMING DATA");
@@ -15,7 +15,7 @@ export const apiIncomingController = async (req, res) => {
   return res.json(data);
 };
 
-export const apiOutgoingController = async (req, res) => {
+export const apiSendController = async (req, res) => {
   try {
     const inputParams = req.body;
     console.log("API OUTGOING DATA");
