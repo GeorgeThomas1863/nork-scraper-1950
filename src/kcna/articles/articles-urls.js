@@ -20,13 +20,16 @@ export const scrapeArticleURLsKCNA = async () => {
     try {
       const articleListTypeData = await parseArticleListByType(type);
       if (!articleListTypeData) continue;
+      articleCount += articleListTypeData.length;
 
       articleURLData.push(articleListTypeData);
-      articleCount += articleListTypeData.length;
     } catch (e) {
       console.log(e.message + "; URL: " + e.url + "; F BREAK: " + e.function);
     }
   }
+
+  console.log("ARTICLE COUNT");
+  console.log(articleCount);
 
   kcnaState.scrapeStep = "ARTICLES URLS KCNA";
   kcnaState.scrapeMessage = `FINISHED SCRAPING ${articleCount} NEW ARTICLE URLS`;
