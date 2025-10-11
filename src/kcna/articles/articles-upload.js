@@ -82,16 +82,21 @@ export const postArticleTitleTG = async (inputObj) => {
   if (!inputObj) return null;
   const { tgChannelId } = inputObj;
 
-  const titleText = await buildArticleTitleText(inputObj);
+  try {
+    const titleText = await buildArticleTitleText(inputObj);
 
-  const params = {
-    chat_id: tgChannelId,
-    text: titleText,
-    parse_mode: "HTML",
-  };
+    const params = {
+      chat_id: tgChannelId,
+      text: titleText,
+      parse_mode: "HTML",
+    };
 
-  const data = await tgSendMessage(params);
-  return data;
+    const data = await tgSendMessage(params);
+    return data;
+  } catch (e) {
+    console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+    return null;
+  }
 };
 
 export const buildArticleTitleText = async (inputObj) => {
@@ -165,22 +170,28 @@ export const postArticleContentTG = async (inputObj) => {
   for (let i = 0; i < chunkTotal; i++) {
     if (!kcnaState.scrapeActive) return chunkArray;
 
-    const chunk = text.substring(i * maxLength, (i + 1) * maxLength);
-    const chunkText = await buildChunkText(chunk, chunkObj, i);
-    if (!chunkText) continue;
+    try {
+      const chunk = text.substring(i * maxLength, (i + 1) * maxLength);
+      const chunkText = await buildChunkText(chunk, chunkObj, i);
+      if (!chunkText) continue;
 
-    const params = {
-      chat_id: tgChannelId,
-      text: chunkText,
-      parse_mode: "HTML",
-    };
+      const params = {
+        chat_id: tgChannelId,
+        text: chunkText,
+        parse_mode: "HTML",
+      };
 
-    const data = await tgSendMessage(params);
-    if (!data) continue;
-    chunkObj.chunkData = data;
+      const data = await tgSendMessage(params);
+      if (!data) continue;
+      chunkObj.chunkData = data;
 
-    chunkArray.push(chunkObj);
+      chunkArray.push(chunkObj);
+    } catch (e) {
+      console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+      return null;
+    }
   }
+
   return chunkArray;
 };
 

@@ -54,54 +54,61 @@ export const downloadVidsKCNA = async () => {
 
 export const downloadVidFS = async (inputParams) => {
   if (!inputParams) return null;
-  const { downloadVidChunkSize, vids } = CONFIG;
+  const { downloadVidChunkSize } = CONFIG;
   const { url, vidId } = inputParams;
 
-  const headers = await downloadVidHeaders(url);
-  const vidSize = +headers["content-range"]?.substring(headers["content-range"]?.lastIndexOf("/") + 1, headers["content-range"]?.length); //in bytes
-  const totalVidChunks = Math.ceil(vidSize / downloadVidChunkSize);
+  if (!kcnaState.scrapeActive) return null;
 
-  //build chunk array so names / paths in one place
-  const chunkArrayDefault = await buildChunkArrayDefault(vidId, vidSize);
-  const chunksCompleted = await getChunksCompleted(chunkArrayDefault);
-  const chunksPending = chunkArrayDefault.filter((chunk) => !chunksCompleted.includes(chunk));
+  try {
+    const headers = await downloadVidHeaders(url);
+    const vidSize = +headers["content-range"]?.substring(headers["content-range"]?.lastIndexOf("/") + 1, headers["content-range"]?.length); //in bytes
+    const totalVidChunks = Math.ceil(vidSize / downloadVidChunkSize);
 
-  if (chunksCompleted && chunksCompleted.length === totalVidChunks) {
-    console.log("Vid already downloaded");
-    return chunksCompleted;
+    //build chunk array so names / paths in one place
+    const chunkArrayDefault = await buildChunkArrayDefault(vidId, vidSize);
+    const chunksCompleted = await getChunksCompleted(chunkArrayDefault);
+    const chunksPending = chunkArrayDefault.filter((chunk) => !chunksCompleted.includes(chunk));
+
+    if (chunksCompleted && chunksCompleted.length === totalVidChunks) {
+      console.log("Vid already downloaded");
+      return chunksCompleted;
+    }
+
+    if (chunksCompleted && chunksCompleted.length > 0) {
+      console.log(`Resuming Chunk ${chunksCompleted.length + 1} of ${totalVidChunks} total chunks`);
+    }
+
+    const downloadObj = { ...inputParams, headers, vidSize, totalVidChunks, chunkArrayDefault, chunksPending, chunksCompleted };
+
+    //throw error on failed download
+    const downloadChunksData = await downloadChunksWithRetries(downloadObj);
+    if (!downloadChunksData || !downloadChunksData.length) {
+      const error = new Error("FAILED TO DOWNLOAD VIDEO");
+      error.url = url;
+      error.function = "downloadVidFS";
+      throw error;
+    }
+
+    //most check prob unnecessary, remove later
+    if (downloadChunksData.length < totalVidChunks * 0.9) {
+      const error = new Error("FAILED TO DOWNLOAD MOST CHUNKS, LESS THAN 90% DOWNLOADED");
+      error.url = url;
+      error.function = "downloadVidFS";
+      throw error;
+    }
+
+    //otherwise merge chunks and cleanup
+    await mergeChunks(downloadObj);
+    await cleanupTempFiles(downloadObj);
+
+    //defining returnObj as downloadObj without 2 items (which are renamed to remove them bc already defined in function)
+    const { chunksPending: _, chunksCompleted: __, chunkArrayDefault: ___, ...returnObj } = downloadObj;
+
+    return returnObj;
+  } catch (e) {
+    console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+    return null;
   }
-
-  if (chunksCompleted && chunksCompleted.length > 0) {
-    console.log(`Resuming Chunk ${chunksCompleted.length + 1} of ${totalVidChunks} total chunks`);
-  }
-
-  const downloadObj = { ...inputParams, headers, vidSize, totalVidChunks, chunkArrayDefault, chunksPending, chunksCompleted };
-
-  //throw error on failed download
-  const downloadChunksData = await downloadChunksWithRetries(downloadObj);
-  if (!downloadChunksData || !downloadChunksData.length) {
-    const error = new Error("FAILED TO DOWNLOAD VIDEO");
-    error.url = url;
-    error.function = "downloadVidFS";
-    throw error;
-  }
-
-  //most check prob unnecessary, remove later
-  if (downloadChunksData.length < totalVidChunks * 0.9) {
-    const error = new Error("FAILED TO DOWNLOAD MOST CHUNKS, LESS THAN 90% DOWNLOADED");
-    error.url = url;
-    error.function = "downloadVidFS";
-    throw error;
-  }
-
-  //otherwise merge chunks and cleanup
-  await mergeChunks(downloadObj);
-  await cleanupTempFiles(downloadObj);
-
-  //defining returnObj as downloadObj without 2 items (which are renamed to remove them bc already defined in function)
-  const { chunksPending: _, chunksCompleted: __, chunkArrayDefault: ___, ...returnObj } = downloadObj;
-
-  return returnObj;
 };
 
 export const downloadChunksWithRetries = async (inputObj) => {
@@ -111,15 +118,20 @@ export const downloadChunksWithRetries = async (inputObj) => {
   for (let i = 0; i < vidRetries; i++) {
     if (!kcnaState.scrapeActive) return null;
 
-    inputObj.chunksPending = await downloadPendingChunkArray(inputObj);
+    try {
+      inputObj.chunksPending = await downloadPendingChunkArray(inputObj);
 
-    if (inputObj.chunksPending.length === 0) {
-      console.log("ALL CHUNKS DOWNLOADED");
-      return inputObj.chunksCompleted;
-    }
+      if (inputObj.chunksPending.length === 0) {
+        console.log("ALL CHUNKS DOWNLOADED");
+        return inputObj.chunksCompleted;
+      }
 
-    if (i < vidRetries - 1) {
-      console.log(`Retrying download of ${inputObj.chunksPending.length} chunks (RETRY ATTEMPT ${i + 1})`);
+      if (i < vidRetries - 1) {
+        console.log(`Retrying download of ${inputObj.chunksPending.length} chunks (RETRY ATTEMPT ${i + 1})`);
+      }
+    } catch (e) {
+      console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+      continue;
     }
   }
 
@@ -137,9 +149,14 @@ export const downloadPendingChunkArray = async (inputObj) => {
   for (let i = 0; i < chunksPending.length; i += downloadVidConcurrent) {
     if (!kcnaState.scrapeActive) return null;
 
-    const batchArray = chunksPending.slice(i, i + downloadVidConcurrent);
-    const failedObj = await downloadChunksBatch(inputObj, batchArray);
-    failedDownloadArray.push(...failedObj);
+    try {
+      const batchArray = chunksPending.slice(i, i + downloadVidConcurrent);
+      const failedObj = await downloadChunksBatch(inputObj, batchArray);
+      failedDownloadArray.push(...failedObj);
+    } catch (e) {
+      console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+      continue;
+    }
   }
 
   return failedDownloadArray;
@@ -153,27 +170,37 @@ export const downloadChunksBatch = async (inputObj, inputArray) => {
   for (let i = 0; i < inputArray.length; i++) {
     if (!kcnaState.scrapeActive) return null;
 
-    const chunk = inputArray[i];
-    const chunkObj = { ...chunk, ...inputObj };
-    const promise = downloadVidChunk(chunkObj);
-    promiseArray.push(promise);
-  }
+    try {
+      const chunk = inputArray[i];
+      const chunkObj = { ...chunk, ...inputObj };
+      const promise = downloadVidChunk(chunkObj);
+      promiseArray.push(promise);
 
-  const results = await Promise.allSettled(promiseArray);
+      const results = await Promise.allSettled(promiseArray);
 
-  const failedChunks = [];
-  for (let i = 0; i < results.length; i++) {
-    if (!kcnaState.scrapeActive) return null;
+      const failedChunks = [];
+      for (let i = 0; i < results.length; i++) {
+        if (!kcnaState.scrapeActive) return null;
 
-    const resultItem = results[i];
-    const chunk = inputArray[i];
+        try {
+          const resultItem = results[i];
+          const chunk = inputArray[i];
 
-    if (resultItem.status !== "fulfilled" || !resultItem.value) {
-      console.error(`Failed chunk ${chunk.chunkIndex}: ${resultItem.reason || "Unknown error"}`);
-      failedChunks.push(chunk);
+          if (resultItem.status !== "fulfilled" || !resultItem.value) {
+            console.error(`Failed chunk ${chunk.chunkIndex}: ${resultItem.reason || "Unknown error"}`);
+            failedChunks.push(chunk);
+            continue;
+          }
+          chunksCompleted.push(chunk);
+        } catch (e) {
+          console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+          continue;
+        }
+      }
+    } catch (e) {
+      console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
       continue;
     }
-    chunksCompleted.push(chunk);
   }
 
   const progress = ((chunksCompleted.length / totalVidChunks) * 100).toFixed(1);
@@ -298,20 +325,25 @@ export const getChunksCompleted = async (inputArray) => {
   for (let i = 0; i < inputArray.length; i++) {
     if (!kcnaState.scrapeActive) return completedChunkArray;
 
-    const chunk = inputArray[i];
-    const { chunkPath, chunkSize } = chunk;
+    try {
+      const chunk = inputArray[i];
+      const { chunkPath, chunkSize } = chunk;
 
-    const chunkStored = fs.existsSync(chunkPath);
-    if (!chunkStored) continue;
+      const chunkStored = fs.existsSync(chunkPath);
+      if (!chunkStored) continue;
 
-    //check the chunk is the right size, delete if not
-    const chunkStoredSize = fs.statSync(chunkPath).size;
-    if (chunkStoredSize !== chunkSize) {
-      fs.unlinkSync(chunkPath);
+      //check the chunk is the right size, delete if not
+      const chunkStoredSize = fs.statSync(chunkPath).size;
+      if (chunkStoredSize !== chunkSize) {
+        fs.unlinkSync(chunkPath);
+        continue;
+      }
+
+      completedChunkArray.push(chunk);
+    } catch (e) {
+      console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
       continue;
     }
-
-    completedChunkArray.push(chunk);
   }
 
   return completedChunkArray;
@@ -326,30 +358,39 @@ export const mergeChunks = async (inputObj) => {
 
   for (let i = 0; i < chunkArrayDefault.length; i++) {
     if (!kcnaState.scrapeActive) return true;
+    try {
+      const chunk = chunkArrayDefault[i];
+      const { chunkPath, chunkIndex } = chunk;
+      if (!fs.existsSync(chunkPath)) continue;
 
-    const chunk = chunkArrayDefault[i];
-    const { chunkPath, chunkIndex } = chunk;
-    if (!fs.existsSync(chunkPath)) continue;
+      console.log(`MERGING CHUNK ${chunkIndex} OF ${chunkArrayDefault.length}`);
 
-    console.log(`MERGING CHUNK ${chunkIndex} OF ${chunkArrayDefault.length}`);
-
-    const chunkData = fs.readFileSync(chunkPath);
-    writeStream.write(chunkData);
-    fs.unlinkSync(chunkPath); // Clean up temp file
+      const chunkData = fs.readFileSync(chunkPath);
+      writeStream.write(chunkData);
+      fs.unlinkSync(chunkPath); // Clean up temp file
+    } catch (e) {
+      console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+      continue;
+    }
   }
 
   // CRITICAL FOR PROPER AWAITING AND LATER CHECKS
-  await new Promise((resolve, reject) => {
-    writeStream.on("finish", () => {
-      console.log("Merge complete");
-      resolve();
+  try {
+    await new Promise((resolve, reject) => {
+      writeStream.on("finish", () => {
+        console.log("Merge complete");
+        resolve();
+      });
+      writeStream.on("error", (error) => {
+        console.error("Error during merge:", error);
+        reject(error);
+      });
+      writeStream.end();
     });
-    writeStream.on("error", (error) => {
-      console.error("Error during merge:", error);
-      reject(error);
-    });
-    writeStream.end();
-  });
+  } catch (e) {
+    console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+    return null;
+  }
 };
 
 export const cleanupTempFiles = async (inputObj) => {
@@ -358,11 +399,15 @@ export const cleanupTempFiles = async (inputObj) => {
 
   for (let i = 0; i < chunkArrayDefault.length; i++) {
     if (!kcnaState.scrapeActive) return true;
-
-    const chunk = chunkArrayDefault[i];
-    const { chunkPath } = chunk;
-    if (fs.existsSync(chunkPath)) {
-      fs.unlinkSync(chunkPath);
+    try {
+      const chunk = chunkArrayDefault[i];
+      const { chunkPath } = chunk;
+      if (fs.existsSync(chunkPath)) {
+        fs.unlinkSync(chunkPath);
+      }
+    } catch (e) {
+      console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+      continue;
     }
   }
 

@@ -53,19 +53,24 @@ export const updateArticleItem = async (inputObj) => {
   const rebuiltPicArray = await rebuildPicArray(picArray);
   if (!rebuiltPicArray || !rebuiltPicArray.length) return null;
 
-  const updateParams = {
-    docKey: "url",
-    docValue: url,
-    updateKey: "picArray",
-    updateArray: rebuiltPicArray,
-  };
+  try {
+    const updateParams = {
+      docKey: "url",
+      docValue: url,
+      updateKey: "picArray",
+      updateArray: rebuiltPicArray,
+    };
 
-  const updateArticleModel = new dbModel(updateParams, articles);
-  const storeData = await updateArticleModel.updateArrayNested();
-  console.log("STORE DATA");
-  console.log(storeData);
+    const updateArticleModel = new dbModel(updateParams, articles);
+    const storeData = await updateArticleModel.updateArrayNested();
+    console.log("STORE DATA");
+    console.log(storeData);
 
-  return updateParams;
+    return updateParams;
+  } catch (e) {
+    console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+    return null;
+  }
 };
 
 //-----------------------------
@@ -104,19 +109,24 @@ export const updatePicSetItem = async (inputObj) => {
   const rebuiltPicArray = await rebuildPicArray(picArray);
   if (!rebuiltPicArray || !rebuiltPicArray.length) return null;
 
-  const updateParams = {
-    docKey: "url",
-    docValue: url,
-    updateKey: "picArray",
-    updateArray: rebuiltPicArray,
-  };
+  try {
+    const updateParams = {
+      docKey: "url",
+      docValue: url,
+      updateKey: "picArray",
+      updateArray: rebuiltPicArray,
+    };
 
-  const updatePicSetModel = new dbModel(updateParams, picSets);
-  const storeData = await updatePicSetModel.updateArrayNested();
-  console.log("STORE DATA");
-  console.log(storeData);
+    const updatePicSetModel = new dbModel(updateParams, picSets);
+    const storeData = await updatePicSetModel.updateArrayNested();
+    console.log("STORE DATA");
+    console.log(storeData);
 
-  return updateParams;
+    return updateParams;
+  } catch (e) {
+    console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+    return null;
+  }
 };
 
 //--------------
@@ -156,20 +166,25 @@ export const updateThumbnailItem = async (inputObj) => {
   const picData = await getPicData(thumbnailURL);
   if (!picData) return null;
 
-  const updateParams = {
-    keyToLookup: "url",
-    itemValue: url,
-    insertKey: "thumbnailData",
-    updateObj: picData,
-  };
+  try {
+    const updateParams = {
+      keyToLookup: "url",
+      itemValue: url,
+      insertKey: "thumbnailData",
+      updateObj: picData,
+    };
 
-  const updateVidPageModel = new dbModel(updateParams, vidPages);
-  const storeData = await updateVidPageModel.updateObjInsert();
-  console.log("STORE DATA");
-  console.log(storeData);
+    const updateVidPageModel = new dbModel(updateParams, vidPages);
+    const storeData = await updateVidPageModel.updateObjInsert();
+    console.log("STORE DATA");
+    console.log(storeData);
 
-  //return picData of the thumbnail
-  return picData;
+    //return picData of the thumbnail
+    return picData;
+  } catch (e) {
+    console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+    return null;
+  }
 };
 
 //------
@@ -194,10 +209,15 @@ export const getPicData = async (url) => {
   if (!url) return null;
   const { pics } = CONFIG;
 
-  const lookupPicModel = new dbModel({ keyToLookup: "url", itemValue: url }, pics);
-  const picData = await lookupPicModel.getUniqueItem();
+  try {
+    const lookupPicModel = new dbModel({ keyToLookup: "url", itemValue: url }, pics);
+    const picData = await lookupPicModel.getUniqueItem();
 
-  return picData;
+    return picData;
+  } catch (e) {
+    console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+    return null;
+  }
 };
 
 //-------------------------------------
@@ -235,22 +255,27 @@ export const updateVidItem = async (inputObj) => {
   const vidData = await getVidData(vidURL);
   if (!vidData) return null;
 
-  const updateParams = {
-    keyToLookup: "url",
-    itemValue: url,
-    insertKey: "vidData",
-    updateObj: vidData,
-  };
+  try {
+    const updateParams = {
+      keyToLookup: "url",
+      itemValue: url,
+      insertKey: "vidData",
+      updateObj: vidData,
+    };
 
-  console.log("UPDATE VID PAGE PARAMS");
-  console.log(updateParams);
+    console.log("UPDATE VID PAGE PARAMS");
+    console.log(updateParams);
 
-  const updateVidPageModel = new dbModel(updateParams, vidPages);
-  const storeData = await updateVidPageModel.updateObjInsert();
-  console.log("STORE DATA");
-  console.log(storeData);
+    const updateVidPageModel = new dbModel(updateParams, vidPages);
+    const storeData = await updateVidPageModel.updateObjInsert();
+    console.log("STORE DATA");
+    console.log(storeData);
 
-  return vidData;
+    return vidData;
+  } catch (e) {
+    console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+    return null;
+  }
 };
 
 export const getVidData = async (url) => {

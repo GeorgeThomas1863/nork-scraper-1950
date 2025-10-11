@@ -32,21 +32,26 @@ export const scrapePicSetURLsKCNA = async () => {
 };
 
 export const parsePicSetList = async (html) => {
-  if (!html) {
-    const error = new Error("FAILED TO GET PIC SET LIST HTML ");
-    error.url = url;
-    error.function = "parsePicSetList";
-    throw error;
+  try {
+    if (!html) {
+      const error = new Error("FAILED TO GET PIC SET LIST HTML ");
+      error.url = url;
+      error.function = "parsePicSetList";
+      throw error;
+    }
+
+    const dom = new JSDOM(html);
+    const document = dom.window.document;
+
+    const photoWrapperArray = document.querySelectorAll(".photo-wrapper");
+    if (!photoWrapperArray || !photoWrapperArray.length) return null;
+
+    const picSetListArray = await extractPicSetListArray(photoWrapperArray);
+    return picSetListArray;
+  } catch (e) {
+    console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+    return null;
   }
-
-  const dom = new JSDOM(html);
-  const document = dom.window.document;
-
-  const photoWrapperArray = document.querySelectorAll(".photo-wrapper");
-  if (!photoWrapperArray || !photoWrapperArray.length) return null;
-
-  const picSetListArray = await extractPicSetListArray(photoWrapperArray);
-  return picSetListArray;
 };
 
 export const extractPicSetListArray = async (inputArray) => {
@@ -57,29 +62,33 @@ export const extractPicSetListArray = async (inputArray) => {
   for (const picSetElement of inputArray) {
     if (!kcnaState.scrapeActive) return picSetURLArray;
 
-    const titleWrapper = picSetElement.querySelector(".title a");
-    const picSetLink = titleWrapper.getAttribute("href");
-    const picSetDate = await extractItemDate(picSetElement);
-    const picSetURL = "http://www.kcna.kp" + picSetLink;
-    const picSetId = await getIdFromURL(picSetURL);
+    try {
+      const titleWrapper = picSetElement.querySelector(".title a");
+      const picSetLink = titleWrapper.getAttribute("href");
+      const picSetDate = await extractItemDate(picSetElement);
+      const picSetURL = "http://www.kcna.kp" + picSetLink;
+      const picSetId = await getIdFromURL(picSetURL);
 
-    const params = {
-      url: picSetURL,
-      date: picSetDate,
-      scrapeId: kcnaState.scrapeId,
-      picSetId: picSetId,
-    };
+      const params = {
+        url: picSetURL,
+        date: picSetDate,
+        scrapeId: kcnaState.scrapeId,
+        picSetId: picSetId,
+      };
 
-    console.log("PIC SET LIST PARAMS");
-    console.log(params);
+      console.log("PIC SET LIST PARAMS");
+      console.log(params);
 
-    const storeModel = new dbModel(params, picSets);
-    const storeData = await storeModel.storeUniqueURL();
+      const storeModel = new dbModel(params, picSets);
+      const storeData = await storeModel.storeUniqueURL();
 
-    console.log("STORE DATA");
-    console.log(storeData);
+      console.log("STORE DATA");
+      console.log(storeData);
 
-    picSetURLArray.push(params);
+      picSetURLArray.push(params);
+    } catch (e) {
+      console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+    }
   }
 
   return picSetURLArray;

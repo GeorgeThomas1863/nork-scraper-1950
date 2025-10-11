@@ -26,31 +26,41 @@ export const logScrapeStartKCNA = async () => {
   const newScrapeStartTime = new Date();
 
   console.log("STARTING NEW KCNA SCRAPE AT " + newScrapeStartTime);
-  const startModel = new dbModel({ scrapeStartTime: newScrapeStartTime }, log);
-  const startData = await startModel.storeAny();
-  console.log("START DATA");
-  console.log(startData);
 
-  const newScrapeId = startData.insertedId?.toString() || null;
+  try {
+    const startModel = new dbModel({ scrapeStartTime: newScrapeStartTime }, log);
+    const startData = await startModel.storeAny();
+    console.log("START DATA");
+    console.log(startData);
 
-  kcnaState.scrapeId = newScrapeId;
-  kcnaState.scrapeEndTime = null;
-  kcnaState.scrapeStartTime = newScrapeStartTime;
-  kcnaState.scrapeActive = true;
-  kcnaState.scrapeStep = "ARTICLE URLS KCNA";
-  kcnaState.scrapeMessage = "STARTING NEW SCRAPE KCNA";
+    const newScrapeId = startData.insertedId?.toString() || null;
+    kcnaState.scrapeId = newScrapeId;
+    kcnaState.scrapeEndTime = null;
+    kcnaState.scrapeStartTime = newScrapeStartTime;
+    kcnaState.scrapeActive = true;
+    kcnaState.scrapeStep = "ARTICLE URLS KCNA";
+    kcnaState.scrapeMessage = "STARTING NEW SCRAPE KCNA";
 
-  await updateDisplayerKCNA(kcnaState);
+    await updateDisplayerKCNA(kcnaState);
 
-  //update the log
-  const updateModel = new dbModel({ keyToLookup: "scrapeStartTime", itemValue: newScrapeStartTime, updateObj: kcnaState }, log);
-  const updateData = await updateModel.updateObjItem();
-  console.log("UPDATE DATA");
-  console.log(updateData);
+    //update the log
+    try {
+      const updateModel = new dbModel({ keyToLookup: "scrapeStartTime", itemValue: newScrapeStartTime, updateObj: kcnaState }, log);
+      const updateData = await updateModel.updateObjItem();
+      console.log("UPDATE DATA");
+      console.log(updateData);
 
-  console.log("KCNA STATE");
-  console.log(kcnaState);
-  return true;
+      console.log("KCNA STATE");
+      console.log(kcnaState);
+      return true;
+    } catch (e) {
+      console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+      return null;
+    }
+  } catch (e) {
+    console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+    return null;
+  }
 };
 
 export const logScrapeStopKCNA = async () => {
@@ -68,17 +78,22 @@ export const logScrapeStopKCNA = async () => {
   kcnaState.scrapeMessage = "FINISHED SCRAPE KCNA";
   await updateDisplayerKCNA(kcnaState);
 
-  const updateModel = new dbModel({ keyToLookup: "scrapeId", itemValue: kcnaState.scrapeId, updateObj: kcnaState }, log);
-  const updateData = await updateModel.updateObjItem();
-  console.log("UPDATE DATA");
-  console.log(updateData);
+  try {
+    const updateModel = new dbModel({ keyToLookup: "scrapeId", itemValue: kcnaState.scrapeId, updateObj: kcnaState }, log);
+    const updateData = await updateModel.updateObjItem();
+    console.log("UPDATE DATA");
+    console.log(updateData);
 
-  console.log("KCNA STATE");
-  console.log(kcnaState);
+    console.log("KCNA STATE");
+    console.log(kcnaState);
 
-  console.log("FINISHED KCNA SCRAPE AT " + scrapeEndTime);
-  console.log(`SCRAPE LENGTH: ${scrapeLengthMinutes} minutes and ${(scrapeLengthSeconds % 60).toFixed(2)} seconds`);
-  return true;
+    console.log("FINISHED KCNA SCRAPE AT " + scrapeEndTime);
+    console.log(`SCRAPE LENGTH: ${scrapeLengthMinutes} minutes and ${(scrapeLengthSeconds % 60).toFixed(2)} seconds`);
+    return true;
+  } catch (e) {
+    console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+    return null;
+  }
 };
 
 export default kcnaState;

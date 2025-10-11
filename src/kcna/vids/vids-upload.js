@@ -17,8 +17,13 @@ export const postVidThumbnailTG = async (inputObj) => {
     mode: "html",
   };
 
-  const data = await tgPostPicFS(params);
-  return data;
+  try {
+    const data = await tgPostPicFS(params);
+    return data;
+  } catch (e) {
+    console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+    return null;
+  }
 };
 
 export const buildVidThumbnailCaption = async (inputObj) => {
@@ -52,21 +57,26 @@ export const postVidChunkArrayTG = async (inputObj) => {
   for (let i = 0; i < chunkArray.length; i++) {
     if (!kcnaState.scrapeActive) return vidPostDataArray;
 
-    const chunk = chunkArray[i];
-    chunk.chunkIndex = i + 1;
-    chunk.chunkCount = chunkArray.length;
-    chunk.mode = "html";
+    try {
+      const chunk = chunkArray[i];
+      chunk.chunkIndex = i + 1;
+      chunk.chunkCount = chunkArray.length;
+      chunk.mode = "html";
 
-    const postChunkObj = { ...chunk, tgChannelId, dateNormal, urlNormal };
-    const vidChunkCaption = await buildVidChunkCaption(postChunkObj);
-    postChunkObj.caption = vidChunkCaption;
-    const vidPostData = await tgPostVidFS(postChunkObj);
-    if (!vidPostData) continue;
+      const postChunkObj = { ...chunk, tgChannelId, dateNormal, urlNormal };
+      const vidChunkCaption = await buildVidChunkCaption(postChunkObj);
+      postChunkObj.caption = vidChunkCaption;
+      const vidPostData = await tgPostVidFS(postChunkObj);
+      if (!vidPostData) continue;
 
-    console.log("VID POST DATA");
-    console.log(vidPostData);
+      console.log("VID POST DATA");
+      console.log(vidPostData);
 
-    vidPostDataArray.push(vidPostData);
+      vidPostDataArray.push(vidPostData);
+    } catch (e) {
+      console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+      continue;
+    }
   }
 
   await deleteVidChunks(chunkArray);

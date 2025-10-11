@@ -51,33 +51,38 @@ export const parsePicSetContent = async (url, date) => {
   if (!url) return null;
   const { picSets } = CONFIG;
 
-  const kcna = new NORK({ url });
-  const html = await kcna.getHTML();
+  try {
+    const kcna = new NORK({ url });
+    const html = await kcna.getHTML();
 
-  if (!html) {
-    const error = new Error("FAILED TO GET PIC SET ITEM HTML ");
-    error.url = url;
-    error.function = "parsePicSetContent";
-    throw error;
+    if (!html) {
+      const error = new Error("FAILED TO GET PIC SET ITEM HTML ");
+      error.url = url;
+      error.function = "parsePicSetContent";
+      throw error;
+    }
+
+    const dom = new JSDOM(html);
+    const document = dom.window.document;
+
+    const picSetTitle = await extractPicSetTitle(document);
+    const picSetPicArray = await extractPicSetPicArray(document, date);
+
+    const storeParams = {
+      title: picSetTitle,
+      picArray: picSetPicArray,
+    };
+
+    const storeModel = new dbModel({ keyToLookup: "url", itemValue: url, updateObj: storeParams }, picSets);
+    const storeData = await storeModel.updateObjItem();
+    console.log("STORE DATA");
+    console.log(storeData);
+
+    return storeParams;
+  } catch (e) {
+    console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+    return null;
   }
-
-  const dom = new JSDOM(html);
-  const document = dom.window.document;
-
-  const picSetTitle = await extractPicSetTitle(document);
-  const picSetPicArray = await extractPicSetPicArray(document, date);
-
-  const storeParams = {
-    title: picSetTitle,
-    picArray: picSetPicArray,
-  };
-
-  const storeModel = new dbModel({ keyToLookup: "url", itemValue: url, updateObj: storeParams }, picSets);
-  const storeData = await storeModel.updateObjItem();
-  console.log("STORE DATA");
-  console.log(storeData);
-
-  return storeParams;
 };
 
 export const extractPicSetTitle = async (document) => {
@@ -103,22 +108,25 @@ export const extractPicSetPicArray = async (document, date) => {
       const picSetPicURL = "http://www.kcna.kp" + picSrc;
       picSetPicArray.push(picSetPicURL);
 
-      //store urls to picDB (so dont have to do again); build params
-      const picId = await getIdFromURL(picSetPicURL);
-      const storeParams = {
-        picId: picId,
-        url: picSetPicURL,
-        scrapeId: kcnaState.scrapeId,
-        date: date,
-      };
+      try {
+        //store urls to picDB (so dont have to do again); build params
+        const picId = await getIdFromURL(picSetPicURL);
+        const storeParams = {
+          picId: picId,
+          url: picSetPicURL,
+          scrapeId: kcnaState.scrapeId,
+          date: date,
+        };
 
-      console.log("STORE PIC PARAMS");
-      console.log(storeParams);
-
-      const storePicModel = new dbModel(storeParams, pics);
-      const storeData = await storePicModel.storeUniqueURL();
-      console.log("STORE PIC DATA");
-      console.log(storeData);
+        console.log("STORE PIC PARAMS");
+        console.log(storeParams);
+        const storePicModel = new dbModel(storeParams, pics);
+        const storeData = await storePicModel.storeUniqueURL();
+        console.log("STORE PIC DATA");
+        console.log(storeData);
+      } catch (e) {
+        console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+      }
     } catch (e) {
       console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
     }

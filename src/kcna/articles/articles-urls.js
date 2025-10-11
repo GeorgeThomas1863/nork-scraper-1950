@@ -41,26 +41,31 @@ export const scrapeArticleURLsKCNA = async () => {
 export const parseArticleListByType = async (type) => {
   if (!type) return null;
 
-  const typeURL = CONFIG[type];
-  const htmlModel = new NORK({ url: typeURL });
-  const html = await htmlModel.getHTML();
+  try {
+    const typeURL = CONFIG[type];
+    const htmlModel = new NORK({ url: typeURL });
+    const html = await htmlModel.getHTML();
 
-  if (!html) {
-    const error = new Error("FAILED TO GET ARTICLE LIST HTML ");
-    error.url = typeURL;
-    error.function = "getArticleListHTML";
-    throw error;
+    if (!html) {
+      const error = new Error("FAILED TO GET ARTICLE LIST HTML ");
+      error.url = typeURL;
+      error.function = "getArticleListHTML";
+      throw error;
+    }
+
+    const dom = new JSDOM(html);
+    const document = dom.window.document;
+
+    const articleLinkElement = document.querySelector(".article-link");
+    const linkElementArray = articleLinkElement?.querySelectorAll("a");
+    if (!linkElementArray || !linkElementArray.length) return null;
+
+    const articleListArray = await extractArticleListArray(linkElementArray, type);
+    return articleListArray;
+  } catch (e) {
+    console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+    return null;
   }
-
-  const dom = new JSDOM(html);
-  const document = dom.window.document;
-
-  const articleLinkElement = document.querySelector(".article-link");
-  const linkElementArray = articleLinkElement?.querySelectorAll("a");
-  if (!linkElementArray || !linkElementArray.length) return null;
-
-  const articleListArray = await extractArticleListArray(linkElementArray, type);
-  return articleListArray;
 };
 
 export const extractArticleListArray = async (inputArray, type) => {

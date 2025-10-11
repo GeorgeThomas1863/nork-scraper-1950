@@ -22,25 +22,30 @@ export const chunkVidFS = async (inputObj) => {
   for (let i = 0; i < chunkArray.length; i++) {
     if (!kcnaState.scrapeActive) return promiseArray;
 
-    const chunk = chunkArray[i];
-    const { chunkPath } = chunk;
+    try {
+      const chunk = chunkArray[i];
+      const { chunkPath } = chunk;
 
-    const chunkExists = fs.existsSync(chunkPath);
-    if (chunkExists) {
-      console.log(`Chunk ${chunkPath} already exists`);
+      const chunkExists = fs.existsSync(chunkPath);
+      if (chunkExists) {
+        console.log(`Chunk ${chunkPath} already exists`);
+        continue;
+      }
+
+      const command = await buildChunkCommand(chunk);
+
+      promiseArray.push(
+        (async () => {
+          await execAsync(command);
+          const stats = await stat(chunkPath);
+          const sizeMB = (stats.size / (1024 * 1024)).toFixed(2);
+          console.log(`✓ ${chunkPath} created (${sizeMB} MB)`);
+        })()
+      );
+    } catch (e) {
+      console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
       continue;
     }
-
-    const command = await buildChunkCommand(chunk);
-
-    promiseArray.push(
-      (async () => {
-        await execAsync(command);
-        const stats = await stat(chunkPath);
-        const sizeMB = (stats.size / (1024 * 1024)).toFixed(2);
-        console.log(`✓ ${chunkPath} created (${sizeMB} MB)`);
-      })()
-    );
   }
 
   await Promise.all(promiseArray);
@@ -80,21 +85,31 @@ export const calcVidSeconds = async (inputObj) => {
   if (!inputObj) return null;
   const { savePath } = inputObj;
 
-  const { stdout: durationOutput } = await execAsync(`ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${savePath}"`);
+  try {
+    const { stdout: durationOutput } = await execAsync(`ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${savePath}"`);
 
-  const vidSeconds = parseFloat(durationOutput.trim());
+    const vidSeconds = parseFloat(durationOutput.trim());
 
-  return vidSeconds;
+    return vidSeconds;
+  } catch (e) {
+    console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+    return null;
+  }
 };
 
 export const buildChunkCommand = async (inputObj) => {
   if (!inputObj) return null;
   const { savePath, startTime, chunkSeconds, chunkPath } = inputObj;
 
-  const command = `ffmpeg -i "${savePath}" -ss ${startTime} -t ${chunkSeconds} -c copy -avoid_negative_ts make_zero "${chunkPath}"`;
-  console.log(`Creating ${chunkPath}...`);
+  try {
+    const command = `ffmpeg -i "${savePath}" -ss ${startTime} -t ${chunkSeconds} -c copy -avoid_negative_ts make_zero "${chunkPath}"`;
+    console.log(`Creating ${chunkPath}...`);
 
-  return command;
+    return command;
+  } catch (e) {
+    console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+    return null;
+  }
 };
 
 //---------------------
@@ -106,12 +121,17 @@ export const deleteVidChunks = async (inputArray) => {
   for (let i = 0; i < inputArray.length; i++) {
     if (!kcnaState.scrapeActive) return true;
 
-    const chunk = inputArray[i];
-    const { chunkPath } = chunk;
-    const chunkExists = fs.existsSync(chunkPath);
-    if (!chunkExists) continue;
+    try {
+      const chunk = inputArray[i];
+      const { chunkPath } = chunk;
+      const chunkExists = fs.existsSync(chunkPath);
+      if (!chunkExists) continue;
 
-    fs.unlinkSync(chunkPath);
+      fs.unlinkSync(chunkPath);
+    } catch (e) {
+      console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+      continue;
+    }
   }
 
   return true;

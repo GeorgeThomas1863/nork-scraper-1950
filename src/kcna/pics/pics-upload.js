@@ -35,10 +35,15 @@ export const postPicTG = async (inputObj) => {
     mode: "html",
   };
 
-  const data = await tgPostPicFS(params);
+  try {
+    const data = await tgPostPicFS(params);
 
-  console.log("POST PIC DATA");
-  console.log(data);
+    console.log("POST PIC DATA");
+    console.log(data);
 
-  return data;
+    return data;
+  } catch (e) {
+    console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+    return null;
+  }
 };

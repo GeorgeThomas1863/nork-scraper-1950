@@ -97,44 +97,49 @@ export const extractVidURL = async (document, date) => {
   const { vids } = CONFIG;
   if (!document) return null;
 
-  const scriptArray = document.querySelectorAll("script");
-
-  if (!scriptArray || !scriptArray.length) {
-    const error = new Error("CANT EXTRACT SCRIPTS FOR VID URL");
-    error.url = url;
-    error.function = "extractVidURL";
-    throw error;
-  }
-
-  const vidLink = await parseVidScripts(scriptArray);
-  if (!vidLink) {
-    const error = new Error("CANT VID URL FROM SCRIPTS");
-    error.url = url;
-    error.function = "extractVidURL";
-    throw error;
-  }
-
-  //store url to vidDB (so dont have to do again); build params
-  const vidURL = "http://www.kcna.kp" + vidLink;
-  const vidId = await getIdFromURL(vidURL);
-
-  const storeParams = {
-    vidId: vidId,
-    url: vidURL,
-    scrapeId: kcnaState.scrapeId,
-    date: date,
-  };
-
   try {
-    const storeVidModel = new dbModel(storeParams, vids);
-    const storeData = await storeVidModel.storeUniqueURL();
-    console.log("STORE DATA");
-    console.log(storeData);
+    const scriptArray = document.querySelectorAll("script");
+
+    if (!scriptArray || !scriptArray.length) {
+      const error = new Error("CANT EXTRACT SCRIPTS FOR VID URL");
+      error.url = url;
+      error.function = "extractVidURL";
+      throw error;
+    }
+
+    const vidLink = await parseVidScripts(scriptArray);
+    if (!vidLink) {
+      const error = new Error("CANT VID URL FROM SCRIPTS");
+      error.url = url;
+      error.function = "extractVidURL";
+      throw error;
+    }
+
+    //store url to vidDB (so dont have to do again); build params
+    const vidURL = "http://www.kcna.kp" + vidLink;
+    const vidId = await getIdFromURL(vidURL);
+
+    const storeParams = {
+      vidId: vidId,
+      url: vidURL,
+      scrapeId: kcnaState.scrapeId,
+      date: date,
+    };
+
+    try {
+      const storeVidModel = new dbModel(storeParams, vids);
+      const storeData = await storeVidModel.storeUniqueURL();
+      console.log("STORE DATA");
+      console.log(storeData);
+    } catch (e) {
+      console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+    }
+
+    return vidURL;
   } catch (e) {
     console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+    return null;
   }
-
-  return vidURL;
 };
 
 export const parseVidScripts = async (inputArray) => {
@@ -143,11 +148,16 @@ export const parseVidScripts = async (inputArray) => {
   for (const script of inputArray) {
     if (!kcnaState.scrapeActive) return null;
 
-    const content = script.textContent;
-    if (content && content.includes("type='video/mp4'")) {
-      //regex looking for the vid type mp4
-      const match = content.match(/source src='([^']+)' type='video\/mp4'/);
-      if (match && match[1]) return match[1];
+    try {
+      const content = script.textContent;
+      if (content && content.includes("type='video/mp4'")) {
+        //regex looking for the vid type mp4
+        const match = content.match(/source src='([^']+)' type='video\/mp4'/);
+        if (match && match[1]) return match[1];
+      }
+    } catch (e) {
+      console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+      return null;
     }
   }
 

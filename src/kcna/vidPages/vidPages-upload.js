@@ -60,15 +60,20 @@ export const postVidPageTG = async (inputObj) => {
   const tgInputs = await normalizeTGInputs(url, date);
   const vidChunkObj = { ...inputObj, ...tgInputs };
 
-  const uploadObj = await chunkVidFS(vidChunkObj);
-  if (!uploadObj) return null;
+  try {
+    const uploadObj = await chunkVidFS(vidChunkObj);
+    if (!uploadObj) return null;
 
-  // post thumbnail as title
-  await postVidThumbnailTG(uploadObj);
+    // post thumbnail as title
+    await postVidThumbnailTG(uploadObj);
 
-  const vidPostData = await postVidChunkArrayTG(uploadObj);
-  if (!vidPostData || !vidPostData.length) return vidChunkObj;
+    const vidPostData = await postVidChunkArrayTG(uploadObj);
+    if (!vidPostData || !vidPostData.length) return vidChunkObj;
 
-  vidChunkObj.chunksUploaded = vidPostData.length;
-  return vidChunkObj;
+    vidChunkObj.chunksUploaded = vidPostData.length;
+    return vidChunkObj;
+  } catch (e) {
+    console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+    return null;
+  }
 };

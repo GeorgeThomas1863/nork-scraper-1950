@@ -27,6 +27,7 @@ export const tgPostPicFS = async (inputParams) => {
   const url = `https://api.telegram.org/bot${token}/sendPhoto`;
 
   const picForm = await buildPicForm(inputParams);
+  if (!picForm) return null;
 
   const data = await tgPostPicReq(url, picForm);
 
@@ -45,6 +46,7 @@ export const tgPostVidFS = async (inputParams) => {
   const url = `https://api.telegram.org/bot${token}/sendVideo`;
 
   const vidChunkForm = await buildVidChunkForm(inputParams);
+  if (!vidChunkForm) return null;
 
   console.log(`STARTING UPLOAD OF ${chunkPath}...`);
 
@@ -140,51 +142,61 @@ export const buildPicForm = async (inputObj) => {
   if (!inputObj) return null;
   const { chatId, savePath, caption, mode } = inputObj;
 
-  //build form
-  const form = new FormData();
-  form.append("chat_id", chatId);
-  form.append("photo", fs.createReadStream(savePath));
-  form.append("caption", caption);
-  form.append("parse_mode", mode);
+  try {
+    //build form
+    const form = new FormData();
+    form.append("chat_id", chatId);
+    form.append("photo", fs.createReadStream(savePath));
+    form.append("caption", caption);
+    form.append("parse_mode", mode);
 
-  if (!form || !fs.createReadStream(savePath)) {
-    const error = new Error("BUILD PIC FORM FUCKED");
-    error.content = "FORM DATA: " + form;
-    error.function = "buildPicForm";
-    throw error;
+    if (!form || !fs.createReadStream(savePath)) {
+      const error = new Error("BUILD PIC FORM FUCKED");
+      error.content = "FORM DATA: " + form;
+      error.function = "buildPicForm";
+      throw error;
+    }
+
+    return form;
+  } catch (e) {
+    console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+    return null;
   }
-
-  return form;
 };
 
 export const buildVidChunkForm = async (inputObj) => {
   if (!inputObj) return null;
   const { chunkPath, tgChannelId, chunkName, caption, mode } = inputObj;
 
-  const readStream = fs.createReadStream(chunkPath);
+  try {
+    const readStream = fs.createReadStream(chunkPath);
 
-  // Create form data for this chunk
-  const form = new FormData();
-  form.append("chat_id", tgChannelId);
-  form.append("video", readStream, {
-    filename: chunkName,
-  });
+    // Create form data for this chunk
+    const form = new FormData();
+    form.append("chat_id", tgChannelId);
+    form.append("video", readStream, {
+      filename: chunkName,
+    });
 
-  //caption
-  form.append("caption", caption);
-  form.append("parse_mode", mode);
+    //caption
+    form.append("caption", caption);
+    form.append("parse_mode", mode);
 
-  //set setting for auto play / streaming
-  form.append("supports_streaming", "true");
-  form.append("width", "1280");
-  form.append("height", "720");
+    //set setting for auto play / streaming
+    form.append("supports_streaming", "true");
+    form.append("width", "1280");
+    form.append("height", "720");
 
-  if (!form || !readStream) {
-    const error = new Error("BUILD VID FORM FUCKED");
-    error.content = "FORM DATA: " + form;
-    error.function = "buildVidChunkForm";
-    throw error;
+    if (!form || !readStream) {
+      const error = new Error("BUILD VID FORM FUCKED");
+      error.content = "FORM DATA: " + form;
+      error.function = "buildVidChunkForm";
+      throw error;
+    }
+
+    return form;
+  } catch (e) {
+    console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+    return null;
   }
-
-  return form;
 };

@@ -69,45 +69,50 @@ export const downloadPicFS = async (inputParams) => {
 
   if (!kcnaState.scrapeActive) return null;
 
-  const res = await axios({
-    method: "get",
-    url: url,
-    timeout: 60 * 1000, //1 minute
-    responseType: "stream",
-  });
+  try {
+    const res = await axios({
+      method: "get",
+      url: url,
+      timeout: 60 * 1000, //1 minute
+      responseType: "stream",
+    });
 
-  if (!res || !res.data || !res.headers) {
-    const error = new Error("AXIOS RES FUCKED");
-    error.url = url;
-    error.function = "downloadPicFS";
-    throw error;
-  }
-
-  let downloadedSize = 0;
-
-  const writer = fs.createWriteStream(savePath);
-  const stream = res.data.pipe(writer);
-
-  res.data.on("data", (chunk) => {
-    if (!kcnaState.scrapeActive) return;
-
-    // Log progress in KB every 100KB
-    downloadedSize += chunk.length;
-    if (downloadedSize % picProgressSize < chunk.length) {
-      const downloadedKB = Math.floor(downloadedSize / 1024);
-      console.log(`Downloaded: ${downloadedKB}KB`);
+    if (!res || !res.data || !res.headers) {
+      const error = new Error("AXIOS RES FUCKED");
+      error.url = url;
+      error.function = "downloadPicFS";
+      throw error;
     }
-  });
-  await new Promise((resolve, reject) => {
-    stream.on("finish", resolve);
-    stream.on("error", reject);
-  });
 
-  const returnObj = {
-    headers: { ...res.headers }, //converts to normal obj
-    downloadedSize: downloadedSize,
-  };
+    let downloadedSize = 0;
 
-  console.log(`DOWNLOAD COMPLETE: ${picName} | FINAL SIZE: ${Math.round(downloadedSize / 1024)}KB`);
-  return returnObj;
+    const writer = fs.createWriteStream(savePath);
+    const stream = res.data.pipe(writer);
+
+    res.data.on("data", (chunk) => {
+      if (!kcnaState.scrapeActive) return;
+
+      // Log progress in KB every 100KB
+      downloadedSize += chunk.length;
+      if (downloadedSize % picProgressSize < chunk.length) {
+        const downloadedKB = Math.floor(downloadedSize / 1024);
+        console.log(`Downloaded: ${downloadedKB}KB`);
+      }
+    });
+    await new Promise((resolve, reject) => {
+      stream.on("finish", resolve);
+      stream.on("error", reject);
+    });
+
+    const returnObj = {
+      headers: { ...res.headers }, //converts to normal obj
+      downloadedSize: downloadedSize,
+    };
+
+    console.log(`DOWNLOAD COMPLETE: ${picName} | FINAL SIZE: ${Math.round(downloadedSize / 1024)}KB`);
+    return returnObj;
+  } catch (e) {
+    console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+    return null;
+  }
 };

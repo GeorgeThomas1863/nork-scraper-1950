@@ -51,43 +51,44 @@ export const parseNewArticleArray = async (inputArray) => {
 export const parseArticleContent = async (url, date) => {
   if (!url) return null;
   const { articles } = CONFIG;
+  try {
+    const kcna = new NORK({ url });
+    const html = await kcna.getHTML();
+    if (!html) {
+      const error = new Error("FAILED TO GET ARTICLE CONTENT HTML ");
+      error.url = url;
+      error.function = "getArticleContentHTML";
+      throw error;
+    }
 
-  console.log("CONTENT URL");
-  console.log(url);
+    const dom = new JSDOM(html);
+    const document = dom.window.document;
 
-  const kcna = new NORK({ url });
-  const html = await kcna.getHTML();
-  if (!html) {
-    const error = new Error("FAILED TO GET ARTICLE CONTENT HTML ");
-    error.url = url;
-    error.function = "getArticleContentHTML";
-    throw error;
+    const articleTitle = await extractArticleTitle(document);
+    const articleText = await extractArticleText(document);
+    const articlePicPage = await extractArticlePicPage(document);
+    const articlePicArray = await extractArticlePicArray(articlePicPage, date);
+
+    const storeParams = {
+      title: articleTitle,
+      text: articleText,
+    };
+
+    if (articlePicArray) {
+      storeParams.picPageURL = articlePicPage;
+      storeParams.picArray = articlePicArray;
+    }
+
+    const storeModel = new dbModel({ keyToLookup: "url", itemValue: url, updateObj: storeParams }, articles);
+    const storeData = await storeModel.updateObjItem();
+    console.log("STORE DATA");
+    console.log(storeData);
+
+    return storeParams;
+  } catch (e) {
+    console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+    return null;
   }
-
-  const dom = new JSDOM(html);
-  const document = dom.window.document;
-
-  const articleTitle = await extractArticleTitle(document);
-  const articleText = await extractArticleText(document);
-  const articlePicPage = await extractArticlePicPage(document);
-  const articlePicArray = await extractArticlePicArray(articlePicPage, date);
-
-  const storeParams = {
-    title: articleTitle,
-    text: articleText,
-  };
-
-  if (articlePicArray) {
-    storeParams.picPageURL = articlePicPage;
-    storeParams.picArray = articlePicArray;
-  }
-
-  const storeModel = new dbModel({ keyToLookup: "url", itemValue: url, updateObj: storeParams }, articles);
-  const storeData = await storeModel.updateObjItem();
-  console.log("STORE DATA");
-  console.log(storeData);
-
-  return storeParams;
 };
 
 export const extractArticleTitle = async (document) => {

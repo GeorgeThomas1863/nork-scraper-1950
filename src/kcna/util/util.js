@@ -40,10 +40,15 @@ export const extractItemDate = async (linkElement) => {
 
 export const lookupItemDate = async (url, collection) => {
   if (!url) return null;
-  const params = { keyToLookup: "url", itemValue: url };
-  const lookupModel = new dbModel(params, collection);
-  const lookupData = await lookupModel.getUniqueItem();
-  return lookupData?.date;
+  try {
+    const params = { keyToLookup: "url", itemValue: url };
+    const lookupModel = new dbModel(params, collection);
+    const lookupData = await lookupModel.getUniqueItem();
+    return lookupData?.date;
+  } catch (e) {
+    console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+    return null;
+  }
 };
 
 export const sortArrayByDate = async (inputArray) => {
@@ -68,12 +73,17 @@ export const sortArrayByDate = async (inputArray) => {
 };
 
 export const getNextId = async (keyToLookup, collection) => {
-  const dataModel = new dbModel({ keyToLookup: keyToLookup }, collection);
-  const maxId = await dataModel.findMaxId();
+  try {
+    const dataModel = new dbModel({ keyToLookup: keyToLookup }, collection);
+    const maxId = await dataModel.findMaxId();
 
-  if (!maxId) return 1;
+    if (!maxId) return 1;
 
-  return maxId + 1;
+    return maxId + 1;
+  } catch (e) {
+    console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+    return null;
+  }
 };
 
 export const getIdFromURL = async (url) => {

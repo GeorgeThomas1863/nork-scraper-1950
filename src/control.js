@@ -7,17 +7,20 @@ import { scrapeKCNA } from "./kcna/kcna-control.js";
 export const handleIncomingAPI = async (inputParams) => {
   const { command } = inputParams;
 
-  //prob not necessary to track data
+  try {
+    switch (command) {
+      case "admin-start-scrape":
+        return await runNewScrape(inputParams);
 
-  switch (command) {
-    case "admin-start-scrape":
-      return await runNewScrape(inputParams);
+      case "admin-stop-scrape":
+        return await runStopScrape(inputParams);
 
-    case "admin-stop-scrape":
-      return await runStopScrape(inputParams);
-
-    default:
-      return null;
+      default:
+        return null;
+    }
+  } catch (e) {
+    console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+    return null;
   }
 };
 

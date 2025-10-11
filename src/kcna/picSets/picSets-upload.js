@@ -44,7 +44,7 @@ export const uploadPicSetsKCNA = async () => {
       console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
     }
   }
-  
+
   kcnaState.scrapeStep = "VID PAGE UPLOAD KCNA";
   kcnaState.scrapeMessage = `FINISHED UPLOADING ${picSetPostDataArray.length} NEW PIC SETS TO TG`;
   await updateDisplayerKCNA(kcnaState);
@@ -60,17 +60,22 @@ export const postPicSetTG = async (inputObj) => {
   const tgInputs = await normalizeTGInputs(url, date);
   const uploadObj = { ...inputObj, ...tgInputs };
 
-  const titleData = await postPicSetTitleTG(uploadObj);
-  console.log("TITLE DATA");
-  console.log(titleData);
+  try {
+    const titleData = await postPicSetTitleTG(uploadObj);
+    console.log("TITLE DATA");
+    console.log(titleData);
 
-  //post pics if exist
+    //post pics if exist
 
-  const picSetPicData = await postPicSetPicsTG(uploadObj);
-  console.log("PIC SET PICS DATA");
-  console.log(picSetPicData);
+    const picSetPicData = await postPicSetPicsTG(uploadObj);
+    console.log("PIC SET PICS DATA");
+    console.log(picSetPicData);
 
-  return uploadObj;
+    return uploadObj;
+  } catch (e) {
+    console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+    return null;
+  }
 };
 
 export const postPicSetTitleTG = async (inputObj) => {
@@ -85,8 +90,13 @@ export const postPicSetTitleTG = async (inputObj) => {
     parse_mode: "HTML",
   };
 
-  const data = await tgSendMessage(params);
-  return data;
+  try {
+    const data = await tgSendMessage(params);
+    return data;
+  } catch (e) {
+    console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+    return null;
+  }
 };
 
 //FIX
@@ -129,9 +139,13 @@ export const postPicSetPicsTG = async (inputObj) => {
     picObj.caption = picSetPicCaption;
     picArrayWithCaption.push(picObj);
   }
-
-  const data = await postPicArrayTG(picArrayWithCaption);
-  return data;
+  try {
+    const data = await postPicArrayTG(picArrayWithCaption);
+    return data;
+  } catch (e) {
+    console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+    return null;
+  }
 };
 
 export const buildPicSetPicCaption = async (inputObj) => {

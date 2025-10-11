@@ -32,21 +32,26 @@ export const scrapeVidPageURLsKCNA = async () => {
 };
 
 export const parseVidPageList = async (html) => {
-  if (!html) {
-    const error = new Error("FAILED TO GET VID PAGE LIST HTML ");
-    error.url = url;
-    error.function = "parseVidPageList";
-    throw error;
+  try {
+    if (!html) {
+      const error = new Error("FAILED TO GET VID PAGE LIST HTML ");
+      error.url = url;
+      error.function = "parseVidPageList";
+      throw error;
+    }
+
+    const dom = new JSDOM(html);
+    const document = dom.window.document;
+
+    const vidWrapperArray = document.querySelectorAll(".video-wrapper");
+    if (!vidWrapperArray || !vidWrapperArray.length) return null;
+
+    const vidPageListArray = await extractVidPageListArray(vidWrapperArray);
+    return vidPageListArray;
+  } catch (e) {
+    console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+    return null;
   }
-
-  const dom = new JSDOM(html);
-  const document = dom.window.document;
-
-  const vidWrapperArray = document.querySelectorAll(".video-wrapper");
-  if (!vidWrapperArray || !vidWrapperArray.length) return null;
-
-  const vidPageListArray = await extractVidPageListArray(vidWrapperArray);
-  return vidPageListArray;
 };
 
 export const extractVidPageListArray = async (inputArray) => {
@@ -57,31 +62,35 @@ export const extractVidPageListArray = async (inputArray) => {
   for (const vidPageElement of inputArray) {
     if (!kcnaState.scrapeActive) return vidPageURLArray;
 
-    const vidLinkElement = vidPageElement.querySelector(".img a");
-    const vidPageLink = vidLinkElement.getAttribute("href");
-    const vidPageDate = await extractItemDate(vidPageElement);
-    //thumbnail only on list page
-    const thumbnailURL = await extractVidThumbnail(vidPageElement, vidPageDate);
-    const vidPageURL = "http://www.kcna.kp" + vidPageLink;
-    const vidPageId = await getIdFromURL(vidPageURL);
+    try {
+      const vidLinkElement = vidPageElement.querySelector(".img a");
+      const vidPageLink = vidLinkElement.getAttribute("href");
+      const vidPageDate = await extractItemDate(vidPageElement);
+      //thumbnail only on list page
+      const thumbnailURL = await extractVidThumbnail(vidPageElement, vidPageDate);
+      const vidPageURL = "http://www.kcna.kp" + vidPageLink;
+      const vidPageId = await getIdFromURL(vidPageURL);
 
-    const params = {
-      url: vidPageURL,
-      date: vidPageDate,
-      thumbnailURL: thumbnailURL,
-      scrapeId: kcnaState.scrapeId,
-      vidPageId: vidPageId,
-    };
+      const params = {
+        url: vidPageURL,
+        date: vidPageDate,
+        thumbnailURL: thumbnailURL,
+        scrapeId: kcnaState.scrapeId,
+        vidPageId: vidPageId,
+      };
 
-    console.log("VID PAGE LIST PARAMS");
-    console.log(params);
+      console.log("VID PAGE LIST PARAMS");
+      console.log(params);
 
-    const storeModel = new dbModel(params, vidPages);
-    const storeData = await storeModel.storeUniqueURL();
-    console.log("VID PAGE LIST STORE DATA");
-    console.log(storeData);
+      const storeModel = new dbModel(params, vidPages);
+      const storeData = await storeModel.storeUniqueURL();
+      console.log("VID PAGE LIST STORE DATA");
+      console.log(storeData);
 
-    vidPageURLArray.push(params);
+      vidPageURLArray.push(params);
+    } catch (e) {
+      console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+    }
   }
 
   return vidPageURLArray;
@@ -92,37 +101,42 @@ export const extractVidThumbnail = async (inputElement, date) => {
   if (!inputElement) return null;
 
   //get thumbnailURL
-  const thumbnailElement = inputElement.querySelector(".img img");
-  const thumbnailLink = thumbnailElement.getAttribute("src");
-  const thumbnailURL = "http://www.kcna.kp" + thumbnailLink;
-
-  if (!thumbnailURL) {
-    const error = new Error("CANT EXTRACT VID THUMBNAIL");
-    error.url = url;
-    error.function = "extractVidThumbnail";
-    throw error;
-  }
-
-  //store thumbnail to picsDB
-  const picId = await getIdFromURL(thumbnailURL);
   try {
-    const storeParams = {
-      picId: picId,
-      url: thumbnailURL,
-      scrapeId: kcnaState.scrapeId,
-      date: date,
-    };
+    const thumbnailElement = inputElement.querySelector(".img img");
+    const thumbnailLink = thumbnailElement.getAttribute("src");
+    const thumbnailURL = "http://www.kcna.kp" + thumbnailLink;
 
-    console.log("STORE PIC PARAMS");
-    console.log(storeParams);
+    if (!thumbnailURL) {
+      const error = new Error("CANT EXTRACT VID THUMBNAIL");
+      error.url = url;
+      error.function = "extractVidThumbnail";
+      throw error;
+    }
 
-    const picModel = new dbModel(storeParams, pics);
-    const storeData = await picModel.storeUniqueURL();
-    console.log("STORE PIC DATA");
-    console.log(storeData);
+    //store thumbnail to picsDB
+    const picId = await getIdFromURL(thumbnailURL);
+    try {
+      const storeParams = {
+        picId: picId,
+        url: thumbnailURL,
+        scrapeId: kcnaState.scrapeId,
+        date: date,
+      };
+
+      console.log("STORE PIC PARAMS");
+      console.log(storeParams);
+
+      const picModel = new dbModel(storeParams, pics);
+      const storeData = await picModel.storeUniqueURL();
+      console.log("STORE PIC DATA");
+      console.log(storeData);
+    } catch (e) {
+      console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+    }
+
+    return thumbnailURL;
   } catch (e) {
     console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+    return null;
   }
-
-  return thumbnailURL;
 };
