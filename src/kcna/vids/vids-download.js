@@ -6,6 +6,8 @@ import CONFIG from "../../../config/config.js";
 import dbModel from "../../../models/db-model.js";
 import kcnaState from "../util/state.js";
 
+import { updateDisplayerKCNA } from "../util/api.js";
+
 export const downloadVidsKCNA = async () => {
   const { vids, vidPath } = CONFIG;
   if (!kcnaState.scrapeActive) return null;
@@ -39,6 +41,10 @@ export const downloadVidsKCNA = async () => {
       console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
     }
   }
+
+  kcnaState.scrapeStep = "VIDS DOWNLOAD KCNA";
+  kcnaState.scrapeMessage = `FINISHED DOWNLOADING ${downloadVidArray.length} NEW VIDS`;
+  await updateDisplayerKCNA(kcnaState);
 
   console.log("FINISHED VIDEO DOWNLOAD");
   console.log(`DOWNLOADED ${downloadVidArray.length} VIDS`);

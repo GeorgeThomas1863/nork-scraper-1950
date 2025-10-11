@@ -6,6 +6,8 @@ import CONFIG from "../../../config/config.js";
 import dbModel from "../../../models/db-model.js";
 import kcnaState from "../util/state.js";
 
+import { updateDisplayerKCNA } from "../util/api.js";
+
 export const downloadPicsKCNA = async () => {
   const { pics, picPath } = CONFIG;
   if (!kcnaState.scrapeActive) return null;
@@ -49,6 +51,10 @@ export const downloadPicsKCNA = async () => {
       console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
     }
   }
+
+  kcnaState.scrapeStep = "PICS DOWNLOAD KCNA";
+  kcnaState.scrapeMessage = `FINISHED DOWNLOADING ${downloadPicArray.length} NEW PICS`;
+  await updateDisplayerKCNA(kcnaState);
 
   console.log("FINISHED PIC DOWNLOAD");
   console.log(`DOWNLOADED ${downloadPicArray.length} PICS`);
