@@ -31,7 +31,7 @@ export const scrapeArticleURLsKCNA = async () => {
   console.log("ARTICLE COUNT");
   console.log(articleCount);
 
-  kcnaState.scrapeStep = "ARTICLES URLS KCNA";
+  kcnaState.scrapeStep = "ARTICLE CONTENT KCNA";
   kcnaState.scrapeMessage = `FINISHED SCRAPING ${articleCount} NEW ARTICLE URLS`;
   await updateDisplayerKCNA(kcnaState);
 

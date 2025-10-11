@@ -42,7 +42,7 @@ export const downloadVidsKCNA = async () => {
     }
   }
 
-  kcnaState.scrapeStep = "VIDS DOWNLOAD KCNA";
+  kcnaState.scrapeStep = "ARTICLE UPLOAD KCNA";
   kcnaState.scrapeMessage = `FINISHED DOWNLOADING ${downloadVidArray.length} NEW VIDS`;
   await updateDisplayerKCNA(kcnaState);
 

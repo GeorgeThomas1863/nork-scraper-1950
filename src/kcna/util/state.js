@@ -37,7 +37,7 @@ export const logScrapeStartKCNA = async () => {
   kcnaState.scrapeEndTime = null;
   kcnaState.scrapeStartTime = newScrapeStartTime;
   kcnaState.scrapeActive = true;
-  kcnaState.scrapeStep = "start";
+  kcnaState.scrapeStep = "ARTICLE URLS KCNA";
   kcnaState.scrapeMessage = "STARTING NEW SCRAPE KCNA";
 
   await updateDisplayerKCNA(kcnaState);
@@ -64,8 +64,8 @@ export const logScrapeStopKCNA = async () => {
   kcnaState.scrapeLengthSeconds = scrapeLengthSeconds;
   kcnaState.scrapeLengthMinutes = scrapeLengthMinutes;
   kcnaState.scrapeActive = false;
-  kcnaState.scrapeStep = "DONE";
-  kcnaState.scrapeMessage = "FINISHED KCNA SCRAPE";
+  kcnaState.scrapeStep = "FINISHED SCRAPE KCNA";
+  kcnaState.scrapeMessage = "FINISHED SCRAPE KCNA";
   await updateDisplayerKCNA(kcnaState);
 
   const updateModel = new dbModel({ keyToLookup: "scrapeId", itemValue: kcnaState.scrapeId, updateObj: kcnaState }, log);

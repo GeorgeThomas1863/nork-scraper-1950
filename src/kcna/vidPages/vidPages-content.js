@@ -40,7 +40,7 @@ export const parseNewVidPageArray = async (inputArray) => {
     }
   }
 
-  kcnaState.scrapeStep = "VID PAGES CONTENT KCNA";
+  kcnaState.scrapeStep = "PIC DOWNLOAD KCNA";
   kcnaState.scrapeMessage = `FINISHED SCRAPING CONTENT FOR ${newVidPageArray.length} NEW VID PAGES`;
   await updateDisplayerKCNA(kcnaState);
 

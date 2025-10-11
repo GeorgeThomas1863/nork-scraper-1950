@@ -45,7 +45,7 @@ export const uploadPicSetsKCNA = async () => {
     }
   }
   
-  kcnaState.scrapeStep = "PIC SETS UPLOAD KCNA";
+  kcnaState.scrapeStep = "VID PAGE UPLOAD KCNA";
   kcnaState.scrapeMessage = `FINISHED UPLOADING ${picSetPostDataArray.length} NEW PIC SETS TO TG`;
   await updateDisplayerKCNA(kcnaState);
 

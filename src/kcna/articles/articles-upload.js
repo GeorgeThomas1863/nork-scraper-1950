@@ -45,7 +45,7 @@ export const uploadArticlesKCNA = async () => {
     }
   }
 
-  kcnaState.scrapeStep = "ARTICLES UPLOAD KCNA";
+  kcnaState.scrapeStep = "PIC SET UPLOAD KCNA";
   kcnaState.scrapeMessage = `FINISHED UPLOADING ${articlePostDataArray.length} NEW ARTICLES TO TG`;
   await updateDisplayerKCNA(kcnaState);
 

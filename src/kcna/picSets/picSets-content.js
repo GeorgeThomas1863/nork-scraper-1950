@@ -40,7 +40,7 @@ export const parseNewPicSetArray = async (inputArray) => {
     }
   }
 
-  kcnaState.scrapeStep = "PIC SETS CONTENT KCNA";
+  kcnaState.scrapeStep = "VID PAGE URLS KCNA";
   kcnaState.scrapeMessage = `FINISHED SCRAPING CONTENT FOR ${newPicSetArray.length} NEW PIC SETS`;
   await updateDisplayerKCNA(kcnaState);
 

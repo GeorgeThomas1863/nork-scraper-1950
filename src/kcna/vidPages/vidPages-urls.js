@@ -20,7 +20,7 @@ export const scrapeVidPageURLsKCNA = async () => {
     const vidPageListData = await parseVidPageList(html);
     if (!vidPageListData) return null;
 
-    kcnaState.scrapeStep = "VID PAGES URLS KCNA";
+    kcnaState.scrapeStep = "VID PAGES CONTENT KCNA";
     kcnaState.scrapeMessage = `FINISHED SCRAPING ${vidPageListData.length} NEW VID PAGE URLS`;
     await updateDisplayerKCNA(kcnaState);
 

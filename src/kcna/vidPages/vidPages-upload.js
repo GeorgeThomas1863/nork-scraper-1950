@@ -45,7 +45,7 @@ export const uploadVidPagesKCNA = async () => {
     }
   }
 
-  kcnaState.scrapeStep = "VID PAGES UPLOAD KCNA";
+  kcnaState.scrapeStep = "UPDATING STUFF KCNA";
   kcnaState.scrapeMessage = `FINISHED UPLOADING ${vidPagePostDataArray.length} NEW VID PAGES TO TG`;
   await updateDisplayerKCNA(kcnaState);
 

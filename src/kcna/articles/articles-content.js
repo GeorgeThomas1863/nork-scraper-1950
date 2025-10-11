@@ -41,7 +41,7 @@ export const parseNewArticleArray = async (inputArray) => {
     }
   }
 
-  kcnaState.scrapeStep = "ARTICLES CONTENT KCNA";
+  kcnaState.scrapeStep = "PIC SET URLS KCNA";
   kcnaState.scrapeMessage = `FINISHED SCRAPING CONTENT FOR ${newArticleArray.length} NEW ARTICLES`;
   await updateDisplayerKCNA(kcnaState);
 
