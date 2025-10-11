@@ -13,29 +13,25 @@ export const scrapeVidPageURLsKCNA = async () => {
 
   if (!kcnaState.scrapeActive) return null;
 
-  const vidPageURLData = [];
   try {
-    const vidPageListData = await parseVidPageList(vidPageListURL);
+    const kcna = new NORK({ url: vidPageListURL });
+    const html = await kcna.getHTML();
+
+    const vidPageListData = await parseVidPageList(html);
     if (!vidPageListData) return null;
-    vidPageURLData.push(vidPageListData);
+
+    kcnaState.scrapeStep = "VID PAGES URLS KCNA";
+    kcnaState.scrapeMessage = `FINISHED SCRAPING ${vidPageListData.length} NEW VID PAGE URLS`;
+    await updateDisplayerKCNA(kcnaState);
+
+    return vidPageListData;
   } catch (e) {
     console.log(e.message + "; URL: " + e.url + "; F BREAK: " + e.function);
     return null;
   }
-
-  kcnaState.scrapeStep = "VID PAGES URLS KCNA";
-  kcnaState.scrapeMessage = `FINISHED SCRAPING ${vidPageURLData.length} NEW VID PAGE URLS`;
-  await updateDisplayerKCNA(kcnaState);
-
-  return vidPageURLData;
 };
 
-export const parseVidPageList = async (url) => {
-  if (!url) return null;
-
-  const kcna = new NORK({ url });
-  const html = await kcna.getHTML();
-
+export const parseVidPageList = async (html) => {
   if (!html) {
     const error = new Error("FAILED TO GET VID PAGE LIST HTML ");
     error.url = url;

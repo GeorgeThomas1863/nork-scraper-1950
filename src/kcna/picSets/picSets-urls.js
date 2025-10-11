@@ -13,30 +13,25 @@ export const scrapePicSetURLsKCNA = async () => {
 
   if (!kcnaState.scrapeActive) return null;
 
-  const picSetURLData = [];
   try {
-    const picSetListData = await parsePicSetList(picSetListURL);
+    const kcna = new NORK({ url: picSetListURL });
+    const html = await kcna.getHTML();
+
+    const picSetListData = await parsePicSetList(html);
     if (!picSetListData) return null;
 
-    picSetURLData.push(picSetListData);
+    kcnaState.scrapeStep = "PIC SETS URLS KCNA";
+    kcnaState.scrapeMessage = `FINISHED SCRAPING ${picSetListData.length} NEW PIC SET URLS`;
+    await updateDisplayerKCNA(kcnaState);
+
+    return picSetListData;
   } catch (e) {
     console.log(e.message + "; URL: " + e.url + "; F BREAK: " + e.function);
     return null;
   }
-
-  kcnaState.scrapeStep = "PIC SETS URLS KCNA";
-  kcnaState.scrapeMessage = `FINISHED SCRAPING ${picSetURLData.length} NEW PIC SET URLS`;
-  await updateDisplayerKCNA(kcnaState);
-
-  return picSetURLData;
 };
 
-export const parsePicSetList = async (url) => {
-  if (!url) return null;
-
-  const kcna = new NORK({ url });
-  const html = await kcna.getHTML();
-
+export const parsePicSetList = async (html) => {
   if (!html) {
     const error = new Error("FAILED TO GET PIC SET LIST HTML ");
     error.url = url;
