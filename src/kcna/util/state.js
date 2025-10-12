@@ -15,10 +15,55 @@ const kcnaState = {
   scrapeError: null,
   scrapeMessage: null,
   scrapeStep: null,
+  scrapeObj: {
+    articleList: {
+      fatboy: null,
+      topNews: null,
+      latestNews: null,
+      externalNews: null,
+      anecdote: null,
+      people: null,
+    },
+    articleContent: {
+      fatboy: null,
+      topNews: null,
+      latestNews: null,
+      externalNews: null,
+      anecdote: null,
+      people: null,
+    },
+    articleUpload: {
+      fatboy: null,
+      topNews: null,
+      latestNews: null,
+      externalNews: null,
+      anecdote: null,
+      people: null,
+    },
+    picSetList: null,
+    picSetContent: null,
+    picSetUpload: null,
+    vidPageList: null,
+    vidPageContent: null,
+    vidPageUpload: null,
+    pics: {
+      urls: null,
+      downloaded: null,
+      uploaded: null,
+    },
+    vids: {
+      urls: null,
+      downloaded: null,
+      uploaded: null,
+    },
+  },
 };
 
 export const logScrapeStartKCNA = async () => {
   const { log } = CONFIG;
+
+  //reset scrape obj
+  await resetScrapeObjKCNA();
 
   //set scrape active
   kcnaState.scrapeActive = true;
@@ -94,6 +139,53 @@ export const logScrapeStopKCNA = async () => {
     console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
     return null;
   }
+};
+
+export const resetScrapeObjKCNA = async () => {
+  kcnaState.scrapeObj = {
+    articleList: {
+      fatboy: null,
+      topNews: null,
+      latestNews: null,
+      externalNews: null,
+      anecdote: null,
+      people: null,
+    },
+    articleContent: {
+      fatboy: null,
+      topNews: null,
+      latestNews: null,
+      externalNews: null,
+      anecdote: null,
+      people: null,
+    },
+    articleUpload: {
+      fatboy: null,
+      topNews: null,
+      latestNews: null,
+      externalNews: null,
+      anecdote: null,
+      people: null,
+    },
+    picSetList: null,
+    picSetContent: null,
+    picSetUpload: null,
+    vidPageList: null,
+    vidPageContent: null,
+    vidPageUpload: null,
+    pics: {
+      urls: null,
+      downloaded: null,
+      uploaded: null,
+    },
+    vids: {
+      urls: null,
+      downloaded: null,
+      uploaded: null,
+    },
+  };
+
+  return true;
 };
 
 export default kcnaState;

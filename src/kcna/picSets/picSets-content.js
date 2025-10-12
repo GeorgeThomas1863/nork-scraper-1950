@@ -31,6 +31,7 @@ export const parseNewPicSetArray = async (inputArray) => {
     try {
       const picSetContent = await parsePicSetContent(url, date);
       if (!picSetContent) continue;
+      kcnaState.scrapeObj.picSetContent++;
       console.log("PIC SET CONTENT");
       console.log(picSetContent);
 
@@ -106,6 +107,7 @@ export const extractPicSetPicArray = async (document, date) => {
       const picSrc = picElement.getAttribute("src");
       if (!picSrc) continue;
       const picSetPicURL = "http://www.kcna.kp" + picSrc;
+      kcnaState.scrapeObj.pics.urls++;
       picSetPicArray.push(picSetPicURL);
 
       try {

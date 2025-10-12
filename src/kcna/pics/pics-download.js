@@ -27,6 +27,8 @@ export const downloadPicsKCNA = async () => {
       picItem.savePath = path.join(picPath, picItem.picName);
 
       const picData = await downloadPicFS(picItem);
+      if (!picData) continue;
+
       const { headers, downloadedSize } = picData;
       picItem.picSize = downloadedSize;
       picItem.headers = headers;
@@ -108,6 +110,8 @@ export const downloadPicFS = async (inputParams) => {
       headers: { ...res.headers }, //converts to normal obj
       downloadedSize: downloadedSize,
     };
+
+    kcnaState.scrapeObj.pics.downloaded++;
 
     console.log(`DOWNLOAD COMPLETE: ${picName} | FINAL SIZE: ${Math.round(downloadedSize / 1024)}KB`);
     return returnObj;

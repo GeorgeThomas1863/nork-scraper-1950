@@ -19,6 +19,7 @@ export const scrapeVidPageURLsKCNA = async () => {
 
     const vidPageListData = await parseVidPageList(html);
     if (!vidPageListData) return null;
+    kcnaState.scrapeObj.vidPageList = vidPageListData.length;
 
     kcnaState.scrapeStep = "VID PAGES CONTENT KCNA";
     kcnaState.scrapeMessage = `FINISHED SCRAPING ${vidPageListData.length} NEW VID PAGE URLS`;
@@ -105,6 +106,7 @@ export const extractVidThumbnail = async (inputElement, date) => {
     const thumbnailElement = inputElement.querySelector(".img img");
     const thumbnailLink = thumbnailElement.getAttribute("src");
     const thumbnailURL = "http://www.kcna.kp" + thumbnailLink;
+    kcnaState.scrapeObj.pics.urls++;
 
     if (!thumbnailURL) {
       const error = new Error("CANT EXTRACT VID THUMBNAIL");

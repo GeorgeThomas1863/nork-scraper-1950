@@ -31,6 +31,7 @@ export const parseNewVidPageArray = async (inputArray) => {
     try {
       const vidPageContent = await parseVidPageContent(url, date);
       if (!vidPageContent) continue;
+      kcnaState.scrapeObj.vidPageContent++;
       console.log("VID PAGE CONTENT");
       console.log(vidPageContent);
 
@@ -118,6 +119,7 @@ export const extractVidURL = async (document, date) => {
     //store url to vidDB (so dont have to do again); build params
     const vidURL = "http://www.kcna.kp" + vidLink;
     const vidId = await getIdFromURL(vidURL);
+    kcnaState.scrapeObj.vids.urls++;
 
     const storeParams = {
       vidId: vidId,

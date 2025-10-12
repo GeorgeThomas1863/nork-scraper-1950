@@ -104,6 +104,8 @@ export const downloadVidFS = async (inputParams) => {
     //defining returnObj as downloadObj without 2 items (which are renamed to remove them bc already defined in function)
     const { chunksPending: _, chunksCompleted: __, chunkArrayDefault: ___, ...returnObj } = downloadObj;
 
+    kcnaState.scrapeObj.vids.downloaded++;
+
     return returnObj;
   } catch (e) {
     console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);

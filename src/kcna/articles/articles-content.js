@@ -24,6 +24,7 @@ export const scrapeArticleContentKCNA = async () => {
 export const parseNewArticleArray = async (inputArray) => {
   if (!inputArray || !inputArray.length) return null;
 
+  let articleCount = 0;
   const newArticleArray = [];
   for (const article of inputArray) {
     if (!kcnaState.scrapeActive) return newArticleArray;
@@ -32,6 +33,8 @@ export const parseNewArticleArray = async (inputArray) => {
     try {
       const articleContent = await parseArticleContent(url, date);
       if (!articleContent) continue;
+      articleCount++;
+      kcnaState.scrapeObj.articleContent[article.type]++;
 
       console.log("ARTICLE CONTENT");
       console.log(articleContent);
@@ -42,7 +45,7 @@ export const parseNewArticleArray = async (inputArray) => {
   }
 
   kcnaState.scrapeStep = "PIC SET URLS KCNA";
-  kcnaState.scrapeMessage = `FINISHED SCRAPING CONTENT FOR ${newArticleArray.length} NEW ARTICLES`;
+  kcnaState.scrapeMessage = `FINISHED SCRAPING CONTENT FOR ${articleCount} NEW ARTICLES`;
   await updateDisplayerKCNA(kcnaState);
 
   return newArticleArray;
@@ -155,6 +158,7 @@ export const extractArticlePicArray = async (url, date) => {
         if (!imgSrc) continue;
 
         const articlePicURL = "http://www.kcna.kp" + imgSrc;
+        kcnaState.scrapeObj.pics.urls++;
 
         picArray.push(articlePicURL);
 

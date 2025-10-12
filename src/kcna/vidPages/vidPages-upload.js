@@ -30,6 +30,7 @@ export const uploadVidPagesKCNA = async () => {
       //post vidPage
       const vidPagePostData = await postVidPageTG(vidPage);
       if (!vidPagePostData) continue;
+      kcnaState.scrapeObj.vidPageUpload++;
       vidPagePostDataArray.push(vidPagePostData);
 
       // console.log("VID PAGE POST DATA");
