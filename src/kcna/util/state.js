@@ -5,6 +5,7 @@ import { updateDisplayerKCNA } from "./api.js";
 const kcnaState = {
   source: "scraper",
   scrapeId: null,
+  intervalId: null,
   scrapeActive: false,
   schedulerActive: false,
 
