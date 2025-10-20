@@ -63,6 +63,8 @@ export const runStopScrape = async (inputParams) => {
 export const runStartScheduler = async (inputParams) => {
   const { site } = inputParams;
 
+  console.log("AHHHHHHHHHHHHHHHHHHHH")
+
   switch (site) {
     case "kcna":
       if (kcnaState.schedulerActive) return { data: "SCHEDULER ALREADY ACTIVE" };
