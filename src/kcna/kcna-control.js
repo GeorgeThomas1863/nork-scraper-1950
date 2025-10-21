@@ -52,7 +52,7 @@ export const scrapeKCNA = async () => {
 export const startSchedulerKCNA = async () => {
   const { scrapeInterval } = CONFIG;
 
-  const testInterval = 10000;
+  // const testInterval = 10000;
 
   console.log("STARTING SCHEDULER");
   console.log(new Date().toISOString());
@@ -62,7 +62,7 @@ export const startSchedulerKCNA = async () => {
 
     console.log("STARTING NEW SCRAPE");
     await scrapeKCNA();
-  }, testInterval); //RESET
+  }, scrapeInterval); //RESET
 
   kcnaState.intervalId = intervalId;
   kcnaState.schedulerActive = true;
