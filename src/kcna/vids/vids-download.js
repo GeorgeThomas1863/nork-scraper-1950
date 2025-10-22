@@ -66,7 +66,7 @@ export const downloadVidFS = async (inputParams) => {
 
     //build chunk array so names / paths in one place
     const chunkArrayDefault = await buildChunkArrayDefault(vidId, vidSize);
-    const chunksCompleted = await getChunksCompleted(chunkArrayDefault);
+    const chunksCompleted = (await getChunksCompleted(chunkArrayDefault)) || []; //per claude
     const chunksPending = chunkArrayDefault.filter((chunk) => !chunksCompleted.includes(chunk));
 
     if (chunksCompleted && chunksCompleted.length === totalVidChunks) {
@@ -154,6 +154,8 @@ export const downloadPendingChunkArray = async (inputObj) => {
     try {
       const batchArray = chunksPending.slice(i, i + downloadVidConcurrent);
       const failedObj = await downloadChunksBatch(inputObj, batchArray);
+      if (!failedObj || !failedObj.length) continue;
+
       failedDownloadArray.push(...failedObj);
     } catch (e) {
       console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
@@ -168,41 +170,40 @@ export const downloadChunksBatch = async (inputObj, inputArray) => {
   if (!inputObj || !inputArray || !inputArray.length) return null;
   const { totalVidChunks, chunksCompleted } = inputObj;
 
+  const failedChunks = [];
   const promiseArray = [];
   for (let i = 0; i < inputArray.length; i++) {
     if (!kcnaState.scrapeActive) return null;
 
-    try {
-      const chunk = inputArray[i];
-      const chunkObj = { ...chunk, ...inputObj };
-      const promise = downloadVidChunk(chunkObj);
-      promiseArray.push(promise);
+    const chunk = inputArray[i];
+    const chunkObj = { ...chunk, ...inputObj };
+    const promise = downloadVidChunk(chunkObj);
+    promiseArray.push(promise);
+  }
 
-      const results = await Promise.allSettled(promiseArray);
+  try {
+    const results = await Promise.allSettled(promiseArray);
 
-      const failedChunks = [];
-      for (let i = 0; i < results.length; i++) {
-        if (!kcnaState.scrapeActive) return null;
+    for (let i = 0; i < results.length; i++) {
+      if (!kcnaState.scrapeActive) return null;
 
-        try {
-          const resultItem = results[i];
-          const chunk = inputArray[i];
+      try {
+        const resultItem = results[i];
+        const chunk = inputArray[i];
 
-          if (resultItem.status !== "fulfilled" || !resultItem.value) {
-            console.error(`Failed chunk ${chunk.chunkIndex}: ${resultItem.reason || "Unknown error"}`);
-            failedChunks.push(chunk);
-            continue;
-          }
-          chunksCompleted.push(chunk);
-        } catch (e) {
-          console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+        if (resultItem.status !== "fulfilled" || !resultItem.value) {
+          console.error(`Failed chunk ${chunk.chunkIndex}: ${resultItem.reason || "Unknown error"}`);
+          failedChunks.push(chunk);
           continue;
         }
+        chunksCompleted.push(chunk);
+      } catch (e) {
+        console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+        continue;
       }
-    } catch (e) {
-      console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
-      continue;
     }
+  } catch (e) {
+    console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
   }
 
   const progress = ((chunksCompleted.length / totalVidChunks) * 100).toFixed(1);
