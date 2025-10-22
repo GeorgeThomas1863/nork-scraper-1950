@@ -80,7 +80,8 @@ export const extractArticleListArray = async (inputArray, type) => {
     const articleLink = linkElement.getAttribute("href");
     const articleDate = await extractItemDate(linkElement);
     const articleURL = "http://www.kcna.kp" + articleLink;
-    const articleId = await getIdFromURL(articleURL);
+    // const articleId = await getIdFromURL(articleURL);
+    const articleId = await buildNumericId("articles");
 
     const params = {
       url: articleURL,

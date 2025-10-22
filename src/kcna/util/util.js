@@ -72,6 +72,16 @@ export const sortArrayByDate = async (inputArray) => {
   return sortArray;
 };
 
+export const buildNumericId = async (itemType) => {
+  if (!itemType) return null;
+
+  const prefix = itemType.slice(0, -1);
+  const keyToLookup = `${prefix}Id`;
+
+  const nextId = await getNextId(keyToLookup, itemType);
+  return nextId;
+};
+
 export const getNextId = async (keyToLookup, collection) => {
   try {
     const dataModel = new dbModel({ keyToLookup: keyToLookup }, collection);
