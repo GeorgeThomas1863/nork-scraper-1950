@@ -23,7 +23,7 @@ export const scrapeArticleURLsKCNA = async () => {
       articleCount += articleListTypeData.length;
       kcnaState.scrapeObj.articles[type] = articleListTypeData.length;
 
-      articleURLData.push(articleListTypeData);
+      articleURLData.push(...articleListTypeData);
     } catch (e) {
       console.log(e.message + "; URL: " + e.url + "; F BREAK: " + e.function);
     }
@@ -80,7 +80,13 @@ export const extractArticleListArray = async (inputArray, type) => {
     const articleLink = linkElement.getAttribute("href");
     const articleDate = await extractItemDate(linkElement);
     const articleURL = "http://www.kcna.kp" + articleLink;
-    // const articleId = await getIdFromURL(articleURL);
+
+    //check if article already exists in db
+    const checkModel = new dbModel({ keyToLookup: "url", itemValue: articleURL }, articles);
+    const checkData = await checkModel.itemExistsCheckBoolean();
+    if (checkData) continue;
+
+    //create new id if article not in db
     const articleId = await buildNumericId("articles");
 
     const params = {

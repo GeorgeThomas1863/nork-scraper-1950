@@ -145,6 +145,15 @@ class dbModel {
     return true;
   }
 
+  //version that doesnt throw error
+  async itemExistsCheckBoolean() {
+    const { keyToLookup, itemValue } = this.dataObject;
+    const itemExists = await dbGet().collection(this.collection).findOne({ [keyToLookup]: itemValue }); //prettier-ignore
+    if (!itemExists) return false;
+
+    return true;
+  }
+
   async findNewURLs() {
     // await db.dbConnect();
     //putting collections in dataObject for no reason, if hate self refactor rest of project like this
