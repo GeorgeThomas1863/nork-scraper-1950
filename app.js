@@ -1,4 +1,4 @@
-//TODO: debug
+//TODO: continue file by file code review with claude, ON articles-content.js
 
 //SEND BACK STATUS ITEMS TO DISPLAYER; BUILD ROUTE LISTENER ON DISPLAYER
 
