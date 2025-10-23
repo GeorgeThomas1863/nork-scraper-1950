@@ -67,7 +67,25 @@ export const downloadVidFS = async (inputParams) => {
     //build chunk array so names / paths in one place
     const chunkArrayDefault = await buildChunkArrayDefault(vidId, vidSize);
     const chunksCompleted = (await getChunksCompleted(chunkArrayDefault)) || []; //per claude
-    const chunksPending = chunkArrayDefault.filter((chunk) => !chunksCompleted.includes(chunk));
+
+    //CLAUDE SAYS BELOW DOOESNT WORK
+    // const chunksPending = chunkArrayDefault.filter((chunk) => !chunksCompleted.includes(chunk));
+
+    // Begin Claude's "fix" for above
+    const completedPaths = new Set();
+    for (let i = 0; i < chunksCompleted.length; i++) {
+      completedPaths.add(chunksCompleted[i].chunkPath);
+    }
+
+    const chunksPending = [];
+    for (let i = 0; i < chunkArrayDefault.length; i++) {
+      const chunk = chunkArrayDefault[i];
+      if (!completedPaths.has(chunk.chunkPath)) {
+        chunksPending.push(chunk);
+      }
+    }
+
+    //end of claude's fix
 
     if (chunksCompleted && chunksCompleted.length === totalVidChunks) {
       console.log("Vid already downloaded");
@@ -364,7 +382,7 @@ export const mergeChunks = async (inputObj) => {
     try {
       const chunk = chunkArrayDefault[i];
       const { chunkPath, chunkIndex } = chunk;
-      if (!fs.existsSync(chunkPath)) continue;
+      if (!fs.existsSync(chunkPath)) throw new Error(`CHUNK NOT FOUND: ${chunkPath}`);
 
       console.log(`MERGING CHUNK ${chunkIndex} OF ${chunkArrayDefault.length}`);
 

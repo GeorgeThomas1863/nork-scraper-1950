@@ -92,7 +92,11 @@ export const downloadPicFS = async (inputParams) => {
     const stream = res.data.pipe(writer);
 
     res.data.on("data", (chunk) => {
-      if (!kcnaState.scrapeActive) return;
+      if (!kcnaState.scrapeActive) {
+        writer.destroy();
+        res.data.destroy();
+        return;
+      }
 
       // Log progress in KB every 100KB
       downloadedSize += chunk.length;
