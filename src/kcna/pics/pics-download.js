@@ -23,7 +23,7 @@ export const downloadPicsKCNA = async () => {
 
     try {
       const { picId, url } = picItem;
-      picItem.picName = picId + ".jpg";
+      picItem.picName = `kcna_pic_${picId}.jpg`;
       picItem.savePath = path.join(picPath, picItem.picName);
 
       const picData = await downloadPicFS(picItem);

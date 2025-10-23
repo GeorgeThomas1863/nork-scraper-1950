@@ -5,7 +5,7 @@ import NORK from "../../../models/nork-model.js";
 import dbModel from "../../../models/db-model.js";
 import kcnaState from "../util/state.js";
 
-import { getIdFromURL } from "../util/util.js";
+import { buildNumericId } from "../util/util.js";
 import { updateDisplayerKCNA } from "../util/api.js";
 
 export const scrapeVidPageContentKCNA = async () => {
@@ -95,8 +95,8 @@ export const extractVidPageTitle = async (document) => {
 };
 
 export const extractVidURL = async (document, date) => {
-  const { vids } = CONFIG;
   if (!document) return null;
+  const { vids, kcnaBaseURL } = CONFIG;
 
   try {
     const scriptArray = document.querySelectorAll("script");
@@ -117,8 +117,8 @@ export const extractVidURL = async (document, date) => {
     }
 
     //store url to vidDB (so dont have to do again); build params
-    const vidURL = "http://www.kcna.kp" + vidLink;
-    const vidId = await getIdFromURL(vidURL);
+    const vidURL = kcnaBaseURL + vidLink;
+    const vidId = await buildNumericId("vids");
     kcnaState.scrapeObj.vids.urls++;
 
     const storeParams = {

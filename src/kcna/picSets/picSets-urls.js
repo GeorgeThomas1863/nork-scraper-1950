@@ -57,7 +57,7 @@ export const parsePicSetList = async (html) => {
 
 export const extractPicSetListArray = async (inputArray) => {
   if (!inputArray || !inputArray.length) return null;
-  const { picSets } = CONFIG;
+  const { picSets, kcnaBaseURL } = CONFIG;
 
   const picSetURLArray = [];
   for (const picSetElement of inputArray) {
@@ -67,8 +67,8 @@ export const extractPicSetListArray = async (inputArray) => {
       const titleWrapper = picSetElement.querySelector(".title a");
       const picSetLink = titleWrapper.getAttribute("href");
       const picSetDate = await extractItemDate(picSetElement);
-      const picSetURL = "http://www.kcna.kp" + picSetLink;
-      const picSetId = await getIdFromURL(picSetURL);
+      const picSetURL = kcnaBaseURL + picSetLink;
+      const picSetId = await buildNumericId("picSets");
 
       const params = {
         url: picSetURL,

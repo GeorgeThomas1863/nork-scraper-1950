@@ -5,7 +5,7 @@ import NORK from "../../../models/nork-model.js";
 import dbModel from "../../../models/db-model.js";
 import kcnaState from "../util/state.js";
 
-import { getIdFromURL } from "../util/util.js";
+import { buildNumericId } from "../util/util.js";
 import { updateDisplayerKCNA } from "../util/api.js";
 
 export const scrapeArticleContentKCNA = async () => {
@@ -129,7 +129,7 @@ export const extractArticlePicPage = async (document) => {
 };
 
 export const extractArticlePicArray = async (url, date) => {
-  const { pics } = CONFIG;
+  const { pics, kcnaBaseURL } = CONFIG;
   const { scrapeId } = kcnaState;
   if (!url) return null;
 
@@ -157,13 +157,13 @@ export const extractArticlePicArray = async (url, date) => {
         const imgSrc = imgArray[i].getAttribute("src");
         if (!imgSrc) continue;
 
-        const articlePicURL = "http://www.kcna.kp" + imgSrc;
+        const articlePicURL = kcnaBaseURL + imgSrc;
         kcnaState.scrapeObj.pics.urls++;
 
         picArray.push(articlePicURL);
 
         //store url to picDB (so dont have to do again); build params
-        const picId = await getIdFromURL(articlePicURL);
+        const picId = await buildNumericId("pics");
         const storeParams = {
           picId: picId,
           url: articlePicURL,

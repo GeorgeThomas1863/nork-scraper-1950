@@ -5,7 +5,7 @@ import NORK from "../../../models/nork-model.js";
 import dbModel from "../../../models/db-model.js";
 import kcnaState from "../util/state.js";
 
-import { extractItemDate, getIdFromURL } from "../util/util.js";
+import { extractItemDate, buildNumericId } from "../util/util.js";
 import { updateDisplayerKCNA } from "../util/api.js";
 
 export const scrapeVidPageURLsKCNA = async () => {
@@ -57,7 +57,7 @@ export const parseVidPageList = async (html) => {
 
 export const extractVidPageListArray = async (inputArray) => {
   if (!inputArray || !inputArray.length) return null;
-  const { vidPages } = CONFIG;
+  const { vidPages, kcnaBaseURL } = CONFIG;
 
   const vidPageURLArray = [];
   for (const vidPageElement of inputArray) {
@@ -69,8 +69,8 @@ export const extractVidPageListArray = async (inputArray) => {
       const vidPageDate = await extractItemDate(vidPageElement);
       //thumbnail only on list page
       const thumbnailURL = await extractVidThumbnail(vidPageElement, vidPageDate);
-      const vidPageURL = "http://www.kcna.kp" + vidPageLink;
-      const vidPageId = await getIdFromURL(vidPageURL);
+      const vidPageURL = kcnaBaseURL + vidPageLink;
+      const vidPageId = await buildNumericId("vidPages");
 
       const params = {
         url: vidPageURL,
@@ -98,14 +98,14 @@ export const extractVidPageListArray = async (inputArray) => {
 };
 
 export const extractVidThumbnail = async (inputElement, date) => {
-  const { pics } = CONFIG;
   if (!inputElement) return null;
+  const { pics, kcnaBaseURL } = CONFIG;
 
   //get thumbnailURL
   try {
     const thumbnailElement = inputElement.querySelector(".img img");
     const thumbnailLink = thumbnailElement.getAttribute("src");
-    const thumbnailURL = "http://www.kcna.kp" + thumbnailLink;
+    const thumbnailURL = kcnaBaseURL + thumbnailLink;
     kcnaState.scrapeObj.pics.urls++;
 
     if (!thumbnailURL) {
@@ -116,7 +116,7 @@ export const extractVidThumbnail = async (inputElement, date) => {
     }
 
     //store thumbnail to picsDB
-    const picId = await getIdFromURL(thumbnailURL);
+    const picId = await buildNumericId("pics");
     try {
       const storeParams = {
         picId: picId,

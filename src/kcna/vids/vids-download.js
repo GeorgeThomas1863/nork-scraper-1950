@@ -25,7 +25,7 @@ export const downloadVidsKCNA = async () => {
 
     try {
       const { vidId, url } = vidItem;
-      vidItem.vidName = vidId + ".mp4";
+      vidItem.vidName = `kcna_vid_${vidId}.mp4`;
       vidItem.savePath = path.join(vidPath, vidItem.vidName);
 
       const vidData = await downloadVidFS(vidItem);
@@ -318,7 +318,7 @@ export const buildChunkArrayDefault = async (vidId, vidSize) => {
   for (let i = 0; i < totalVidChunks; i++) {
     if (!kcnaState.scrapeActive) return chunkArray;
 
-    const chunkName = `${vidId}_chunk_${i + 1}.mp4`;
+    const chunkName = `kcna_vid_${vidId}_chunk_${i + 1}.mp4`;
     const chunkPath = path.join(tmpPath, chunkName);
     const startByte = i * downloadVidChunkSize;
     const endByte = Math.min(startByte + downloadVidChunkSize - 1, vidSize - 1);
