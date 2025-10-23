@@ -1,11 +1,12 @@
 import path from "path";
 import fs from "fs";
-import { exec } from "child_process";
-import { promisify } from "util";
 import { stat } from "fs/promises";
 
 import CONFIG from "../../../config/config.js";
 import kcnaState from "../util/state.js";
+
+import { exec } from "child_process";
+import { promisify } from "util";
 
 const execAsync = promisify(exec);
 
@@ -48,7 +49,15 @@ export const chunkVidFS = async (inputObj) => {
     }
   }
 
-  await Promise.all(promiseArray);
+  // await Promise.all(promiseArray);
+
+  //claude addtion below
+  const results = await Promise.allSettled(promiseArray);
+
+  const failures = results.filter((r) => r.status === "rejected");
+  if (failures.length > 0) {
+    console.log(`Failed to create ${failures.length} chunks`);
+  }
 
   const returnObj = { ...inputObj, chunkArray };
 
