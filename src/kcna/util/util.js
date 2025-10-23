@@ -51,11 +51,13 @@ export const lookupItemDate = async (url, collection) => {
   }
 };
 
-export const sortArrayByDate = async (inputArray) => {
-  //return null on blank input
+export const sortArrayByDate = async (inputArray, itemType = "articles") => {
   if (!inputArray || !inputArray.length) return null;
 
   if (!kcnaState.scrapeActive) return null;
+
+  const prefix = itemType.slice(0, -1);
+  const typeKey = `${prefix}Id`;
 
   // Create a copy of the array to avoid modifying the original
   const sortArray = [...inputArray];
@@ -66,7 +68,11 @@ export const sortArrayByDate = async (inputArray) => {
     const dateA = new Date(a.date);
     const dateB = new Date(b.date);
 
-    return dateA - dateB;
+    const dateCompare = dateA - dateB;
+
+    if (dateCompare === 0) return a[typeKey] - b[typeKey];
+
+    return dateCompare;
   });
 
   return sortArray;

@@ -15,7 +15,7 @@ export const uploadVidPagesKCNA = async () => {
   const vidPageArray = await vidPageModel.findEmptyItems();
   if (!vidPageArray || !vidPageArray.length) return null;
 
-  const vidPageArraySorted = await sortArrayByDate(vidPageArray);
+  const vidPageArraySorted = await sortArrayByDate(vidPageArray, "vidPages");
 
   const vidPagePostDataArray = [];
   for (const vidPage of vidPageArraySorted) {

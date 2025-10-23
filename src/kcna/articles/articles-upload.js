@@ -15,7 +15,7 @@ export const uploadArticlesKCNA = async () => {
   const articleArray = await articleModel.findEmptyItems();
   if (!articleArray || !articleArray.length) return null;
 
-  const articleArraySorted = await sortArrayByDate(articleArray);
+  const articleArraySorted = await sortArrayByDate(articleArray, "articles");
 
   const articlePostDataArray = [];
   for (const article of articleArraySorted) {

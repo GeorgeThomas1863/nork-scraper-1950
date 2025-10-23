@@ -15,7 +15,7 @@ export const uploadPicSetsKCNA = async () => {
   const picSetArray = await picSetModel.findEmptyItems();
   if (!picSetArray || !picSetArray.length) return null;
 
-  const picSetArraySorted = await sortArrayByDate(picSetArray);
+  const picSetArraySorted = await sortArrayByDate(picSetArray, "picSets");
 
   const picSetPostDataArray = [];
   for (const picSet of picSetArraySorted) {
