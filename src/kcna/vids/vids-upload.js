@@ -28,7 +28,7 @@ export const postVidThumbnailTG = async (inputObj) => {
 
 export const buildVidThumbnailCaption = async (inputObj) => {
   if (!inputObj) return null;
-  const { title, dateNormal, chunkArray, vidPageId, urlNormal } = inputObj;
+  const { title, dateNormal, chunkArray, urlNormal, vidData } = inputObj;
 
   const chunkCount = chunkArray.length;
 
@@ -36,11 +36,11 @@ export const buildVidThumbnailCaption = async (inputObj) => {
   
 -----------------
         
-<b>VID TITLED: ${title}</b>
+<b>${title}</b>
       
 -----------------
   
-<b>${chunkCount} CHUNK VID</b> | <b>VID PAGE ID:</b> ${vidPageId} | <b>DATE:</b> <i>${dateNormal}</i> | <b>URL:</b> 
+<b>KCNA VID ID: ${vidData.vidId}</b> | <b>${chunkCount} CHUNKS IN VID</b> | <b>DATE:</b> <i>${dateNormal}</i> | <b>URL:</b> 
 <i>${urlNormal}</i>
       `;
 
