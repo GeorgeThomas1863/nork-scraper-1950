@@ -5,7 +5,7 @@ import NORK from "../../../models/nork-model.js";
 import dbModel from "../../../models/db-model.js";
 import kcnaState from "../util/state.js";
 
-import { extractItemDate, getIdFromURL } from "../util/util.js";
+import { extractItemDate, buildNumericId } from "../util/util.js";
 import { updateDisplayerKCNA } from "../util/api.js";
 
 export const scrapePicSetURLsKCNA = async () => {
