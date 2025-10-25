@@ -6,7 +6,8 @@ import dbModel from "../../../models/db-model.js";
 import kcnaState from "../util/state.js";
 
 import { buildNumericId } from "../util/util.js";
-import { updateDisplayerKCNA } from "../util/api.js";
+import { updateLogKCNA } from "../util/log.js";
+
 
 export const scrapePicSetContentKCNA = async () => {
   const { picSets } = CONFIG;
@@ -43,7 +44,7 @@ export const parseNewPicSetArray = async (inputArray) => {
 
   kcnaState.scrapeStep = "VID PAGE URLS KCNA";
   kcnaState.scrapeMessage = `FINISHED SCRAPING CONTENT FOR ${newPicSetArray.length} NEW PIC SETS`;
-  await updateDisplayerKCNA(kcnaState);
+  await updateLogKCNA();
 
   return newPicSetArray;
 };

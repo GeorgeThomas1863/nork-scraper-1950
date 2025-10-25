@@ -5,7 +5,7 @@ import kcnaState from "../util/state.js";
 import { normalizeTGInputs, sortArrayByDate } from "../util/util.js";
 import { chunkVidFS } from "../vids/vids-chunk.js";
 import { postVidThumbnailTG, postVidChunkArrayTG } from "../vids/vids-upload.js";
-import { updateDisplayerKCNA } from "../util/api.js";
+import { updateLogKCNA } from "../util/log.js";
 
 export const uploadVidPagesKCNA = async () => {
   const { vidPages, tgChannelId } = CONFIG;
@@ -48,7 +48,7 @@ export const uploadVidPagesKCNA = async () => {
 
   kcnaState.scrapeStep = "UPDATING STUFF KCNA";
   kcnaState.scrapeMessage = `FINISHED UPLOADING ${vidPagePostDataArray.length} NEW VID PAGES TO TG`;
-  await updateDisplayerKCNA(kcnaState);
+  await updateLogKCNA();
 
   return vidPagePostDataArray;
 };

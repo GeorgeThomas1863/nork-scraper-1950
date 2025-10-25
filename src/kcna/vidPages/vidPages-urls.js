@@ -6,7 +6,7 @@ import dbModel from "../../../models/db-model.js";
 import kcnaState from "../util/state.js";
 
 import { extractItemDate, buildNumericId } from "../util/util.js";
-import { updateDisplayerKCNA } from "../util/api.js";
+import { updateLogKCNA } from "../util/log.js";
 
 export const scrapeVidPageURLsKCNA = async () => {
   const { vidPageListURL } = CONFIG;
@@ -23,7 +23,7 @@ export const scrapeVidPageURLsKCNA = async () => {
 
     kcnaState.scrapeStep = "VID PAGES CONTENT KCNA";
     kcnaState.scrapeMessage = `FINISHED SCRAPING ${vidPageListData.length} NEW VID PAGE URLS`;
-    await updateDisplayerKCNA(kcnaState);
+    await updateLogKCNA();
 
     return vidPageListData;
   } catch (e) {

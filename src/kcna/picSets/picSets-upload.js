@@ -5,7 +5,7 @@ import kcnaState from "../util/state.js";
 import { tgSendMessage } from "../../tg/tg-api.js";
 import { postPicArrayTG } from "../pics/pics-upload.js";
 import { normalizeTGInputs, sortArrayByDate } from "../util/util.js";
-import { updateDisplayerKCNA } from "../util/api.js";
+import { updateLogKCNA } from "../util/log.js";
 
 export const uploadPicSetsKCNA = async () => {
   const { picSets, tgChannelId } = CONFIG;
@@ -48,7 +48,7 @@ export const uploadPicSetsKCNA = async () => {
 
   kcnaState.scrapeStep = "VID PAGE UPLOAD KCNA";
   kcnaState.scrapeMessage = `FINISHED UPLOADING ${picSetPostDataArray.length} NEW PIC SETS TO TG`;
-  await updateDisplayerKCNA(kcnaState);
+  await updateLogKCNA();
 
   return picSetPostDataArray;
 };

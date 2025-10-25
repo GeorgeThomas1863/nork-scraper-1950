@@ -8,7 +8,6 @@
 
 import CONFIG from "./config/config.js";
 import express from "express";
-// import cors from "cors";
 
 import routes from "./routes/router.js";
 import { dbConnect } from "./config/db.js";
@@ -20,14 +19,6 @@ const app = express();
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-
-// app.use(
-//   cors({
-//     origin: [`http://localhost:${CONFIG.displayPort}`],
-//     methods: ["GET", "POST"],
-//     allowedHeaders: ["Content-Type", "Authorization"],
-//   })
-// );
 
 app.use(routes);
 

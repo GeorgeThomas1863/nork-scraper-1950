@@ -1,5 +1,3 @@
-import axios from "axios";
-
 import CONFIG from "../config/config.js";
 import kcnaState from "./kcna/util/state.js";
 import { scrapeKCNA, startSchedulerKCNA, stopSchedulerKCNA } from "./kcna/kcna-control.js";
@@ -32,12 +30,12 @@ export const handleIncomingAPI = async (inputParams) => {
 
 //check which site should be targeted
 export const runNewScrape = async (inputParams) => {
-  const { site } = inputParams;
+  const { site, displayerId } = inputParams;
 
   switch (site) {
     case "kcna":
       if (kcnaState.scrapeActive) return { data: "ALREADY SCRAPING FAGGOT" };
-      return await scrapeKCNA();
+      return await scrapeKCNA(displayerId);
 
     case "watch":
       return await scrapeWatch();
@@ -52,7 +50,8 @@ export const runStopScrape = async (inputParams) => {
 
   switch (site) {
     case "kcna":
-      kcnaState.scrapeActive = false;
+      //turns off scraper and resets state
+      await logScrapeStopKCNA();
       return { data: "STOPPING KCNA SCRAPE" };
 
     default:
@@ -63,7 +62,7 @@ export const runStopScrape = async (inputParams) => {
 export const runStartScheduler = async (inputParams) => {
   const { site } = inputParams;
 
-  console.log("AHHHHHHHHHHHHHHHHHHHH")
+  console.log("AHHHHHHHHHHHHHHHHHHHH");
 
   switch (site) {
     case "kcna":

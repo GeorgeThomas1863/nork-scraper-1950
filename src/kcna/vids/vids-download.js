@@ -5,8 +5,7 @@ import axios from "axios";
 import CONFIG from "../../../config/config.js";
 import dbModel from "../../../models/db-model.js";
 import kcnaState from "../util/state.js";
-
-import { updateDisplayerKCNA } from "../util/api.js";
+import { updateLogKCNA } from "../util/log.js";
 
 export const downloadVidsKCNA = async () => {
   const { vids, vidPath } = CONFIG;
@@ -44,7 +43,7 @@ export const downloadVidsKCNA = async () => {
 
   kcnaState.scrapeStep = "ARTICLE UPLOAD KCNA";
   kcnaState.scrapeMessage = `FINISHED DOWNLOADING ${downloadVidArray.length} NEW VIDS`;
-  await updateDisplayerKCNA(kcnaState);
+  await updateLogKCNA();
 
   console.log("FINISHED VIDEO DOWNLOAD");
   console.log(`DOWNLOADED ${downloadVidArray.length} VIDS`);
