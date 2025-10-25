@@ -114,8 +114,6 @@ export const downloadPicFS = async (inputParams) => {
       downloadedSize: downloadedSize,
     };
 
-    kcnaState.scrapeObj.pics.downloaded++;
-
     console.log(`DOWNLOAD COMPLETE: ${picName} | FINAL SIZE: ${Math.round(downloadedSize / 1024)}KB`);
     return returnObj;
   } catch (e) {

@@ -8,7 +8,6 @@ import kcnaState from "../util/state.js";
 import { buildNumericId } from "../util/util.js";
 import { updateLogKCNA } from "../util/log.js";
 
-
 export const scrapePicSetContentKCNA = async () => {
   const { picSets } = CONFIG;
   if (!kcnaState.scrapeActive) return null;
@@ -32,7 +31,6 @@ export const parseNewPicSetArray = async (inputArray) => {
     try {
       const picSetContent = await parsePicSetContent(url, date);
       if (!picSetContent) continue;
-      kcnaState.scrapeObj.picSetContent++;
       console.log("PIC SET CONTENT");
       console.log(picSetContent);
 
@@ -108,7 +106,6 @@ export const extractPicSetPicArray = async (document, date) => {
       const picSrc = picElement.getAttribute("src");
       if (!picSrc) continue;
       const picSetPicURL = kcnaBaseURL + picSrc;
-      kcnaState.scrapeObj.pics.urls++;
       picSetPicArray.push(picSetPicURL);
 
       try {

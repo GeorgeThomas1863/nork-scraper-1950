@@ -79,8 +79,6 @@ export const postVidChunkArrayTG = async (inputObj) => {
     }
   }
 
-  kcnaState.scrapeObj.vids.uploaded++;
-
   await deleteVidChunks(chunkArray);
 
   return vidPostDataArray;

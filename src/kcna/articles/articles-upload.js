@@ -30,11 +30,8 @@ export const uploadArticlesKCNA = async () => {
       //post article
       const articlePostData = await postArticleTG(article);
       if (!articlePostData) continue;
-      kcnaState.scrapeObj.articleUpload[article.type]++;
-      articlePostDataArray.push(articlePostData);
 
-      console.log("ARTICLE POST DATA");
-      console.log(articlePostData);
+      articlePostDataArray.push(articlePostData);
 
       //store data
       const storeModel = new dbModel({ keyToLookup: "url", itemValue: url, updateObj: articlePostData }, articles);

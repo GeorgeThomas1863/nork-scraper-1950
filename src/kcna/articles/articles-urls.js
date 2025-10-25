@@ -21,7 +21,6 @@ export const scrapeArticleURLsKCNA = async () => {
       const articleListTypeData = await parseArticleListByType(type);
       if (!articleListTypeData) continue;
       articleCount += articleListTypeData.length;
-      kcnaState.scrapeObj.articleList[type] = articleListTypeData.length;
 
       articleURLData.push(...articleListTypeData);
     } catch (e) {

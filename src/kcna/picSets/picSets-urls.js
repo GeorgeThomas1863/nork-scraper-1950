@@ -19,7 +19,6 @@ export const scrapePicSetURLsKCNA = async () => {
 
     const picSetListData = await parsePicSetList(html);
     if (!picSetListData) return null;
-    kcnaState.scrapeObj.picSetList = picSetListData.length;
 
     kcnaState.scrapeStep = "PIC SET CONTENT KCNA";
     kcnaState.scrapeMessage = `FINISHED SCRAPING ${picSetListData.length} NEW PIC SET URLS`;

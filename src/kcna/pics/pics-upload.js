@@ -38,7 +38,6 @@ export const postPicTG = async (inputObj) => {
   try {
     const data = await tgPostPicFS(params);
     if (!data) return null;
-    kcnaState.scrapeObj.pics.uploaded++;
 
     console.log("POST PIC DATA");
     console.log(data);

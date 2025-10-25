@@ -34,10 +34,7 @@ export const parseNewArticleArray = async (inputArray) => {
       const articleContent = await parseArticleContent(url, date);
       if (!articleContent) continue;
       articleCount++;
-      kcnaState.scrapeObj.articleContent[article.type]++;
 
-      console.log("ARTICLE CONTENT");
-      console.log(articleContent);
       newArticleArray.push(articleContent);
     } catch (e) {
       console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
@@ -158,7 +155,6 @@ export const extractArticlePicArray = async (url, date) => {
         if (!imgSrc) continue;
 
         const articlePicURL = kcnaBaseURL + imgSrc;
-        kcnaState.scrapeObj.pics.urls++;
 
         picArray.push(articlePicURL);
 
