@@ -1,5 +1,4 @@
-import { handleIncomingAPI } from "../src/control.js";
-// import { scrapeState } from "../src/state.js";
+import { handleIncomingAPI } from "../src/main.js";
 
 //api receive endpoint for scraper
 export const apiEndpointController = async (req, res) => {

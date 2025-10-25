@@ -1,6 +1,7 @@
-import CONFIG from "../config/config.js";
 import kcnaState from "./kcna/util/state.js";
-import { scrapeKCNA, startSchedulerKCNA, stopSchedulerKCNA } from "./kcna/kcna-control.js";
+import { scrapeKCNA } from "./kcna/scrape-kcna.js";
+import { startSchedulerKCNA, stopSchedulerKCNA } from "./kcna/util/scheduler.js";
+import { logScrapeStopKCNA } from "./kcna/util/log.js";
 
 export const handleIncomingAPI = async (inputParams) => {
   const { command } = inputParams;
