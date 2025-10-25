@@ -75,7 +75,7 @@ export const buildChunkArray = async (inputObj) => {
   for (let i = 0; i < totalChunks; i++) {
     if (!kcnaState.scrapeActive) return chunkArray;
 
-    const chunkName = `${vidId}_chunk_${i + 1}.mp4`;
+    const chunkName = `kcna_vid_${vidId}_chunk_${i + 1}.mp4`;
     const chunkPath = path.join(tmpPath, chunkName);
     const startTime = i * chunkSeconds;
 
