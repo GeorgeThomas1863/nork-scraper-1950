@@ -19,11 +19,15 @@ export const logScrapeStartKCNA = async (displayerId = null) => {
     //create scrapeId
     const startModel = new dbModel({ scrapeStartTime: newScrapeStartTime }, log);
     const startData = await startModel.storeAny();
-    console.log("START DATA");
-    console.log(startData);
-
     const newScrapeId = startData.insertedId?.toString() || null;
     kcnaState.scrapeId = newScrapeId;
+
+    //add it to the the log (so can look up everything else by scrapeId)
+    const logModel = new dbModel({ keyToLookup: "scrapeStartTime", itemValue: newScrapeStartTime, updateObj: kcnaState }, log);
+    const logData = await logModel.updateObjItem();
+    console.log("LOG DATA");
+    console.log(logData);
+
     kcnaState.scrapeEndTime = null;
     kcnaState.scrapeStartTime = newScrapeStartTime;
     kcnaState.scrapeActive = true;
@@ -67,10 +71,7 @@ export const updateLogKCNA = async () => {
   console.log(kcnaState);
 
   try {
-    const updateModel = new dbModel(
-      { keyToLookup: "scrapeId", itemValue: kcnaState.scrapeId, updateObj: kcnaState },
-      log
-    );
+    const updateModel = new dbModel({ keyToLookup: "scrapeId", itemValue: kcnaState.scrapeId, updateObj: kcnaState }, log);
     const updateData = await updateModel.updateObjItem();
 
     console.log("UPDATE DATA");
