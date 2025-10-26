@@ -63,8 +63,14 @@ export const updateLogKCNA = async () => {
   if (!kcnaState.scrapeId) return null;
   const { log } = CONFIG;
 
+  console.log("UPDATE LOG KCNA");
+  console.log(kcnaState);
+
   try {
-    const updateModel = new dbModel({ keyToLookup: "scrapeId", itemValue: kcnaState.scrapeId, updateObj: kcnaState }, log);
+    const updateModel = new dbModel(
+      { keyToLookup: "scrapeId", itemValue: kcnaState.scrapeId, updateObj: kcnaState },
+      log
+    );
     const updateData = await updateModel.updateObjItem();
 
     console.log("UPDATE DATA");

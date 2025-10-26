@@ -1,4 +1,4 @@
-//TODO: continue file by file code review with claude, ON articles-content.js
+//SCRAPER FAILING TO UPDATE LOG
 
 //SEND BACK STATUS ITEMS TO DISPLAYER; BUILD ROUTE LISTENER ON DISPLAYER
 
