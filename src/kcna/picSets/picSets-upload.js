@@ -114,7 +114,7 @@ export const buildPicSetTitleText = async (inputObj) => {
   
 -----------------
 
-<b>KCNA PIC SET ID:</b> ${picSetId} | <b>${picCount} TOTAL PICS</b> | <b>DATE:</b> <i>${dateNormal}</i> | <b>URL:</b> 
+<b>KCNA PIC SET ID:</b> ${picSetId} | <b>TOTAL PICS:</b> ${picCount} | <b>DATE:</b> <i>${dateNormal}</i> | <b>URL:</b> 
 <i>${urlNormal}</i>
   `;
 
