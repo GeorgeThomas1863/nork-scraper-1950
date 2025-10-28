@@ -5,17 +5,24 @@ import { scrapeKCNA } from "../scrape-kcna.js";
 export const startSchedulerKCNA = async () => {
   const { scrapeInterval } = CONFIG;
 
-  // const testInterval = 10000;
+  const testInterval = 60 * 1000; //1 minute
 
   console.log("STARTING SCHEDULER");
   console.log(new Date().toISOString());
+
+  // const intervalId = setInterval(async () => {
+  //   if (kcnaState.scrapeActive) return null;
+
+  //   console.log("STARTING NEW SCRAPE");
+  //   await scrapeKCNA();
+  // }, scrapeInterval); //RESET
 
   const intervalId = setInterval(async () => {
     if (kcnaState.scrapeActive) return null;
 
     console.log("STARTING NEW SCRAPE");
     await scrapeKCNA();
-  }, scrapeInterval); //RESET
+  }, testInterval); //RESET
 
   kcnaState.intervalId = intervalId;
   kcnaState.schedulerActive = true;
