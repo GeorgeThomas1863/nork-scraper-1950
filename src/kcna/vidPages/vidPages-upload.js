@@ -27,6 +27,9 @@ export const uploadVidPagesKCNA = async () => {
       //add channelId HERE
       vidPage.tgChannelId = tgChannelId;
 
+      console.log("!!!!POST VID PAGE INPUT OBJ!!!!");
+      console.log(vidPage);
+
       //post vidPage
       const vidPagePostData = await postVidPageTG(vidPage);
       if (!vidPagePostData) continue;
