@@ -1,5 +1,4 @@
 const kcnaState = {
-  source: "scraper",
   scrapeId: null,
   intervalId: null,
   scrapeActive: false,
@@ -12,7 +11,7 @@ const kcnaState = {
   scrapeError: null,
   scrapeMessage: null,
   scrapeStep: null,
-  displayerId: null,
+  // displayerId: null,
 };
 
 //reset after scrape turn off active

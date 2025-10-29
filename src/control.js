@@ -31,12 +31,12 @@ export const handleIncomingAPI = async (inputParams) => {
 
 //check which site should be targeted
 export const runNewScrape = async (inputParams) => {
-  const { site, displayerId } = inputParams;
+  const { site } = inputParams;
 
   switch (site) {
     case "kcna":
       if (kcnaState.scrapeActive) return { data: "ALREADY SCRAPING FAGGOT" };
-      return await scrapeKCNA(displayerId);
+      return await scrapeKCNA();
 
     case "watch":
       return await scrapeWatch();

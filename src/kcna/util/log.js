@@ -3,11 +3,11 @@ import dbModel from "../../../models/db-model.js";
 import kcnaState from "./state.js";
 import { resetStateKCNA } from "./state.js";
 
-export const logScrapeStartKCNA = async (displayerId = null) => {
+export const logScrapeStartKCNA = async () => {
   const { log } = CONFIG;
 
   //set if displayerId provided
-  if (displayerId) kcnaState.displayerId = displayerId;
+  // if (displayerId) kcnaState.displayerId = displayerId;
 
   //set scrape active
   kcnaState.scrapeActive = true;
@@ -23,7 +23,7 @@ export const logScrapeStartKCNA = async (displayerId = null) => {
     kcnaState.scrapeId = newScrapeId;
 
     //add it to the the log (so can look up everything else by scrapeId)
-    const logModel = new dbModel({ keyToLookup: "scrapeStartTime", itemValue: newScrapeStartTime, updateObj: kcnaState }, log);
+    const logModel = new dbModel({ keyToLookup: "_id", itemValue: startData.insertedId, updateObj: kcnaState }, log);
     const logData = await logModel.updateObjItem();
     console.log("LOG DATA");
     console.log(logData);

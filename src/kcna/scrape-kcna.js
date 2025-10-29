@@ -17,8 +17,9 @@ import { downloadVidsKCNA } from "./vids/vids-download.js";
 
 import { updatePicDataKCNA, updateVidDataKCNA } from "./util/update-db.js";
 
-export const scrapeKCNA = async (displayerId = null) => {
-  await logScrapeStartKCNA(displayerId);
+export const scrapeKCNA = async () => {
+  //await logScrapeStartKCNA(displayerId);
+  await logScrapeStartKCNA();
 
   //URLs
   await scrapeArticleURLsKCNA();
