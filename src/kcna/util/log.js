@@ -11,9 +11,6 @@ export const logScrapeStartKCNA = async () => {
   await resetStateKCNA();
   await stopWatchdog();
 
-  //START WATCHDOG
-  runWatchdog();
-
   //set scrape active
   kcnaState.scrapeActive = true;
   const newScrapeStartTime = new Date();
@@ -32,6 +29,9 @@ export const logScrapeStartKCNA = async () => {
     const logData = await logModel.updateObjItem();
     console.log("LOG DATA");
     console.log(logData);
+
+    //START WATCHDOG (ater to avoid intervalId)
+    runWatchdog();
 
     kcnaState.scrapeEndTime = null;
     kcnaState.scrapeStartTime = newScrapeStartTime;

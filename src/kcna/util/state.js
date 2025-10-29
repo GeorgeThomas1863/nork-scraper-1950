@@ -30,6 +30,9 @@ export const resetStateKCNA = async () => {
   kcnaState.scrapeError = null;
   kcnaState.scrapeMessage = null;
   kcnaState.scrapeStep = null;
+  kcnaState.watchdogIntervalId = null;
+  kcnaState.lastUpdateTime = null;
+  kcnaState.isFucked = false;
 };
 
 export default kcnaState;
