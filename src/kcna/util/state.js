@@ -16,13 +16,16 @@ const kcnaState = {
 
 //reset after scrape turn off active
 export const resetStateKCNA = async () => {
-  kcnaState.scrapeActive = false;
   kcnaState.scrapeId = null;
-  kcnaState.displayerId = null;
+  kcnaState.scrapeActive = false;
+  // kcnaState.displayerId = null;
   kcnaState.scrapeStartTime = null;
   kcnaState.scrapeEndTime = null;
   kcnaState.scrapeLengthSeconds = null;
   kcnaState.scrapeLengthMinutes = null;
+  kcnaState.scrapeError = null;
+  kcnaState.scrapeMessage = null;
+  kcnaState.scrapeStep = null;
 };
 
 export default kcnaState;

@@ -6,8 +6,8 @@ import { resetStateKCNA } from "./state.js";
 export const logScrapeStartKCNA = async () => {
   const { log } = CONFIG;
 
-  //set if displayerId provided
-  // if (displayerId) kcnaState.displayerId = displayerId;
+  //RESET FIRST
+  await resetStateKCNA();
 
   //set scrape active
   kcnaState.scrapeActive = true;
