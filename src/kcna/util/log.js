@@ -27,8 +27,8 @@ export const logScrapeStartKCNA = async () => {
     //add it to the the log (so can look up everything else by scrapeId)
     const logModel = new dbModel({ keyToLookup: "_id", itemValue: startData.insertedId, updateObj: kcnaState }, log);
     const logData = await logModel.updateObjItem();
-    console.log("LOG DATA");
-    console.log(logData);
+    // console.log("LOG DATA");
+    // console.log(logData);
 
     //START WATCHDOG (ater to avoid intervalId)
     runWatchdog();
@@ -75,8 +75,8 @@ export const updateLogKCNA = async () => {
 
   await updateWatchdog();
 
-  console.log("UPDATE LOG KCNA");
-  console.log(kcnaState);
+  // console.log("UPDATE LOG KCNA");
+  // console.log(kcnaState);
 
   try {
     //avoid storing intervalIds (causes error)
