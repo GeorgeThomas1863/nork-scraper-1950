@@ -2,7 +2,7 @@ import CONFIG from "../../../config/config.js";
 import dbModel from "../../../models/db-model.js";
 import kcnaState from "./state.js";
 import { resetStateKCNA } from "./state.js";
-import { updateWatchdog } from "./watchdog.js";
+import { updateWatchdog, runWatchdog, stopWatchdog } from "./watchdog.js";
 
 export const logScrapeStartKCNA = async () => {
   const { log } = CONFIG;
