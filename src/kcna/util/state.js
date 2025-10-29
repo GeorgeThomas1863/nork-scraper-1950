@@ -11,7 +11,11 @@ const kcnaState = {
   scrapeError: null,
   scrapeMessage: null,
   scrapeStep: null,
-  // displayerId: null,
+
+  //watchdog
+  lastUpdateTime: null,
+  watchdogIntervalId: null,
+  isFucked: false,
 };
 
 //reset after scrape turn off active

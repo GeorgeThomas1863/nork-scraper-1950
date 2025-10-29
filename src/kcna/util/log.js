@@ -2,12 +2,17 @@ import CONFIG from "../../../config/config.js";
 import dbModel from "../../../models/db-model.js";
 import kcnaState from "./state.js";
 import { resetStateKCNA } from "./state.js";
+import { updateWatchdog } from "./watchdog.js";
 
 export const logScrapeStartKCNA = async () => {
   const { log } = CONFIG;
 
   //RESET FIRST
   await resetStateKCNA();
+  await stopWatchdog();
+
+  //START WATCHDOG
+  runWatchdog();
 
   //set scrape active
   kcnaState.scrapeActive = true;
@@ -58,14 +63,17 @@ export const logScrapeStopKCNA = async () => {
 
   await updateLogKCNA(kcnaState);
   await resetStateKCNA();
+  await stopWatchdog();
 
   return true;
 };
 
-//state as input params
+//ALSO UPDATES WATCHDOG
 export const updateLogKCNA = async () => {
   if (!kcnaState.scrapeId) return null;
   const { log } = CONFIG;
+
+  await updateWatchdog();
 
   console.log("UPDATE LOG KCNA");
   console.log(kcnaState);

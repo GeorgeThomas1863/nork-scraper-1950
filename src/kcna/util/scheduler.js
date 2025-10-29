@@ -10,19 +10,19 @@ export const startSchedulerKCNA = async () => {
   console.log("STARTING SCHEDULER");
   console.log(new Date().toISOString());
 
-  // const intervalId = setInterval(async () => {
-  //   if (kcnaState.scrapeActive) return null;
-
-  //   console.log("STARTING NEW SCRAPE");
-  //   await scrapeKCNA();
-  // }, scrapeInterval); //RESET
-
   const intervalId = setInterval(async () => {
     if (kcnaState.scrapeActive) return null;
 
     console.log("STARTING NEW SCRAPE");
     await scrapeKCNA();
-  }, testInterval); //RESET
+  }, scrapeInterval); //RESET
+
+  // const intervalId = setInterval(async () => {
+  //   if (kcnaState.scrapeActive) return null;
+
+  //   console.log("STARTING NEW SCRAPE");
+  //   await scrapeKCNA();
+  // }, testInterval); //RESET
 
   kcnaState.intervalId = intervalId;
   kcnaState.schedulerActive = true;
