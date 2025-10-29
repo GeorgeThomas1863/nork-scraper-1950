@@ -1,5 +1,7 @@
 //FUCKED, NEED TO UNFUCK
 
+//MAKE SURE SCRAPE ITSELF STOPS WATCHDOG, MAKE STOPS MORE ROBUST, then ADD BACK IN
+
 // import CONFIG from "../../../config/config.js";
 // import kcnaState from "./state.js";
 
