@@ -1,56 +1,58 @@
-import CONFIG from "../../../config/config.js";
-import kcnaState from "./state.js";
+//FUCKED, NEED TO UNFUCK
 
-import { runStopScrape, runNewScrape } from "../../control.js";
+// import CONFIG from "../../../config/config.js";
+// import kcnaState from "./state.js";
 
-//ALL EXECUTED IN LOG
-export const stopWatchdog = async () => {
-  if (!kcnaState.watchdogIntervalId) return null;
+// import { runStopScrape, runNewScrape } from "../../control.js";
 
-  console.log("STOPPING WATCHDOG AT " + new Date().toISOString());
+// //ALL EXECUTED IN LOG
+// export const stopWatchdog = async () => {
+//   if (!kcnaState.watchdogIntervalId) return null;
 
-  clearInterval(kcnaState.watchdogIntervalId);
-  kcnaState.watchdogIntervalId = null;
+//   console.log("STOPPING WATCHDOG AT " + new Date().toISOString());
 
-  return true;
-};
+//   clearInterval(kcnaState.watchdogIntervalId);
+//   kcnaState.watchdogIntervalId = null;
 
-export const updateWatchdog = async () => {
-  kcnaState.lastUpdateTime = Date.now();
-  kcnaState.isFucked = false;
+//   return true;
+// };
 
-  return true;
-};
+// export const updateWatchdog = async () => {
+//   kcnaState.lastUpdateTime = Date.now();
+//   kcnaState.isFucked = false;
 
-export const runWatchdog = () => {
-  const { watchdogTimeout } = CONFIG;
-  // Clear any existing watchdog
-  stopWatchdog();
+//   return true;
+// };
 
-  // Initialize activity time
-  kcnaState.lastUpdateTime = Date.now();
-  kcnaState.isFucked = false;
+// export const runWatchdog = () => {
+//   const { watchdogTimeout } = CONFIG;
+//   // Clear any existing watchdog
+//   stopWatchdog();
 
-  // Check every 10 seconds
-  kcnaState.watchdogIntervalId = setInterval(async () => {
-    const timeSinceActivity = Date.now() - kcnaState.lastUpdateTime;
+//   // Initialize activity time
+//   kcnaState.lastUpdateTime = Date.now();
+//   kcnaState.isFucked = false;
 
-    //2 min
-    if (timeSinceActivity > watchdogTimeout) {
-      console.error(`⚠️ Watchdog: Scraper stuck at step "${kcnaState.scrapeStep}" for ${Math.round(timeSinceActivity / 1000)}s`);
-      kcnaState.isFucked = true;
+//   // Check every 10 seconds
+//   kcnaState.watchdogIntervalId = setInterval(async () => {
+//     const timeSinceActivity = Date.now() - kcnaState.lastUpdateTime;
 
-      try {
-        //stop scrape and restart it
-        await runStopScrape({ site: "kcna" });
-        await runNewScrape({ site: "kcna" });
-      } catch (e) {
-        console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
-        await stopWatchdog();
-        return null;
-      }
-    }
-  }, 10000); // Check every 10 seconds
+//     //2 min
+//     if (timeSinceActivity > watchdogTimeout) {
+//       console.error(`⚠️ Watchdog: Scraper stuck at step "${kcnaState.scrapeStep}" for ${Math.round(timeSinceActivity / 1000)}s`);
+//       kcnaState.isFucked = true;
 
-  console.log(`✓ Watchdog started with ${watchdogTimeout / 1000}s timeout`);
-};
+//       try {
+//         //stop scrape and restart it
+//         await runStopScrape({ site: "kcna" });
+//         await runNewScrape({ site: "kcna" });
+//       } catch (e) {
+//         console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+//         await stopWatchdog();
+//         return null;
+//       }
+//     }
+//   }, 10000); // Check every 10 seconds
+
+//   console.log(`✓ Watchdog started with ${watchdogTimeout / 1000}s timeout`);
+// };

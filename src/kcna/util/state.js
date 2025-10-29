@@ -13,9 +13,9 @@ const kcnaState = {
   scrapeStep: null,
 
   //watchdog
-  lastUpdateTime: null,
-  watchdogIntervalId: null,
-  isFucked: false,
+  // lastUpdateTime: null,
+  // watchdogIntervalId: null,
+  // isFucked: false,
 };
 
 //reset after scrape turn off active
@@ -30,9 +30,9 @@ export const resetStateKCNA = async () => {
   kcnaState.scrapeError = null;
   kcnaState.scrapeMessage = null;
   kcnaState.scrapeStep = null;
-  kcnaState.watchdogIntervalId = null;
-  kcnaState.lastUpdateTime = null;
-  kcnaState.isFucked = false;
+  // kcnaState.watchdogIntervalId = null;
+  // kcnaState.lastUpdateTime = null;
+  // kcnaState.isFucked = false;
 };
 
 export default kcnaState;

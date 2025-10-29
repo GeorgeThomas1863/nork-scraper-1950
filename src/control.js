@@ -2,7 +2,7 @@ import kcnaState from "./kcna/util/state.js";
 import { scrapeKCNA } from "./kcna/scrape-kcna.js";
 import { startSchedulerKCNA, stopSchedulerKCNA } from "./kcna/util/scheduler.js";
 import { logScrapeStopKCNA } from "./kcna/util/log.js";
-import { stopWatchdog } from "./kcna/util/watchdog.js";
+// import { stopWatchdog } from "./kcna/util/watchdog.js";
 
 export const handleIncomingAPI = async (inputParams) => {
   const { command } = inputParams;
@@ -53,7 +53,7 @@ export const runStopScrape = async (inputParams) => {
   switch (site) {
     case "kcna":
       //turns off scraper and resets state, kill watchdog first
-      await stopWatchdog();
+      // await stopWatchdog();
       await logScrapeStopKCNA();
       return { data: "STOPPING KCNA SCRAPE" };
 
