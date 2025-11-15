@@ -22,7 +22,6 @@ const kcnaState = {
 export const resetStateKCNA = async () => {
   kcnaState.scrapeId = null;
   kcnaState.scrapeActive = false;
-  // kcnaState.displayerId = null;
   kcnaState.scrapeStartTime = null;
   kcnaState.scrapeEndTime = null;
   kcnaState.scrapeLengthSeconds = null;
@@ -30,9 +29,6 @@ export const resetStateKCNA = async () => {
   kcnaState.scrapeError = null;
   kcnaState.scrapeMessage = null;
   kcnaState.scrapeStep = null;
-  // kcnaState.watchdogIntervalId = null;
-  // kcnaState.lastUpdateTime = null;
-  // kcnaState.isFucked = false;
 };
 
 export default kcnaState;

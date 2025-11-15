@@ -27,11 +27,8 @@ export const logScrapeStartKCNA = async () => {
     //add it to the the log (so can look up everything else by scrapeId)
     const logModel = new dbModel({ keyToLookup: "_id", itemValue: startData.insertedId, updateObj: kcnaState }, log);
     const logData = await logModel.updateObjItem();
-    // console.log("LOG DATA");
-    // console.log(logData);
-
-    //START WATCHDOG (ater to avoid intervalId)
-    // runWatchdog();
+    console.log("LOG DATA");
+    console.log(logData);
 
     kcnaState.scrapeEndTime = null;
     kcnaState.scrapeStartTime = newScrapeStartTime;
