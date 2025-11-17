@@ -21,7 +21,14 @@ export const logScrapeStartKCNA = async () => {
     //create scrapeId
     const startModel = new dbModel({ scrapeStartTime: newScrapeStartTime }, log);
     const startData = await startModel.storeAny();
+
+    console.log("START DATA");
+    console.log(startData);
+
     const newScrapeId = startData.insertedId?.toString() || null;
+    console.log("NEW SCRAPE ID");
+    console.log(newScrapeId);
+
     kcnaState.scrapeId = newScrapeId;
 
     //add it to the the log (so can look up everything else by scrapeId)
