@@ -81,7 +81,7 @@ export const parseArticleContent = async (url, date) => {
 
     const storeModel = new dbModel({ keyToLookup: "url", itemValue: url, updateObj: storeParams }, articles);
     const storeData = await storeModel.updateObjItem();
-    console.log("STORE DATA");
+    console.log("STORE ARTICLE CONTENT DATA");
     console.log(storeData);
 
     return storeParams;

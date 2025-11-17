@@ -38,13 +38,13 @@ export const downloadPicsKCNA = async () => {
         updateObj: picItem,
       };
 
-      console.log("STORE PARAMS");
-      console.log(storeParams);
+      // console.log("STORE PARAMS");
+      // console.log(storeParams);
 
       const storePicModel = new dbModel(storeParams, pics);
       const storeData = await storePicModel.updateObjItem();
 
-      console.log("PIC STORE DATA");
+      console.log("PIC DOWNLOAD STORE DATA");
       console.log(storeData);
 
       downloadPicArray.push(storeParams);

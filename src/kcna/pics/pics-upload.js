@@ -39,7 +39,7 @@ export const postPicTG = async (inputObj) => {
     const data = await tgPostPicFS(params);
     if (!data) return null;
 
-    console.log("POST PIC DATA");
+    console.log("PIC UPLOAD POST DATA");
     console.log(data);
 
     return data;

@@ -79,8 +79,8 @@ export const extractVidPageListArray = async (inputArray) => {
         vidPageId: vidPageId,
       };
 
-      console.log("VID PAGE LIST PARAMS");
-      console.log(params);
+      // console.log("VID PAGE LIST PARAMS");
+      // console.log(params);
 
       const storeModel = new dbModel(params, vidPages);
       const storeData = await storeModel.storeUniqueURL();

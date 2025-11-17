@@ -28,8 +28,8 @@ export const scrapeArticleURLsKCNA = async () => {
     }
   }
 
-  console.log("ARTICLE COUNT");
-  console.log(articleCount);
+  // console.log("ARTICLE COUNT");
+  // console.log(articleCount);
 
   kcnaState.scrapeStep = "ARTICLE CONTENT KCNA";
   kcnaState.scrapeMessage = `FINISHED SCRAPING ${articleCount} NEW ARTICLE URLS`;
@@ -96,13 +96,13 @@ export const extractArticleListArray = async (inputArray, type) => {
       articleId: articleId,
     };
 
-    console.log("ARTICLE LIST PARAMS");
-    console.log(params);
+    // console.log("ARTICLE LIST PARAMS");
+    // console.log(params);
 
     const storeModel = new dbModel(params, articles);
     const storeData = await storeModel.storeUniqueURL();
 
-    console.log("STORE DATA");
+    console.log("ARTICLE LIST STORE DATA");
     console.log(storeData);
 
     articleListArray.push(params);

@@ -22,7 +22,7 @@ export const logScrapeStartKCNA = async () => {
     const startModel = new dbModel({ scrapeStartTime: newScrapeStartTime }, log);
     const startData = await startModel.storeAny();
 
-    console.log("START DATA");
+    console.log("LOG SCAPE START DATA");
     console.log(startData);
 
     const newScrapeId = startData.insertedId?.toString() || null;

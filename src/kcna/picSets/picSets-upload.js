@@ -31,14 +31,14 @@ export const uploadPicSetsKCNA = async () => {
       const picSetPostData = await postPicSetTG(picSet);
       if (!picSetPostData) continue;
 
-      console.log("PIC SET POST DATA");
-      console.log(picSetPostData);
+      // console.log("PIC SET POST DATA");
+      // console.log(picSetPostData);
       picSetPostDataArray.push(picSetPostData);
 
       //store data
       const storeModel = new dbModel({ keyToLookup: "url", itemValue: url, updateObj: picSetPostData }, picSets);
       const storeData = await storeModel.updateObjItem();
-      console.log("STORE DATA");
+      console.log("PIC SET UPLOAD STORE DATA");
       console.log(storeData);
     } catch (e) {
       console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
@@ -62,8 +62,8 @@ export const postPicSetTG = async (inputObj) => {
 
   try {
     const titleData = await postPicSetTitleTG(uploadObj);
-    console.log("TITLE DATA");
-    console.log(titleData);
+    // console.log("TITLE DATA");
+    // console.log(titleData);
 
     //post pics if exist
 

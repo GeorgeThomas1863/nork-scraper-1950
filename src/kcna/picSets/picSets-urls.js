@@ -76,13 +76,13 @@ export const extractPicSetListArray = async (inputArray) => {
         picSetId: picSetId,
       };
 
-      console.log("PIC SET LIST PARAMS");
-      console.log(params);
+      // console.log("PIC SET LIST PARAMS");
+      // console.log(params);
 
       const storeModel = new dbModel(params, picSets);
       const storeData = await storeModel.storeUniqueURL();
 
-      console.log("STORE DATA");
+      console.log("PIC SET LIST STORE DATA");
       console.log(storeData);
 
       picSetURLArray.push(params);

@@ -36,7 +36,7 @@ export const uploadArticlesKCNA = async () => {
       //store data
       const storeModel = new dbModel({ keyToLookup: "url", itemValue: url, updateObj: articlePostData }, articles);
       const storeData = await storeModel.updateObjItem();
-      console.log("STORE DATA");
+      console.log("ARTICLE UPLOAD STORE DATA");
       console.log(storeData);
     } catch (e) {
       console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
@@ -59,19 +59,19 @@ export const postArticleTG = async (inputObj) => {
   const uploadObj = { ...inputObj, ...tgInputs };
 
   const titleData = await postArticleTitleTG(uploadObj);
-  console.log("TITLE DATA");
-  console.log(titleData);
+  // console.log("TITLE DATA");
+  // console.log(titleData);
 
   //post pics if exist
   if (picArray && picArray.length) {
     const articlePicsData = await postArticlePicsTG(uploadObj);
-    console.log("ARTICLE PICS DATA");
-    console.log(articlePicsData);
+    // console.log("ARTICLE PICS DATA");
+    // console.log(articlePicsData);
   }
 
   const articleContentData = await postArticleContentTG(uploadObj);
-  console.log("ARTICLE CONTENT DATA");
-  console.log(articleContentData);
+  // console.log("ARTICLE CONTENT DATA");
+  // console.log(articleContentData);
 
   return uploadObj;
 };

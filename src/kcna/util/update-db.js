@@ -4,7 +4,7 @@ import kcnaState from "./state.js";
 
 //UPDATE DB (with full pic data in each collection)
 export const updatePicDataKCNA = async () => {
-  console.log("UPDATING PIC DATA");
+  // console.log("UPDATING PIC DATA");
   if (!kcnaState.scrapeActive) return null;
 
   const updateArray = [];
@@ -26,8 +26,8 @@ export const updateArticlePics = async () => {
   const articleDataArray = await articleDataModel.findEmptyItemsNested();
   if (!articleDataArray || !articleDataArray.length) return null;
 
-  console.log("ARTICLES TO UPDATE");
-  console.log(articleDataArray);
+  // ("ARTICLES TO UPDATE");
+  // console.log(articleDataArray);
 
   //update articles
   const updateArticleArray = [];
@@ -63,8 +63,8 @@ export const updateArticleItem = async (inputObj) => {
 
     const updateArticleModel = new dbModel(updateParams, articles);
     const storeData = await updateArticleModel.updateArrayNested();
-    console.log("STORE DATA");
-    console.log(storeData);
+    // console.log("STORE DATA");
+    // console.log(storeData);
 
     return updateParams;
   } catch (e) {
@@ -83,8 +83,8 @@ export const updatePicSetPics = async () => {
   const picSetDataArray = await picSetDataModel.findEmptyItemsNested();
   if (!picSetDataArray || !picSetDataArray.length) return null;
 
-  console.log("PIC SETS TO UPDATE");
-  console.log(picSetDataArray);
+  // console.log("PIC SETS TO UPDATE");
+  // console.log(picSetDataArray);
 
   const updatePicSetArray = [];
   for (const picSet of picSetDataArray) {
@@ -119,7 +119,7 @@ export const updatePicSetItem = async (inputObj) => {
 
     const updatePicSetModel = new dbModel(updateParams, picSets);
     const storeData = await updatePicSetModel.updateArrayNested();
-    console.log("STORE DATA");
+    console.log("UPDATE PIC SET STORE DATA");
     console.log(storeData);
 
     return updateParams;
@@ -139,8 +139,8 @@ export const updateVidPageThumbnail = async () => {
   const vidPageDataArray = await vidPageDataModel.findEmptyItemsNested();
   if (!vidPageDataArray || !vidPageDataArray.length) return null;
 
-  console.log("VID PAGES TO UPDATE");
-  console.log(vidPageDataArray);
+  // console.log("VID PAGES TO UPDATE");
+  // console.log(vidPageDataArray);
 
   const updateVidPageArray = [];
   for (const vidPage of vidPageDataArray) {
@@ -176,8 +176,8 @@ export const updateThumbnailItem = async (inputObj) => {
 
     const updateVidPageModel = new dbModel(updateParams, vidPages);
     const storeData = await updateVidPageModel.updateObjInsert();
-    console.log("STORE DATA");
-    console.log(storeData);
+    // console.log("STORE DATA");
+    // console.log(storeData);
 
     //return picData of the thumbnail
     return picData;
@@ -225,7 +225,7 @@ export const getPicData = async (url) => {
 export const updateVidDataKCNA = async () => {
   const { vidPages } = CONFIG;
 
-  console.log("UPDATING VID DATA");
+  // console.log("UPDATING VID DATA");
 
   const vidPageVidModel = new dbModel({ keyExists: "url", arrayKey: "vidData", keyEmpty: "vidSize" }, vidPages);
   const vidPageDataArray = await vidPageVidModel.findEmptyItemsNested();
@@ -263,12 +263,12 @@ export const updateVidItem = async (inputObj) => {
       updateObj: vidData,
     };
 
-    console.log("UPDATE VID PAGE PARAMS");
-    console.log(updateParams);
+    // console.log("UPDATE VID PAGE PARAMS");
+    // console.log(updateParams);
 
     const updateVidPageModel = new dbModel(updateParams, vidPages);
     const storeData = await updateVidPageModel.updateObjInsert();
-    console.log("STORE DATA");
+    console.log("UPDATE VID PAGE STORE DATA");
     console.log(storeData);
 
     return vidData;

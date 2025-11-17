@@ -27,21 +27,21 @@ export const uploadVidPagesKCNA = async () => {
       //add channelId HERE
       vidPage.tgChannelId = tgChannelId;
 
-      console.log("!!!!POST VID PAGE INPUT OBJ!!!!");
-      console.log(vidPage);
+      // console.log("!!!!POST VID PAGE INPUT OBJ!!!!");
+      // console.log(vidPage);
 
       //post vidPage
       const vidPagePostData = await postVidPageTG(vidPage);
       if (!vidPagePostData) continue;
-      console.log("VID PAGE POST DATA");
-      console.log(vidPagePostData);
+      // console.log("VID PAGE POST DATA");
+      // console.log(vidPagePostData);
 
       vidPagePostDataArray.push(vidPagePostData);
 
       //store data
       const storeModel = new dbModel({ keyToLookup: "url", itemValue: url, updateObj: vidPagePostData }, vidPages);
       const storeData = await storeModel.updateObjItem();
-      console.log("STORE DATA");
+      console.log("VID PAGE UPLOAD STORE DATA");
       console.log(storeData);
     } catch (e) {
       console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);

@@ -31,8 +31,8 @@ export const parseNewPicSetArray = async (inputArray) => {
     try {
       const picSetContent = await parsePicSetContent(url, date);
       if (!picSetContent) continue;
-      console.log("PIC SET CONTENT");
-      console.log(picSetContent);
+      // console.log("PIC SET CONTENT");
+      // console.log(picSetContent);
 
       newPicSetArray.push(picSetContent);
     } catch (e) {
@@ -75,7 +75,7 @@ export const parsePicSetContent = async (url, date) => {
 
     const storeModel = new dbModel({ keyToLookup: "url", itemValue: url, updateObj: storeParams }, picSets);
     const storeData = await storeModel.updateObjItem();
-    console.log("STORE DATA");
+    console.log("PIC SET CONTENTSTORE DATA");
     console.log(storeData);
 
     return storeParams;
@@ -118,8 +118,8 @@ export const extractPicSetPicArray = async (document, date) => {
           date: date,
         };
 
-        console.log("STORE PIC PARAMS");
-        console.log(storeParams);
+        // console.log("STORE PIC PARAMS");
+        // console.log(storeParams);
         const storePicModel = new dbModel(storeParams, pics);
         const storeData = await storePicModel.storeUniqueURL();
         console.log("STORE PIC DATA");

@@ -31,8 +31,8 @@ export const parseNewVidPageArray = async (inputArray) => {
     try {
       const vidPageContent = await parseVidPageContent(url, date);
       if (!vidPageContent) continue;
-      console.log("VID PAGE CONTENT");
-      console.log(vidPageContent);
+      // console.log("VID PAGE CONTENT");
+      // console.log(vidPageContent);
 
       newVidPageArray.push(vidPageContent);
     } catch (e) {
@@ -75,7 +75,7 @@ export const parseVidPageContent = async (url, date) => {
 
     const storeModel = new dbModel({ keyToLookup: "url", itemValue: url, updateObj: storeParams }, vidPages);
     const storeData = await storeModel.updateObjItem();
-    console.log("STORE DATA");
+    console.log("VID PAGE CONTENT STORE DATA");
     console.log(storeData);
 
     return storeParams;
@@ -129,8 +129,8 @@ export const extractVidURL = async (document, date) => {
     try {
       const storeVidModel = new dbModel(storeParams, vids);
       const storeData = await storeVidModel.storeUniqueURL();
-      console.log("STORE DATA");
-      console.log(storeData);
+      // console.log("STORE DATA");
+      // console.log(storeData);
     } catch (e) {
       console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
     }
