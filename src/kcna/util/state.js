@@ -1,6 +1,5 @@
 const kcnaState = {
   scrapeId: null,
-  intervalId: null,
   scrapeActive: false,
   schedulerActive: false,
 

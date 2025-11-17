@@ -2,6 +2,9 @@ import CONFIG from "../../../config/config.js";
 import kcnaState from "./state.js";
 import { scrapeKCNA } from "../scrape-kcna.js";
 
+// Store intervalId at module level instead of in state (fucked in state)
+let intervalId = null;
+
 export const startSchedulerKCNA = async () => {
   const { scrapeInterval } = CONFIG;
 
@@ -16,26 +19,25 @@ export const startSchedulerKCNA = async () => {
     await scrapeKCNA();
   }
 
-  const intervalId = setInterval(async () => {
+  intervalId = setInterval(async () => {
     if (kcnaState.scrapeActive) return null;
 
     console.log("STARTING NEW SCRAPE");
     await scrapeKCNA();
   }, testInterval); //RESET
 
-  kcnaState.intervalId = intervalId;
   kcnaState.schedulerActive = true;
   return true;
 };
 
 export const stopSchedulerKCNA = async () => {
-  if (!kcnaState.intervalId) return null;
+  if (!intervalId) return null;
 
   console.log("STOPPING SCHEDULER AT:");
   console.log(new Date().toISOString());
 
-  clearInterval(kcnaState.intervalId);
-  kcnaState.intervalId = null;
+  clearInterval(intervalId);
+  intervalId = null;
   kcnaState.schedulerActive = false;
 
   return true;
