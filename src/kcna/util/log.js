@@ -86,7 +86,7 @@ export const updateLogKCNA = async () => {
     //avoid storing intervalIds (causes error)
     // const { intervalId: _, watchdogIntervalId: __, ...storeObj } = kcnaState;
     // const { intervalId: _, ...storeObj } = kcnaState;
-    const updateModel = new dbModel({ keyToLookup: "scrapeId", itemValue: kcnaState.scrapeId, updateObj: storeObj }, log);
+    const updateModel = new dbModel({ keyToLookup: "scrapeId", itemValue: kcnaState.scrapeId, updateObj: kcnaState }, log);
     const updateData = await updateModel.updateObjItem();
 
     console.log("UPDATE DATA");
