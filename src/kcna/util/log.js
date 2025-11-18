@@ -61,12 +61,14 @@ export const logScrapeStopKCNA = async () => {
   kcnaState.scrapeLengthMinutes = scrapeLengthMinutes;
   kcnaState.scrapeStep = "FINISHED SCRAPE KCNA";
   kcnaState.scrapeMessage = "FINISHED SCRAPE KCNA";
+  kcnaState.scrapeActive = false;
 
   console.log("FINISHED KCNA SCRAPE AT " + scrapeEndTime);
   console.log(`SCRAPE LENGTH: ${scrapeLengthMinutes} minutes and ${(scrapeLengthSeconds % 60).toFixed(2)} seconds`);
 
   await updateLogKCNA(kcnaState);
   await resetStateKCNA();
+
   // await stopWatchdog();
 
   return true;
