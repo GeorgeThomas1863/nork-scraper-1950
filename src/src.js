@@ -21,6 +21,9 @@ export const handleIncomingAPI = async (inputParams) => {
       case "admin-stop-scheduler":
         return await runStopScheduler(inputParams);
 
+      case "admin-scrape-status":
+        return kcnaState;
+
       default:
         return null;
     }
