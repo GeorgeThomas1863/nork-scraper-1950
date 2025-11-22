@@ -69,6 +69,9 @@ export const postVidChunkArrayTG = async (inputObj) => {
       const vidPostData = await tgPostVidFS(postChunkObj);
       if (!vidPostData) continue;
 
+      //add uploaded flag
+      vidPostData.uploaded = true;
+
       // console.log("VID POST DATA");
       // console.log(vidPostData);
 

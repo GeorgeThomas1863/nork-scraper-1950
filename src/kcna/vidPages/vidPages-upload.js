@@ -33,6 +33,10 @@ export const uploadVidPagesKCNA = async () => {
       //post vidPage
       const vidPagePostData = await postVidPageTG(vidPage);
       if (!vidPagePostData) continue;
+
+      //add uploaded flag
+      vidPagePostData.uploaded = true
+
       // console.log("VID PAGE POST DATA");
       // console.log(vidPagePostData);
 

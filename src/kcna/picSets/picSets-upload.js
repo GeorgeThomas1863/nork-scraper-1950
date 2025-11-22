@@ -31,6 +31,9 @@ export const uploadPicSetsKCNA = async () => {
       const picSetPostData = await postPicSetTG(picSet);
       if (!picSetPostData) continue;
 
+      //add uploaded flag
+      picSetPostData.uploaded = true
+
       // console.log("PIC SET POST DATA");
       // console.log(picSetPostData);
       picSetPostDataArray.push(picSetPostData);

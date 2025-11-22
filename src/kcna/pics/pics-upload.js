@@ -12,6 +12,10 @@ export const postPicArrayTG = async (inputArray) => {
     try {
       const postPicData = await postPicTG(pic);
       if (!postPicData) continue;
+
+      //add uploaded flag
+      postPicData.uploaded = true
+
       postPicDataArray.push(postPicData);
     } catch (e) {
       console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);

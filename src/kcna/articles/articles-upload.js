@@ -11,6 +11,7 @@ export const uploadArticlesKCNA = async () => {
   const { articles, tgChannelId } = CONFIG;
   if (!kcnaState.scrapeActive) return null;
 
+  //CHANGE TO UPLOADED FALSE
   const articleModel = new dbModel({ keyExists: "url", keyEmpty: "tgChannelId" }, articles);
   const articleArray = await articleModel.findEmptyItems();
   if (!articleArray || !articleArray.length) return null;
@@ -30,6 +31,9 @@ export const uploadArticlesKCNA = async () => {
       //post article
       const articlePostData = await postArticleTG(article);
       if (!articlePostData) continue;
+
+      //add uploaded flag
+      articlePostData.uploaded = true
 
       articlePostDataArray.push(articlePostData);
 
