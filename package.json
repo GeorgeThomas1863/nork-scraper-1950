@@ -1,0 +1,28 @@
+{
+  "name": "nork-scraper-1950",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "",
+  "homepage": "https://github.com/GeorgeThomas1863/nork-scraper-1950#readme",
+  "bugs": {
+    "url": "https://github.com/GeorgeThomas1863/nork-scraper-1950/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GeorgeThomas1863/nork-scraper-1950.git"
+  },
+  "license": "ISC",
+  "author": "GeorgeThomas1863",
+  "main": "app.js",
+  "scripts": {
+    "start": "nodemon app.js"
+  },
+  "dependencies": {
+    "axios": "^1.13.2",
+    "express": "^5.1.0",
+    "form-data": "^4.0.5",
+    "jsdom": "^27.2.0",
+    "mongodb": "^7.0.0",
+    "nodemon": "^3.1.11"
+  }
+}
