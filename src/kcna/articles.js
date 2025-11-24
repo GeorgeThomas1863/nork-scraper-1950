@@ -7,6 +7,7 @@ import dbModel from "../../models/db-model.js";
 import { updateLogKCNA } from "../util/log.js";
 import { buildNumericId, extractItemDate } from "../util/util.js";
 
+//HERE
 export const scrapeArticleURLsKCNA = async () => {
   const { articleTypeArr } = CONFIG;
 
