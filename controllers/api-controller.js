@@ -1,4 +1,4 @@
-import { runAPI } from "../src/src.js";
+import { runScraper } from "../src/src.js";
 
 //api receive endpoint for scraper
 export const apiEndpointController = async (req, res) => {
@@ -9,7 +9,7 @@ export const apiEndpointController = async (req, res) => {
     console.log(inputParams);
 
     //updates the scrapeState
-    const data = await runAPI(inputParams);
+    const data = await runScraper(inputParams);
     console.log("API INCOMING RESPONSE");
     console.log(data);
 

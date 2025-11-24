@@ -4,7 +4,7 @@ import { startSchedulerKCNA, stopSchedulerKCNA } from "./kcna/util/scheduler.js"
 import { logScrapeStopKCNA } from "./kcna/util/log.js";
 // import { stopWatchdog } from "./kcna/util/watchdog.js";
 
-export const runAPI = async (inputParams) => {
+export const runScraper = async (inputParams) => {
   const { command } = inputParams;
 
   try {
