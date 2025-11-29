@@ -1,4 +1,4 @@
-import { logScrapeStartKCNA } from "./util/log.js";
+import { logScrapeStartKCNA } from "../util/log.js";
 
 export const scrapeKCNA = async () => {
   await logScrapeStartKCNA();
