@@ -4,7 +4,7 @@ import CONFIG from "../../config/config.js";
 import { resetStateKCNA } from "./state.js";
 
 export const logScrapeStartKCNA = async () => {
-  const { logCollection } = CONFIG;
+  const { log } = CONFIG;
 
   //RESET FIRST
   await resetStateKCNA();
@@ -17,7 +17,7 @@ export const logScrapeStartKCNA = async () => {
   console.log("STARTING NEW KCNA SCRAPE AT " + newScrapeStartTime);
 
   //create scrapeId
-  const startModel = new dbModel({ scrapeStartTime: newScrapeStartTime }, logCollection);
+  const startModel = new dbModel({ scrapeStartTime: newScrapeStartTime }, log);
   const startData = await startModel.storeAny();
 
   const newScrapeId = startData.insertedId?.toString() || null;
@@ -27,7 +27,7 @@ export const logScrapeStartKCNA = async () => {
   kcnaState.scrapeId = newScrapeId;
 
   //add it to the the log (so can look up everything else by scrapeId)
-  const logModel = new dbModel({ keyToLookup: "_id", itemValue: startData.insertedId, updateObj: kcnaState }, logCollection);
+  const logModel = new dbModel({ keyToLookup: "_id", itemValue: startData.insertedId, updateObj: kcnaState }, log);
   const logData = await logModel.updateObjItem();
   console.log("LOG DATA");
   console.log(logData);
@@ -69,9 +69,9 @@ export const logScrapeStopKCNA = async () => {
 
 export const updateLogKCNA = async () => {
   if (!kcnaState.scrapeId) return null;
-  const { logCollection } = CONFIG;
+  const { log } = CONFIG;
 
-  const updateModel = new dbModel({ keyToLookup: "scrapeId", itemValue: kcnaState.scrapeId, updateObj: kcnaState }, logCollection);
+  const updateModel = new dbModel({ keyToLookup: "scrapeId", itemValue: kcnaState.scrapeId, updateObj: kcnaState }, log);
   const updateData = await updateModel.updateObjItem();
 
   return updateData;
