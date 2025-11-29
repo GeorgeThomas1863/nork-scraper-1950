@@ -14,6 +14,13 @@ export const buildNumericId = async (itemType) => {
 export const getNextId = async (keyToLookup, itemType) => {
   const collectionName = itemType + "Collection";
 
+  console.log("COLLECTION NAME");
+  console.log(collectionName); 
+  console.log("KEY TO LOOKUP");
+  console.log(keyToLookup);
+  console.log("ITEM TYPE");
+  console.log(itemType);
+
   const dataModel = new dbModel({ keyToLookup: keyToLookup }, collectionName);
   const maxId = await dataModel.findMaxId();
 
