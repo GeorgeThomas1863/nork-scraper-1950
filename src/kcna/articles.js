@@ -78,30 +78,32 @@ export const parseArticleLinkElement = async (linkElement, pageURL, type) => {
   const articleDate = await extractItemDate(linkElement);
   const articleURL = kcnaBaseURL + articleLink;
 
+  // //check if article already exists in db
+  // const checkModel = new dbModel({ keyToLookup: "url", itemValue: articleURL }, articles);
+  // const checkData = await checkModel.itemExistsCheckBoolean();
+  // if (checkData) {
+  //   console.log(`ARTICLE ALREADY STORED: ${articleURL}`);
+  //   return null;
+  // }
+
+  //create new id if article not in db
+  const articleId = await buildNumericId("articles");
+
+  const params = {
+    url: articleURL,
+    pageURL: pageURL,
+    date: articleDate,
+    articleType: type,
+    scrapeId: kcnaState.scrapeId,
+    articleId: articleId,
+  };
+
+  console.log("ARTICLE LIST PARAMS");
+  console.log(params);
+
   try {
-    //check if article already exists in db
-    const checkModel = new dbModel({ keyToLookup: "url", itemValue: articleURL }, articles);
-    const checkData = await checkModel.itemExistsCheckBoolean();
-    if (checkData) {
-      console.log(`ARTICLE ALREADY STORED: ${articleURL}`);
-      return null;
-    }
-
-    //create new id if article not in db
-    const articleId = await buildNumericId("articles");
-
-    const params = {
-      url: articleURL,
-      pageURL: pageURL,
-      date: articleDate,
-      articleType: type,
-      scrapeId: kcnaState.scrapeId,
-      articleId: articleId,
-    };
-
-    console.log("ARTICLE LIST PARAMS");
-    console.log(params);
-
+    console.log("STORING ARTICLE: " + articleURL);
+    //auto checks if new
     const storeModel = new dbModel(params, articles);
     const storeData = await storeModel.storeUniqueURL();
 
