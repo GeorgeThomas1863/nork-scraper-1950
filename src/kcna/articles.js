@@ -59,7 +59,7 @@ export const parseArticleListPage = async (pageURL, type) => {
   }
 
   const articleListArray = [];
-  for (const linkElement of inputArray) {
+  for (const linkElement of linkElementArray) {
     if (!kcnaState.scrapeActive) return articleListArray;
 
     const articleLinkObj = await parseArticleLinkElement(linkElement, pageURL, type);

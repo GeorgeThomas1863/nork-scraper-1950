@@ -7,29 +7,24 @@ import { scrapeKCNA } from "./kcna/scrape-kcna.js";
 export const runScraper = async (inputParams) => {
   const { command } = inputParams;
 
-  try {
-    switch (command) {
-      case "admin-start-scrape":
-        return await runNewScrape(inputParams);
+  switch (command) {
+    case "admin-start-scrape":
+      return await runNewScrape(inputParams);
 
-      case "admin-stop-scrape":
-        return await runStopScrape(inputParams);
+    case "admin-stop-scrape":
+      return await runStopScrape(inputParams);
 
-      case "admin-start-scheduler":
-        return await runStartScheduler(inputParams);
+    case "admin-start-scheduler":
+      return await runStartScheduler(inputParams);
 
-      case "admin-stop-scheduler":
-        return await runStopScheduler(inputParams);
+    case "admin-stop-scheduler":
+      return await runStopScheduler(inputParams);
 
-      case "admin-scrape-status":
-        return kcnaState;
+    case "admin-scrape-status":
+      return kcnaState;
 
-      default:
-        return null;
-    }
-  } catch (e) {
-    console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
-    return null;
+    default:
+      return null;
   }
 };
 

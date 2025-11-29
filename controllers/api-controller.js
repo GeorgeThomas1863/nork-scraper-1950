@@ -2,20 +2,15 @@ import { runScraper } from "../src/src.js";
 
 //api receive endpoint for scraper
 export const apiEndpointController = async (req, res) => {
-  try {
-    const inputParams = req.body;
+  const inputParams = req.body;
 
-    console.log("API INCOMING DATA");
-    console.log(inputParams);
+  console.log("API INCOMING DATA");
+  console.log(inputParams);
 
-    //updates the scrapeState
-    const data = await runScraper(inputParams);
-    console.log("API INCOMING RESPONSE");
-    console.log(data);
+  //updates the scrapeState
+  const data = await runScraper(inputParams);
+  console.log("API INCOMING RESPONSE");
+  console.log(data);
 
-    return res.json(data);
-  } catch (e) {
-    console.error(e);
-    return res.status(500).json({ e: "SCRAPER FAILED TO HANDLE INCOMING DATA REQ" });
-  }
+  return res.json(data);
 };
