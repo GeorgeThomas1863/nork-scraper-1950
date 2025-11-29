@@ -87,7 +87,7 @@ export const parseArticleLinkElement = async (linkElement, pageURL, type) => {
   }
 
   //create new id if article not in db
-  const articleId = await buildNumericId("articlesCollection");
+  const articleId = await buildNumericId("articles");
 
   const params = {
     url: articleURL,

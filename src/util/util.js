@@ -11,18 +11,15 @@ export const buildNumericId = async (itemType) => {
   return nextId;
 };
 
-export const getNextId = async (keyToLookup, collection) => {
-  try {
-    const dataModel = new dbModel({ keyToLookup: keyToLookup }, collection);
-    const maxId = await dataModel.findMaxId();
+export const getNextId = async (keyToLookup, itemType) => {
+  const collectionName = itemType + "collection";
 
-    if (!maxId) return 1;
+  const dataModel = new dbModel({ keyToLookup: keyToLookup }, collectionName);
+  const maxId = await dataModel.findMaxId();
 
-    return maxId + 1;
-  } catch (e) {
-    console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
-    return null;
-  }
+  if (!maxId) return 1;
+
+  return maxId + 1;
 };
 
 //-------------------------------
