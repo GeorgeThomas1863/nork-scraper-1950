@@ -1,4 +1,4 @@
-import { logScrapeStartKCNA } from "../util/log.js";
+import { logScrapeStartKCNA, logScrapeStopKCNA } from "../util/log.js";
 import { scrapeArticleURLsKCNA } from "./articles.js";
 
 export const scrapeKCNA = async () => {
@@ -7,4 +7,7 @@ export const scrapeKCNA = async () => {
   //URLs
   await scrapeArticleURLsKCNA();
   // await scrapePicSetURLsKCNA();
+
+  //log stop
+  await logScrapeStopKCNA();
 };

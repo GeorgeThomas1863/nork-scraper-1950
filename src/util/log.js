@@ -46,6 +46,29 @@ export const logScrapeStartKCNA = async () => {
   return kcnaState;
 };
 
+export const logScrapeStopKCNA = async () => {
+  const scrapeEndTime = new Date();
+  const scrapeLengthSeconds = (scrapeEndTime - kcnaState.scrapeStartTime) / 1000;
+  const scrapeLengthMinutes = Math.floor(scrapeLengthSeconds / 60);
+
+  kcnaState.scrapeEndTime = scrapeEndTime;
+  kcnaState.scrapeLengthSeconds = scrapeLengthSeconds;
+  kcnaState.scrapeLengthMinutes = scrapeLengthMinutes;
+  kcnaState.scrapeStep = "FINISHED SCRAPE KCNA";
+  kcnaState.scrapeMessage = "FINISHED SCRAPE KCNA";
+  kcnaState.scrapeActive = false;
+
+  console.log("FINISHED KCNA SCRAPE AT " + scrapeEndTime);
+  console.log(`SCRAPE LENGTH: ${scrapeLengthMinutes} minutes and ${(scrapeLengthSeconds % 60).toFixed(2)} seconds`);
+
+  await updateLogKCNA();
+  await resetStateKCNA();
+
+  // await stopWatchdog();
+
+  return kcnaState;
+};
+
 export const updateLogKCNA = async () => {
   if (!kcnaState.scrapeId) return null;
   const { log } = CONFIG;
