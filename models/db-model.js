@@ -15,14 +15,13 @@ class dbModel {
   //STORE STUFF
 
   async storeAny() {
-    // await db.dbConnect();
     const storeData = await dbGet().collection(this.collection).insertOne(this.dataObject);
     return storeData;
   }
 
   async storeUniqueURL() {
-    // await db.dbConnect();
-    await this.urlNewCheck(); //check if new
+    const isNew = await this.urlNewCheck(); //check if new
+    if (!isNew) return null;
 
     const storeData = await this.storeAny();
     return storeData;
@@ -135,13 +134,11 @@ class dbModel {
     const alreadyStored = await dbGet().collection(this.collection).findOne({ url: this.dataObject.url });
 
     if (alreadyStored) {
-      const error = new Error("URL ALREADY STORED");
-      error.url = this.dataObject.url;
-      error.function = "Store Unique URL";
-      throw error;
+      console.log("URL ALREADY STORED");
+      return false;
     }
 
-    //otherwise return trun
+    //otherwise return true
     return true;
   }
 
