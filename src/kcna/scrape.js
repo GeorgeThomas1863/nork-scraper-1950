@@ -5,5 +5,5 @@ export const scrapeKCNA = async () => {
 
   //URLs
   await scrapeArticleURLsKCNA();
-  await scrapePicSetURLsKCNA();
+  // await scrapePicSetURLsKCNA();
 };

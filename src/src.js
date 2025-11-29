@@ -68,7 +68,7 @@ export const runStopScrape = async (inputParams) => {
 export const runStartScheduler = async (inputParams) => {
   const { site } = inputParams;
 
-  console.log("AHHHHHHHHHHHHHHHHHHHH");
+  // console.log("AHHHHHHHHHHHHHHHHHHHH");
 
   switch (site) {
     case "kcna":
