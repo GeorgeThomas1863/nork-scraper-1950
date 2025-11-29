@@ -12,7 +12,7 @@ export const buildNumericId = async (itemType) => {
 };
 
 export const getNextId = async (keyToLookup, itemType) => {
-  const collectionName = itemType + "collection";
+  const collectionName = itemType + "Collection";
 
   const dataModel = new dbModel({ keyToLookup: keyToLookup }, collectionName);
   const maxId = await dataModel.findMaxId();
