@@ -1,6 +1,6 @@
 import kcnaState from "./util/state.js";
 import { scrapeKCNA } from "./kcna/scrape-kcna.js";
-import { startSchedulerKCNA, stopSchedulerKCNA } from "./util/scheduler.js";
+// import { startSchedulerKCNA, stopSchedulerKCNA } from "./util/scheduler.js";
 // import { logScrapeStopKCNA } from "./util/log.js";
 // import { stopWatchdog } from "./kcna/util/watchdog.js";
 
