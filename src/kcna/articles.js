@@ -72,40 +72,46 @@ export const parseArticleListPage = async (pageURL, type) => {
 
 export const parseArticleLinkElement = async (linkElement, pageURL, type) => {
   if (!linkElement || !pageURL || !type) return null;
-  const { kcnaBaseURL, articlesCollection } = CONFIG;
+  const { kcnaBaseURL, articles } = CONFIG;
 
   const articleLink = linkElement.getAttribute("href");
   const articleDate = await extractItemDate(linkElement);
   const articleURL = kcnaBaseURL + articleLink;
 
-  //check if article already exists in db
-  const checkModel = new dbModel({ keyToLookup: "url", itemValue: articleURL }, articlesCollection);
-  const checkData = await checkModel.itemExistsCheckBoolean();
-  if (checkData) {
-    console.log(`ARTICLE ALREADY STORED: ${articleURL}`);
+  try {
+    //check if article already exists in db
+    const checkModel = new dbModel({ keyToLookup: "url", itemValue: articleURL }, articles);
+    const checkData = await checkModel.itemExistsCheckBoolean();
+    if (checkData) {
+      console.log(`ARTICLE ALREADY STORED: ${articleURL}`);
+      return null;
+    }
+
+    //create new id if article not in db
+    const articleId = await buildNumericId("articles");
+
+    const params = {
+      url: articleURL,
+      pageURL: pageURL,
+      date: articleDate,
+      articleType: type,
+      scrapeId: kcnaState.scrapeId,
+      articleId: articleId,
+    };
+
+    console.log("ARTICLE LIST PARAMS");
+    console.log(params);
+
+    const storeModel = new dbModel(params, articles);
+    const storeData = await storeModel.storeUniqueURL();
+
+    console.log("ARTICLE STORE DATA");
+    console.log(storeData);
+
+    return params;
+  } catch (e) {
+    console.log("MONGO ERROR FOR ARTICLE: " + articleURL);
+    console.log(e.message);
     return null;
   }
-
-  //create new id if article not in db
-  const articleId = await buildNumericId("articles");
-
-  const params = {
-    url: articleURL,
-    pageURL: pageURL,
-    date: articleDate,
-    articleType: type,
-    scrapeId: kcnaState.scrapeId,
-    articleId: articleId,
-  };
-
-  console.log("ARTICLE LIST PARAMS");
-  console.log(params);
-
-  const storeModel = new dbModel(params, articlesCollection);
-  const storeData = await storeModel.storeUniqueURL();
-
-  console.log("ARTICLE STORE DATA");
-  console.log(storeData);
-
-  return params;
 };
