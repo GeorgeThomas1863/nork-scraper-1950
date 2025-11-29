@@ -15,8 +15,8 @@ export const getNextId = async (keyToLookup, itemType) => {
   const dataModel = new dbModel({ keyToLookup: keyToLookup }, itemType);
   const maxId = await dataModel.findMaxId();
 
-  console.log("MAX ID");
-  console.log(maxId);
+  // console.log("MAX ID");
+  // console.log(maxId);
 
   if (!maxId) return 1;
 

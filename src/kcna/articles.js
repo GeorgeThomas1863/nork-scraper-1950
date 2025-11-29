@@ -15,8 +15,10 @@ export const scrapeArticleURLsKCNA = async () => {
 
   let articleCount = 0;
   const articleTypeData = [];
-  for (const type in articleURLs) {
-    const typeArr = articleURLs[type];
+  for (const typeKey in articleURLs) {
+    const typeArr = articleURLs[typeKey];
+    const type = typeKey.slice(0, -3);
+
     for (const pageURL of typeArr) {
       if (!kcnaState.scrapeActive) return articleTypeData;
 
