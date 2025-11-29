@@ -20,9 +20,6 @@ export const logScrapeStartKCNA = async () => {
   const startModel = new dbModel({ scrapeStartTime: newScrapeStartTime }, log);
   const startData = await startModel.storeAny();
 
-  console.log("LOG SCAPE START DATA");
-  console.log(startData);
-
   const newScrapeId = startData.insertedId?.toString() || null;
   console.log("NEW SCRAPE ID");
   console.log(newScrapeId);
@@ -58,6 +55,7 @@ export const logScrapeStopKCNA = async () => {
   kcnaState.scrapeMessage = "FINISHED SCRAPE KCNA";
   kcnaState.scrapeActive = false;
 
+  console.log("LOGGING SCRAPE STOP KCNA");
   console.log("FINISHED KCNA SCRAPE AT " + scrapeEndTime);
   console.log(`SCRAPE LENGTH: ${scrapeLengthMinutes} minutes and ${(scrapeLengthSeconds % 60).toFixed(2)} seconds`);
 
