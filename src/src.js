@@ -1,7 +1,7 @@
-import kcnaState from "./kcna/util/state.js";
+import kcnaState from "./util/state.js";
 import { scrapeKCNA } from "./kcna/scrape-kcna.js";
-import { startSchedulerKCNA, stopSchedulerKCNA } from "./kcna/util/scheduler.js";
-import { logScrapeStopKCNA } from "./kcna/util/log.js";
+import { startSchedulerKCNA, stopSchedulerKCNA } from "./util/scheduler.js";
+import { logScrapeStopKCNA } from "./util/log.js";
 // import { stopWatchdog } from "./kcna/util/watchdog.js";
 
 export const runScraper = async (inputParams) => {
