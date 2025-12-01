@@ -14,8 +14,8 @@ export const scrapeArticleURLsKCNA = async (inputObj) => {
   console.log("SCRAPING KCNA ARTICLES; GETTING URLS");
 
   const articleTypeData = [];
+  let articleCount = 0;
   for (const typeObj of inputObj) {
-    let articleCount = 0;
     const { typeArr, pageArray } = typeObj;
     const type = typeArr.slice(0, -3);
 
@@ -33,8 +33,6 @@ export const scrapeArticleURLsKCNA = async (inputObj) => {
 
       articleTypeData.push(...articleListArray);
     }
-
-    console.log(`ARTICLE TYPE: ${type} | NEW ITEMS FOUND: ${articleCount}`);
   }
 
   kcnaState.scrapeStep = "ARTICLE CONTENT KCNA";
@@ -46,10 +44,6 @@ export const scrapeArticleURLsKCNA = async (inputObj) => {
 
 export const parseArticleListPage = async (pageURL, type) => {
   if (!pageURL || !type) return null;
-
-  console.log("PARSING ARTICLE LIST PAGE");
-  console.log(pageURL);
-  console.log(type);
 
   const htmlModel = new NORK({ url: pageURL });
   const html = await htmlModel.getHTML();
@@ -90,6 +84,8 @@ export const parseArticleLinkElement = async (linkElement, pageURL, type) => {
   //check if stored here
   const checkModel = new dbModel({ url: articleURL }, articles);
   const checkData = await checkModel.itemExistsCheckBoolean();
+  console.log("CHECK DATA");
+  console.log(checkData);
   if (checkData) return null;
 
   const articleDate = await extractItemDate(linkElement);
