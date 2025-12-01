@@ -224,3 +224,7 @@ export const extractPicSetPicArray = async (document, date) => {
 
   return picSetPicArray;
 };
+
+//+++++++++++++++++++++++++++++++++
+
+export const uploadPicSetsKCNA = async () => {};

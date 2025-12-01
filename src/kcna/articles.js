@@ -273,3 +273,7 @@ export const extractArticlePicArray = async (url, date) => {
 
   return picArray;
 };
+
+//+++++++++++++++++++++++++++++++++++
+
+export const uploadArticlesKCNA = async () => {};
