@@ -14,11 +14,10 @@ export const scrapePicSetURLsKCNA = async (inputArray) => {
 
   let picSetCount = 0;
   const picSetTypeData = [];
-  for (const typeKey in inputArray) {
-    const typeArr = inputArray[typeKey];
-    const type = typeKey.slice(0, -3);
+  for (const typeObj of inputObj) {
+    const { type, pageArray } = typeObj;
 
-    for (const pageURL of typeArr) {
+    for (const pageURL of pageArray) {
       if (!kcnaState.scrapeActive) return picSetTypeData;
 
       const picSetListArray = await parsePicSetListPage(pageURL, type);
@@ -108,5 +107,5 @@ export const parsePicSetLinkElement = async (linkElement, pageURL, type) => {
 //+++++++++++++++++++++++++++++++++++++++++
 
 export const scrapePicSetContentKCNA = async () => {
-    //build
+  //build
 };

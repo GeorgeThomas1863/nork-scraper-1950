@@ -9,20 +9,19 @@ import { updateLogKCNA } from "../util/log.js";
 import { buildNumericId, extractItemDate } from "../util/util.js";
 
 //BUILD IN WAY TO SCRAPE ONLY 5 MOST RECENT URLS PER TYPE, make this default
-export const scrapeArticleURLsKCNA = async (inputArray) => {
+export const scrapeArticleURLsKCNA = async (inputObj) => {
   if (!kcnaState.scrapeActive) return null;
   console.log("SCRAPING KCNA ARTICLES; GETTING URLS");
 
-  console.log("INPUT ARRAY");
-  console.log(inputArray);
+  console.log("INPUT OBJECT");
+  console.log(inputObj);
 
   let articleCount = 0;
   const articleTypeData = [];
-  for (const typeKey in inputArray) {
-    const typeArr = inputArray[typeKey];
-    const type = typeKey.slice(0, -3);
+  for (const typeObj of inputObj) {
+    const { type, pageArray } = typeObj;
 
-    for (const pageURL of typeArr) {
+    for (const pageURL of pageArray) {
       if (!kcnaState.scrapeActive) return articleTypeData;
 
       const articleListArray = await parseArticleListPage(pageURL, type);
