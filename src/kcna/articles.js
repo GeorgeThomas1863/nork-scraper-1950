@@ -8,7 +8,7 @@ import dbModel from "../../models/db-model.js";
 import { updateLogKCNA } from "../util/log.js";
 import { buildNumericId, extractItemDate } from "../util/util.js";
 
-//HERE
+//BUILD IN WAY TO SCRAPE ONLY RECENT DATES (MAKE THAT DEFAULT)
 export const scrapeArticleURLsKCNA = async () => {
   if (!kcnaState.scrapeActive) return null;
   console.log("SCRAPING KCNA ARTICLES; GETTING URLS");
@@ -77,10 +77,14 @@ export const parseArticleLinkElement = async (linkElement, pageURL, type) => {
   const { kcnaBaseURL, articles } = CONFIG;
 
   const articleLink = linkElement.getAttribute("href");
-  const articleDate = await extractItemDate(linkElement);
   const articleURL = kcnaBaseURL + articleLink;
 
-  //create new id if article not in db
+  //check if stored here 
+  const checkModel = new dbModel({ url: articleURL }, articles);
+  const checkData = await checkModel.itemExistsCheckBoolean();
+  if (checkData) return null;
+
+  const articleDate = await extractItemDate(linkElement);
   const articleId = await buildNumericId("articles");
 
   const params = {
