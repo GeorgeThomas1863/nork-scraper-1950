@@ -78,6 +78,10 @@ export const parsePicSetLinkElement = async (linkElement, pageURL, type) => {
   const picSetDate = await extractItemDate(linkElement);
   const picSetURL = kcnaBaseURL + picSetLink;
 
+  const checkModel = new dbModel({ keyToLookup: "url", itemValue: picSetURL }, picSets);
+  const checkData = await checkModel.urlExistsCheck();
+  if (checkData) return null;
+
   const picSetId = await buildNumericId("picSets");
 
   const params = {
