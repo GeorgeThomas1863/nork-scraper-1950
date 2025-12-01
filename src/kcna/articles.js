@@ -84,7 +84,7 @@ export const parseArticleLinkElement = async (linkElement, pageURL, type) => {
   const checkData = await checkModel.urlExistsCheck();
 
   if (checkData) {
-    console.log(`URL ${articleURL} ALREADY STORED`);
+    console.log(`URL ALREADY STORED: ${articleURL} `);
     return null;
   }
 

@@ -81,7 +81,7 @@ export const parsePicSetLinkElement = async (linkElement, pageURL, type) => {
   const checkModel = new dbModel({ url: picSetURL }, picSets);
   const checkData = await checkModel.urlExistsCheck();
   if (checkData) {
-    console.log(`URL ${picSetURL} ALREADY STORED`);
+    console.log(`URL ALREADY STORED: ${picSetURL}`);
     return null;
   }
 
