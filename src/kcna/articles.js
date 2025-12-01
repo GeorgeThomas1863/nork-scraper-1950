@@ -8,7 +8,7 @@ import dbModel from "../../models/db-model.js";
 import { updateLogKCNA } from "../util/log.js";
 import { buildNumericId, extractItemDate } from "../util/util.js";
 
-//BUILD IN WAY TO SCRAPE ONLY RECENT DATES (MAKE THAT DEFAULT)
+//BUILD IN WAY TO SCRAPE ONLY 5 MOST RECENT URLS PER TYPE, make this default
 export const scrapeArticleURLsKCNA = async () => {
   if (!kcnaState.scrapeActive) return null;
   console.log("SCRAPING KCNA ARTICLES; GETTING URLS");
@@ -30,7 +30,7 @@ export const scrapeArticleURLsKCNA = async () => {
       articleTypeData.push(...articleListArray);
     }
 
-    console.log(`ARTICLE TYPE: ${type} | COUNT: ${articleCount}`);
+    console.log(`ARTICLE TYPE: ${type} | NEW ITEMS FOUND: ${articleCount}`);
   }
 
   kcnaState.scrapeStep = "ARTICLE CONTENT KCNA";
@@ -79,7 +79,7 @@ export const parseArticleLinkElement = async (linkElement, pageURL, type) => {
   const articleLink = linkElement.getAttribute("href");
   const articleURL = kcnaBaseURL + articleLink;
 
-  //check if stored here 
+  //check if stored here
   const checkModel = new dbModel({ url: articleURL }, articles);
   const checkData = await checkModel.itemExistsCheckBoolean();
   if (checkData) return null;
@@ -144,9 +144,130 @@ export const scrapeArticleContentKCNA = async () => {
 
 export const parseArticleContent = async (inputObj) => {
   if (!inputObj) return null;
+  const { url, date } = inputObj;
 
-  console.log("PARSING ARTICLE CONTENT");
-  console.log(inputObj);
+  const kcna = new NORK({ url });
+  const html = await kcna.getHTML();
+  if (!html) {
+    console.log(`FAILED TO GET HTML FOR URL: ${url}`);
+    return null;
+  }
 
-  return inputObj;
+  const dom = new JSDOM(html);
+  const document = dom.window.document;
+
+  const articleTitle = await extractArticleTitle(document);
+  const articleText = await extractArticleText(document);
+  const articlePicPage = await extractArticlePicPage(document);
+  const articlePicArray = await extractArticlePicArray(articlePicPage, date);
+
+  const params = {
+    title: articleTitle,
+    text: articleText,
+  };
+
+  if (articlePicArray) {
+    params.picPageURL = articlePicPage;
+    params.picArray = articlePicArray;
+  }
+
+  console.log("ARTICLE CONTENT PARAMS");
+  console.log(params);
+
+  try {
+    const storeModel = new dbModel({ keyToLookup: "url", itemValue: url, updateObj: params }, articles);
+    const storeData = await storeModel.updateObjItem();
+    console.log("STORE ARTICLE CONTENT DATA");
+    console.log(storeData);
+  } catch (e) {
+    console.log("MONGO ERROR FOR ARTICLE: " + url);
+    console.log(e.message);
+  }
+
+  return params;
+};
+
+export const extractArticleTitle = async (document) => {
+  const titleElement = document.querySelector(".article-main-title");
+  const articleTitle = titleElement?.textContent?.replace(/\s+/g, " ").trim();
+  return articleTitle;
+};
+
+export const extractArticleText = async (document) => {
+  //extract text content
+  const textElement = document.querySelector(".content-wrapper");
+  const textArray = textElement.querySelectorAll("p"); //array of paragraph elements
+
+  const paragraphArray = [];
+  for (let i = 0; i < textArray.length; i++) {
+    paragraphArray.push(textArray[i].textContent.trim());
+  }
+
+  // Join paragraphs with double newlines for better readability
+  const articleText = paragraphArray.join("\n\n");
+  return articleText;
+};
+
+export const extractArticlePicPage = async (document) => {
+  //get article PAGE (if exists) where all pics are displayed
+  const mediaIconElement = document.querySelector(".media-icon");
+  const picPageHref = mediaIconElement?.firstElementChild?.getAttribute("href");
+
+  //return null if  pic doesnt exist
+  if (!picPageHref) return null;
+
+  //otherwise build pic / pic array
+  const picPageURL = "http://www.kcna.kp" + picPageHref;
+  return picPageURL;
+};
+
+export const extractArticlePicArray = async (url, date) => {
+  const { pics, kcnaBaseURL } = CONFIG;
+  if (!url) return null;
+
+  const kcna = new NORK({ url });
+  const html = await kcna.getHTML();
+
+  if (!html) {
+    console.log(`FAILED TO GET HTML FOR URL: ${url}`);
+    return null;
+  }
+
+  const dom = new JSDOM(html);
+  const document = dom.window.document;
+
+  //get and loop through img elements
+  const picArray = [];
+  const imgArray = document.querySelectorAll("img");
+  for (let i = 0; i < imgArray.length; i++) {
+    if (!kcnaState.scrapeActive) return picArray;
+
+    const imgSrc = imgArray[i].getAttribute("src");
+    if (!imgSrc) continue;
+
+    const articlePicURL = kcnaBaseURL + imgSrc;
+
+    picArray.push(articlePicURL);
+
+    //store url to picDB (so dont have to do again); build params
+    const picId = await buildNumericId("pics");
+    const storeParams = {
+      picId: picId,
+      url: articlePicURL,
+      scrapeId: kcnaState.scrapeId,
+      date: date,
+    };
+
+    console.log("ARTICLE PIC STORE PARAMS");
+    console.log(storeParams);
+    try {
+      const storePicModel = new dbModel(storeParams, pics);
+      await storePicModel.storeUniqueURL();
+    } catch (e) {
+      console.log("MONGO ERROR FOR ARTICLE PIC: " + articlePicURL);
+      console.log(e.message);
+    }
+  }
+
+  return picArray;
 };
