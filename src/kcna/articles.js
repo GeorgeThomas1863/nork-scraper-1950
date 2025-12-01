@@ -8,7 +8,6 @@ import dbModel from "../../models/db-model.js";
 import { updateLogKCNA } from "../util/log.js";
 import { buildNumericId, extractItemDate } from "../util/util.js";
 
-//BUILD IN WAY TO SCRAPE ONLY 5 MOST RECENT URLS PER TYPE, make this default
 export const scrapeArticleURLsKCNA = async (inputObj) => {
   if (!kcnaState.scrapeActive) return null;
   console.log("SCRAPING KCNA ARTICLES; GETTING URLS");
@@ -80,6 +79,10 @@ export const parseArticleLinkElement = async (linkElement, pageURL, type) => {
 
   const articleLink = linkElement.getAttribute("href");
   const articleURL = kcnaBaseURL + articleLink;
+
+  const checkModel = new dbModel({ keyToLookup: "url", itemValue: articleURL }, articles);
+  const checkData = await checkModel.urlExistsCheck();
+  if (checkData) return null;
 
   const articleDate = await extractItemDate(linkElement);
   const articleId = await buildNumericId("articles");
@@ -250,7 +253,7 @@ export const extractArticlePicArray = async (url, date) => {
 
     //store url to picDB (so dont have to do again); build params
     const picId = await buildNumericId("pics");
-    const storeParams = {
+    const picParams = {
       picId: picId,
       url: articlePicURL,
       scrapeId: kcnaState.scrapeId,
@@ -258,9 +261,9 @@ export const extractArticlePicArray = async (url, date) => {
     };
 
     console.log("ARTICLE PIC STORE PARAMS");
-    console.log(storeParams);
+    console.log(picParams);
     try {
-      const storePicModel = new dbModel(storeParams, pics);
+      const storePicModel = new dbModel(picParams, pics);
       await storePicModel.storeUniqueURL();
     } catch (e) {
       console.log("MONGO ERROR FOR ARTICLE PIC: " + articlePicURL);

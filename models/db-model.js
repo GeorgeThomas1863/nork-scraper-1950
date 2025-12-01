@@ -142,6 +142,15 @@ class dbModel {
     return true;
   }
 
+  //non r slur version (logic NOT BACKWARDS)
+  async urlExistsCheck() {
+    const alreadyStored = await dbGet().collection(this.collection).findOne({ url: this.dataObject.url });
+
+    if (alreadyStored) console.log(`URL ALREADY STORED: ${this.dataObject.url}`);
+
+    return alreadyStored;
+  }
+
   //version that doesnt throw error
   async itemExistsCheckBoolean() {
     const { keyToLookup, itemValue } = this.dataObject;
