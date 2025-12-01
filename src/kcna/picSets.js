@@ -1,21 +1,21 @@
 import { JSDOM } from "jsdom";
 
 import CONFIG from "../../config/config.js";
-import { picSetURLs } from "../../config/urls.js";
+// import { picSetURLs } from "../../config/urls.js";
 import kcnaState from "../util/state.js";
 import NORK from "../../models/nork-model.js";
 import dbModel from "../../models/db-model.js";
 import { updateLogKCNA } from "../util/log.js";
 import { buildNumericId, extractItemDate } from "../util/util.js";
 
-export const scrapePicSetURLsKCNA = async () => {
+export const scrapePicSetURLsKCNA = async (inputArray) => {
   if (!kcnaState.scrapeActive) return null;
   console.log("SCRAPING KCNA PIC SETS; GETTING URLS");
 
   let picSetCount = 0;
   const picSetTypeData = [];
-  for (const typeKey in picSetURLs) {
-    const typeArr = picSetURLs[typeKey];
+  for (const typeKey in inputArray) {
+    const typeArr = inputArray[typeKey];
     const type = typeKey.slice(0, -3);
 
     for (const pageURL of typeArr) {

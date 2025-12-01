@@ -1,7 +1,7 @@
 import { JSDOM } from "jsdom";
 
 import CONFIG from "../../config/config.js";
-import { articleURLs } from "../../config/urls.js";
+// import { articleURLs } from "../../config/urls.js";
 import kcnaState from "../util/state.js";
 import NORK from "../../models/nork-model.js";
 import dbModel from "../../models/db-model.js";
@@ -9,20 +9,22 @@ import { updateLogKCNA } from "../util/log.js";
 import { buildNumericId, extractItemDate } from "../util/util.js";
 
 //BUILD IN WAY TO SCRAPE ONLY 5 MOST RECENT URLS PER TYPE, make this default
-export const scrapeArticleURLsKCNA = async () => {
+export const scrapeArticleURLsKCNA = async (inputArray) => {
   if (!kcnaState.scrapeActive) return null;
   console.log("SCRAPING KCNA ARTICLES; GETTING URLS");
 
   let articleCount = 0;
   const articleTypeData = [];
-  for (const typeKey in articleURLs) {
-    const typeArr = articleURLs[typeKey];
+  for (const typeKey in inputArray) {
+    const typeArr = inputArray[typeKey];
     const type = typeKey.slice(0, -3);
 
     for (const pageURL of typeArr) {
       if (!kcnaState.scrapeActive) return articleTypeData;
 
       const articleListArray = await parseArticleListPage(pageURL, type);
+      console.log("ARTICLE LIST ARRAY FOR PAGE: " + pageURL);
+      console.log(articleListArray);
 
       if (!articleListArray) continue;
       articleCount += articleListArray.length;

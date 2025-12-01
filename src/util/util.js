@@ -1,5 +1,39 @@
 import dbModel from "../../models/db-model.js";
 import kcnaState from "./state.js";
+import { articleURLs, picSetURLs } from "../../config/urls.js";
+
+export const calcHowMuchKCNA = async (howMuch, type) => {
+  if (!howMuch || !type) return null;
+
+  let defaultURLs = articleURLs;
+  if (type === "picSets") defaultURLs = picSetURLs;
+
+  const dataArray = [];
+  for (const typeKey in defaultURLs) {
+    if (!kcnaState.scrapeActive) return dataArray;
+
+    const typeArr = defaultURLs[typeKey];
+    if (!typeArr || !typeArr.length) continue;
+    let itemLength = typeArr.length;
+    if (howMuch === "admin-scrape-new" && itemLength > 3) itemLength = 3;
+
+    const returnObj = {
+      type: typeKey,
+      pageArray: [],
+    };
+
+    for (let i = 0; i < itemLength; i++) {
+      const pageURL = typeArr[i];
+      returnObj.pageArray.push(pageURL);
+    }
+
+    dataArray.push(returnObj);
+  }
+
+  return dataArray;
+};
+
+//---------------------
 
 export const buildNumericId = async (itemType) => {
   if (!itemType) return null;
