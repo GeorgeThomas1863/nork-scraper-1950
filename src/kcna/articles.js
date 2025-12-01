@@ -13,9 +13,9 @@ export const scrapeArticleURLsKCNA = async (inputObj) => {
   if (!kcnaState.scrapeActive) return null;
   console.log("SCRAPING KCNA ARTICLES; GETTING URLS");
 
-  let articleCount = 0;
   const articleTypeData = [];
   for (const typeObj of inputObj) {
+    let articleCount = 0;
     const { typeArr, pageArray } = typeObj;
     const type = typeArr.slice(0, -3);
 
@@ -110,13 +110,12 @@ export const parseArticleLinkElement = async (linkElement, pageURL, type) => {
 
     console.log("ARTICLE STORE DATA");
     console.log(storeData);
-
-    return params;
   } catch (e) {
     console.log("MONGO ERROR FOR ARTICLE: " + articleURL);
     console.log(e.message);
-    return null;
   }
+
+  return params;
 };
 
 //++++++++++++++++++++++++++++++++++
