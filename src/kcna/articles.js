@@ -82,6 +82,9 @@ export const parseArticleLinkElement = async (linkElement, pageURL, type) => {
 
   const checkModel = new dbModel({ keyToLookup: "url", itemValue: articleURL }, articles);
   const checkData = await checkModel.urlExistsCheck();
+  console.log("CHECK DATA");
+  console.log(checkData);
+  
   if (checkData) {
     console.log(`URL ${articleURL} ALREADY STORED`);
     return null;
