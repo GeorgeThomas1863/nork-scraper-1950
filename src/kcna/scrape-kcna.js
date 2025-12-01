@@ -1,3 +1,5 @@
+import { articleURLs, picSetURLs } from "../../config/urls.js";
+
 import { logScrapeStartKCNA, logScrapeStopKCNA } from "../util/log.js";
 import { scrapeArticleURLsKCNA, scrapeArticleContentKCNA } from "./articles.js";
 import { scrapePicSetURLsKCNA, scrapePicSetContentKCNA } from "./picSets.js";
