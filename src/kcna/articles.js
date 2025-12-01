@@ -13,20 +13,20 @@ export const scrapeArticleURLsKCNA = async (inputObj) => {
   if (!kcnaState.scrapeActive) return null;
   console.log("SCRAPING KCNA ARTICLES; GETTING URLS");
 
-  console.log("INPUT OBJECT");
-  console.log(inputObj);
-
   let articleCount = 0;
   const articleTypeData = [];
   for (const typeObj of inputObj) {
-    const { type, pageArray } = typeObj;
+    const { typeArr, pageArray } = typeObj;
+    const type = typeArr.slice(0, -3);
+
+    console.log("TYPE: " + type + " | PAGE ARRAY LENGTH: " + pageArray.length);
 
     for (const pageURL of pageArray) {
       if (!kcnaState.scrapeActive) return articleTypeData;
 
       const articleListArray = await parseArticleListPage(pageURL, type);
-      console.log("ARTICLE LIST ARRAY FOR PAGE: " + pageURL);
-      console.log(articleListArray);
+      // console.log("ARTICLE LIST ARRAY FOR PAGE: " + pageURL);
+      // console.log(articleListArray);
 
       if (!articleListArray) continue;
       articleCount += articleListArray.length;

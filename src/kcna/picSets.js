@@ -8,14 +8,17 @@ import dbModel from "../../models/db-model.js";
 import { updateLogKCNA } from "../util/log.js";
 import { buildNumericId, extractItemDate } from "../util/util.js";
 
-export const scrapePicSetURLsKCNA = async (inputArray) => {
+export const scrapePicSetURLsKCNA = async (inputObj) => {
   if (!kcnaState.scrapeActive) return null;
   console.log("SCRAPING KCNA PIC SETS; GETTING URLS");
 
   let picSetCount = 0;
   const picSetTypeData = [];
   for (const typeObj of inputObj) {
-    const { type, pageArray } = typeObj;
+    const { typeArr, pageArray } = typeObj;
+    const type = typeArr.slice(0, -3);
+
+    console.log("TYPE: " + type + " | PAGE ARRAY LENGTH: " + pageArray.length);
 
     for (const pageURL of pageArray) {
       if (!kcnaState.scrapeActive) return picSetTypeData;

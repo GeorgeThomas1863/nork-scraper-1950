@@ -22,7 +22,7 @@ export const calcHowMuchKCNA = async (howMuch, type) => {
     if (howMuch === "admin-scrape-new" && itemLength > 3) itemLength = 3;
 
     const returnObj = {
-      type: typeKey,
+      typeArr: typeKey,
       pageArray: [],
     };
 
