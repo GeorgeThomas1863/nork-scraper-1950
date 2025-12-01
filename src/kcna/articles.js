@@ -13,6 +13,9 @@ export const scrapeArticleURLsKCNA = async (inputArray) => {
   if (!kcnaState.scrapeActive) return null;
   console.log("SCRAPING KCNA ARTICLES; GETTING URLS");
 
+  console.log("INPUT ARRAY");
+  console.log(inputArray);
+
   let articleCount = 0;
   const articleTypeData = [];
   for (const typeKey in inputArray) {
