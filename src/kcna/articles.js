@@ -47,6 +47,10 @@ export const scrapeArticleURLsKCNA = async (inputObj) => {
 export const parseArticleListPage = async (pageURL, type) => {
   if (!pageURL || !type) return null;
 
+  console.log("PARSING ARTICLE LIST PAGE");
+  console.log(pageURL);
+  console.log(type);
+
   const htmlModel = new NORK({ url: pageURL });
   const html = await htmlModel.getHTML();
   if (!html) {
