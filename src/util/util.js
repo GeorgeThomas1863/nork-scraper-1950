@@ -19,7 +19,7 @@ export const calcHowMuchKCNA = async (howMuch, type) => {
     const typeArr = defaultURLs[typeKey];
     if (!typeArr || !typeArr.length) continue;
     let itemLength = typeArr.length;
-    if (howMuch === "admin-scrape-new" && itemLength > 3) itemLength = 3;
+    if (howMuch === "admin-scrape-new" && itemLength > 2) itemLength = 2;
 
     const returnObj = {
       typeArr: typeKey,
