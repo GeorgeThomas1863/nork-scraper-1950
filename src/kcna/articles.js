@@ -80,11 +80,11 @@ export const parseArticleLinkElement = async (linkElement, pageURL, type) => {
   const articleLink = linkElement.getAttribute("href");
   const articleURL = kcnaBaseURL + articleLink;
 
-  const checkModel = new dbModel({ keyToLookup: "url", itemValue: articleURL }, articles);
+  const checkModel = new dbModel({ url: articleURL }, articles);
   const checkData = await checkModel.urlExistsCheck();
   console.log("CHECK DATA");
   console.log(checkData);
-  
+
   if (checkData) {
     console.log(`URL ${articleURL} ALREADY STORED`);
     return null;
