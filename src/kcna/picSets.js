@@ -104,3 +104,9 @@ export const parsePicSetLinkElement = async (linkElement, pageURL, type) => {
     return null;
   }
 };
+
+//+++++++++++++++++++++++++++++++++++++++++
+
+export const scrapePicSetContentKCNA = async () => {
+    //build
+};

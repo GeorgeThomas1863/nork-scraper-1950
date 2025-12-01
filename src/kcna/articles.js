@@ -110,3 +110,36 @@ export const parseArticleLinkElement = async (linkElement, pageURL, type) => {
     return null;
   }
 };
+
+//++++++++++++++++++++++++++++++++++
+
+export const scrapeArticleContentKCNA = async () => {
+  const { articles } = CONFIG;
+  if (!kcnaState.scrapeActive) return null;
+
+  //find new article urls by those without text content
+  const newArticleModel = new dbModel({ keyExists: "url", keyEmpty: "text" }, articles);
+  const newArticleArray = await newArticleModel.findEmptyItems();
+  if (!newArticleArray || !newArticleArray.length) return null;
+
+  let articleCount = 0;
+  const articleContentArray = [];
+  for (const articleObj of newArticleArray) {
+    if (!kcnaState.scrapeActive) return articleContentArray;
+
+    const articleContentData = await parseArticleContent(articleObj);
+    if (!articleContentData) continue;
+    articleCount++;
+
+    articleContentArray.push(articleContentData);
+  }
+};
+
+export const parseArticleContent = async (inputObj) => {
+  if (!inputObj) return null;
+
+  console.log("PARSING ARTICLE CONTENT");
+  console.log(inputObj);
+
+  return inputObj;
+};
