@@ -147,6 +147,7 @@ export const scrapeArticleContentKCNA = async () => {
 export const parseArticleContent = async (inputObj) => {
   if (!inputObj) return null;
   const { url, date } = inputObj;
+  const { articles } = CONFIG;
 
   const kcna = new NORK({ url });
   const html = await kcna.getHTML();
