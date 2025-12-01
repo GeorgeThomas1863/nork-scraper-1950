@@ -81,13 +81,6 @@ export const parseArticleLinkElement = async (linkElement, pageURL, type) => {
   const articleLink = linkElement.getAttribute("href");
   const articleURL = kcnaBaseURL + articleLink;
 
-  //check if stored here
-  const checkModel = new dbModel({ url: articleURL }, articles);
-  const checkData = await checkModel.itemExistsCheckBoolean();
-  console.log("CHECK DATA");
-  console.log(checkData);
-  if (checkData) return null;
-
   const articleDate = await extractItemDate(linkElement);
   const articleId = await buildNumericId("articles");
 
