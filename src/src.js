@@ -1,7 +1,7 @@
 import kcnaState from "./util/state.js";
 import { scrapeKCNA } from "./kcna/scrape-kcna.js";
 // import { startSchedulerKCNA, stopSchedulerKCNA } from "./util/scheduler.js";
-// import { logScrapeStopKCNA } from "./util/log.js";
+import { logScrapeStopKCNA } from "./util/log.js";
 // import { stopWatchdog } from "./kcna/util/watchdog.js";
 
 export const runScraper = async (inputParams) => {
@@ -35,7 +35,7 @@ export const runNewScrape = async (inputParams) => {
   switch (site) {
     case "kcna":
       if (kcnaState.scrapeActive) return { data: "ALREADY SCRAPING FAGGOT" };
-      return await scrapeKCNA();
+      return await scrapeKCNA(inputParams);
 
     case "watch":
       return await scrapeWatch();
@@ -60,32 +60,32 @@ export const runStopScrape = async (inputParams) => {
   }
 };
 
-export const runStartScheduler = async (inputParams) => {
-  const { site } = inputParams;
+// export const runStartScheduler = async (inputParams) => {
+//   const { site } = inputParams;
 
-  // console.log("AHHHHHHHHHHHHHHHHHHHH");
+//   // console.log("AHHHHHHHHHHHHHHHHHHHH");
 
-  switch (site) {
-    case "kcna":
-      if (kcnaState.schedulerActive) return { data: "SCHEDULER ALREADY ACTIVE" };
-      return await startSchedulerKCNA();
+//   switch (site) {
+//     case "kcna":
+//       if (kcnaState.schedulerActive) return { data: "SCHEDULER ALREADY ACTIVE" };
+//       return await startSchedulerKCNA();
 
-    default:
-      return null;
-  }
-};
+//     default:
+//       return null;
+//   }
+// };
 
-export const runStopScheduler = async (inputParams) => {
-  const { site } = inputParams;
+// export const runStopScheduler = async (inputParams) => {
+//   const { site } = inputParams;
 
-  switch (site) {
-    case "kcna":
-      if (!kcnaState.schedulerActive) return { data: "SCHEDULER NOT ACTIVE" };
-      return await stopSchedulerKCNA();
+//   switch (site) {
+//     case "kcna":
+//       if (!kcnaState.schedulerActive) return { data: "SCHEDULER NOT ACTIVE" };
+//       return await stopSchedulerKCNA();
 
-    default:
-      return null;
-  }
-};
+//     default:
+//       return null;
+//   }
+// };
 
 export const scrapeWatch = async () => {};
