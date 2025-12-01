@@ -122,6 +122,9 @@ export const scrapeArticleContentKCNA = async () => {
   const newArticleArray = await newArticleModel.findEmptyItems();
   if (!newArticleArray || !newArticleArray.length) return null;
 
+  console.log("NEW ARTICLE ARRAY");
+  console.log(newArticleArray.length);
+
   let articleCount = 0;
   const articleContentArray = [];
   for (const articleObj of newArticleArray) {
