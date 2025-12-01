@@ -138,6 +138,7 @@ export const scrapePicSetContentKCNA = async () => {
 export const parsePicSetContent = async (inputObj) => {
   if (!inputObj) return null;
   const { url, date } = inputObj;
+  const { picSets } = CONFIG;
 
   const kcna = new NORK({ url });
   const html = await kcna.getHTML();
@@ -151,6 +152,23 @@ export const parsePicSetContent = async (inputObj) => {
 
   const picSetTitle = await extractPicSetTitle(document);
   const picSetPicArray = await extractPicSetPicArray(document, date);
+
+  const picSetParams = {
+    title: picSetTitle,
+    picArray: picSetPicArray,
+  };
+
+  try {
+    const storeModel = new dbModel({ keyToLookup: "url", itemValue: url, updateObj: picSetParams }, picSets);
+    const storeData = await storeModel.updateObjItem();
+    console.log("PIC SET CONTENT STORE DATA");
+    console.log(storeData);
+  } catch (e) {
+    console.log("MONGO ERROR FOR PIC SET: " + url);
+    console.log(e.message);
+  }
+
+  return picSetParams;
 };
 
 export const extractPicSetTitle = async (document) => {
