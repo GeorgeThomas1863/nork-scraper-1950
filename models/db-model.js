@@ -146,8 +146,6 @@ class dbModel {
   async urlExistsCheck() {
     const alreadyStored = await dbGet().collection(this.collection).findOne({ url: this.dataObject.url });
 
-    if (alreadyStored) console.log(`URL ALREADY STORED: ${this.dataObject.url}`);
-
     return alreadyStored;
   }
 

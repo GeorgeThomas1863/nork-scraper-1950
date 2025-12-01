@@ -82,7 +82,10 @@ export const parseArticleLinkElement = async (linkElement, pageURL, type) => {
 
   const checkModel = new dbModel({ keyToLookup: "url", itemValue: articleURL }, articles);
   const checkData = await checkModel.urlExistsCheck();
-  if (checkData) return null;
+  if (checkData) {
+    console.log(`URL ${articleURL} ALREADY STORED`);
+    return null;
+  }
 
   const articleDate = await extractItemDate(linkElement);
   const articleId = await buildNumericId("articles");
