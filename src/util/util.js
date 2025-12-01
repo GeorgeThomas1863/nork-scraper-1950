@@ -5,6 +5,10 @@ import { articleURLs, picSetURLs } from "../../config/urls.js";
 export const calcHowMuchKCNA = async (howMuch, type) => {
   if (!howMuch || !type) return null;
 
+  console.log("CALCULATING HOW MUCH KCNA");
+  console.log(howMuch);
+  console.log(type);
+
   let defaultURLs = articleURLs;
   if (type === "picSets") defaultURLs = picSetURLs;
 

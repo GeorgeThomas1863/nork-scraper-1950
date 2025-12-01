@@ -6,6 +6,9 @@ import { scrapePicSetURLsKCNA, scrapePicSetContentKCNA } from "./picSets.js";
 export const scrapeKCNA = async (inputParams) => {
   const { howMuch } = inputParams;
 
+  //start it first
+  await logScrapeStartKCNA();
+
   const articleInput = await calcHowMuchKCNA(howMuch, "articles");
   const picSetInput = await calcHowMuchKCNA(howMuch, "picSets");
   console.log("ARTICLE INPUT");
@@ -13,8 +16,6 @@ export const scrapeKCNA = async (inputParams) => {
   console.log("PIC SET INPUT");
   console.log(picSetInput);
   if (!articleInput || !picSetInput) return null;
-
-  await logScrapeStartKCNA();
 
   //URLs
   await scrapeArticleURLsKCNA(articleInput);
