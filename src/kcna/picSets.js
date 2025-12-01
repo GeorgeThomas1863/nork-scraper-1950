@@ -98,17 +98,107 @@ export const parsePicSetLinkElement = async (linkElement, pageURL, type) => {
 
     console.log("PIC SET LIST STORE DATA");
     console.log(storeData);
-
-    return params;
   } catch (e) {
     console.log("MONGO ERROR FOR PIC SET: " + picSetURL);
     console.log(e.message);
-    return null;
   }
+
+  return params;
 };
 
 //+++++++++++++++++++++++++++++++++++++++++
 
 export const scrapePicSetContentKCNA = async () => {
-  //build
+  const { picSets } = CONFIG;
+  if (!kcnaState.scrapeActive) return null;
+
+  //find new article urls by those without text content
+  const newPicSetModel = new dbModel({ keyExists: "url", keyEmpty: "picArray" }, picSets);
+  const newPicSetArray = await newPicSetModel.findEmptyItems();
+  if (!newPicSetArray || !newPicSetArray.length) return null;
+
+  console.log("NEW PIC SET ARRAY");
+  console.log(newPicSetArray.length);
+
+  let picSetCount = 0;
+  const picSetContentArray = [];
+  for (const picSetObj of newPicSetArray) {
+    if (!kcnaState.scrapeActive) return picSetContentArray;
+
+    const picSetContentData = await parsePicSetContent(picSetObj);
+    if (!picSetContentData) continue;
+    picSetCount++;
+
+    picSetContentArray.push(picSetContentData);
+  }
+
+  return picSetContentArray;
+};
+
+export const parsePicSetContent = async (inputObj) => {
+  if (!inputObj) return null;
+  const { url, date } = inputObj;
+
+  const kcna = new NORK({ url });
+  const html = await kcna.getHTML();
+  if (!html) {
+    console.log(`FAILED TO GET HTML FOR URL: ${url}`);
+    return null;
+  }
+
+  const dom = new JSDOM(html);
+  const document = dom.window.document;
+
+  const picSetTitle = await extractPicSetTitle(document);
+  const picSetPicArray = await extractPicSetPicArray(document, date);
+};
+
+export const extractPicSetTitle = async (document) => {
+  if (!document) return null;
+
+  const titleElement = document.querySelector(".title .main span");
+  if (!titleElement) return null;
+
+  return titleElement.textContent.trim();
+};
+
+export const extractPicSetPicArray = async (document, date) => {
+  if (!document || !date) return null;
+  const { pics, kcnaBaseURL } = CONFIG;
+
+  const picElementArray = document.querySelectorAll(".content img");
+
+  const picSetPicArray = [];
+  for (const picElement of picElementArray) {
+    if (!kcnaState.scrapeActive) return picSetPicArray;
+
+    const picSrc = picElement.getAttribute("src");
+    if (!picSrc) continue;
+    const picSetPicURL = kcnaBaseURL + picSrc;
+    picSetPicArray.push(picSetPicURL);
+
+    //store urls to picDB (so dont have to do again); build params
+    const picId = await buildNumericId("pics");
+    const picParams = {
+      picId: picId,
+      url: picSetPicURL,
+      scrapeId: kcnaState.scrapeId,
+      date: date,
+    };
+
+    console.log("PIC SET PIC PARAMS");
+    console.log(picParams);
+
+    try {
+      const storePicModel = new dbModel(picParams, pics);
+      const storeData = await storePicModel.storeUniqueURL();
+      console.log("STORE PIC DATA");
+      console.log(storeData);
+    } catch (e) {
+      console.log("MONGO ERROR FOR PIC SET PIC: " + picSetPicURL);
+      console.log(e.message);
+    }
+  }
+
+  return picSetPicArray;
 };

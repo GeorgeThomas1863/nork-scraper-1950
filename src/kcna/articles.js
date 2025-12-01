@@ -136,6 +136,8 @@ export const scrapeArticleContentKCNA = async () => {
 
     articleContentArray.push(articleContentData);
   }
+
+  return articleContentArray;
 };
 
 export const parseArticleContent = async (inputObj) => {
