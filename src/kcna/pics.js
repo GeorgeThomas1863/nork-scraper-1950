@@ -10,8 +10,9 @@ export const downloadPicsKCNA = async () => {
 
   const picModel = new dbModel({ keyExists: "url", keyEmpty: "picSize" }, pics);
   const picArray = await picModel.findEmptyItems();
-
   if (!picArray || !picArray.length) return null;
+
+  console.log(`STARTING DOWLOAD OF ${picArray.length} NEW PICS`);
 
   const downloadPicArray = [];
   for (const picItem of picArray) {
