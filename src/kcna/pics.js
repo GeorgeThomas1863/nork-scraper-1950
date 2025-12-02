@@ -1,8 +1,11 @@
+import axios from "axios";
+import fs from "fs";
+import path from "path";
+
 import CONFIG from "../../config/config.js";
 import kcnaState from "../util/state.js";
 import dbModel from "../../models/db-model.js";
 import { updateLogKCNA } from "../util/log.js";
-import { downloadPicFS } from "../util/util.js";
 
 export const downloadPicsKCNA = async () => {
   const { pics, picPath } = CONFIG;
