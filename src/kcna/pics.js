@@ -5,6 +5,7 @@ import path from "path";
 import CONFIG from "../../config/config.js";
 import kcnaState from "../util/state.js";
 import dbModel from "../../models/db-model.js";
+import { tgPostPicFS } from "../tg-api.js";
 import { updateLogKCNA } from "../util/log.js";
 
 export const downloadPicsKCNA = async () => {
@@ -127,4 +128,46 @@ export const downloadPicFS = async (url, savePath, picName) => {
   }
 };
 
-export const updatePicDataKCNA = async () => {};
+//++++++++++++++++++++++++++++++++++++++++++
+
+export const postPicArrayTG = async (inputArray) => {
+  if (!inputArray || !inputArray.length) return null;
+
+  const postPicDataArray = [];
+  for (const pic of inputArray) {
+    if (!kcnaState.scrapeActive) return postPicDataArray;
+
+    const postPicData = await postPicTG(pic);
+    if (!postPicData) continue;
+
+    //add uploaded flag
+    postPicData.uploaded = true;
+
+    postPicDataArray.push(postPicData);
+  }
+
+  return postPicDataArray;
+};
+
+export const postPicTG = async (inputObj) => {
+  if (!inputObj) return null;
+  const { savePath, caption } = inputObj;
+  const { tgChannelId } = CONFIG;
+
+  // if (!kcnaState.scrapeActive) return null;
+
+  const params = {
+    chatId: tgChannelId,
+    savePath: savePath,
+    caption: caption,
+    mode: "html",
+  };
+
+  const data = await tgPostPicFS(params);
+  if (!data) return null;
+
+  console.log("PIC UPLOAD POST DATA");
+  console.log(data);
+
+  return data;
+};

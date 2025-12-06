@@ -5,8 +5,10 @@ import CONFIG from "../../config/config.js";
 import kcnaState from "../util/state.js";
 import NORK from "../../models/nork-model.js";
 import dbModel from "../../models/db-model.js";
+import { tgSendMessage } from "../tg-api.js";
+import { postPicArrayTG } from "./pics.js";
 import { updateLogKCNA } from "../util/log.js";
-import { buildNumericId, extractItemDate } from "../util/util.js";
+import { buildNumericId, extractItemDate, sortArrayByDate, normalizeInputsTG } from "../util/util.js";
 
 export const scrapeArticleURLsKCNA = async (inputObj) => {
   if (!kcnaState.scrapeActive) return null;
@@ -280,4 +282,193 @@ export const extractArticlePicArray = async (url, date) => {
 
 //+++++++++++++++++++++++++++++++++++
 
-export const uploadArticlesKCNA = async () => {};
+export const uploadArticlesKCNA = async () => {
+  const { articles, tgChannelId } = CONFIG;
+  if (!kcnaState.scrapeActive) return null;
+
+  const articleModel = new dbModel({ keyExists: "url", keyEmpty: "uploaded" }, articles);
+  const articleArray = await articleModel.findEmptyItems();
+  if (!articleArray || !articleArray.length) return null;
+
+  const sortArray = await sortArrayByDate(articleArray);
+
+  const articlePostArray = [];
+  for (const articleObj of sortArray) {
+    const { url } = articleObj;
+    if (!kcnaState.scrapeActive) return articlePostArray;
+
+    //add TG id
+    articleObj.tgChannelId = tgChannelId;
+
+    const postData = await postArticleTG(articleObj);
+    if (!postData) continue;
+
+    postData.uploaded = true;
+    articlePostArray.push(postData);
+
+    //store data
+    try {
+      const storeModel = new dbModel({ keyToLookup: "url", itemValue: url, updateObj: postData }, articles);
+      const storeData = await storeModel.updateObjItem();
+      console.log("ARTICLE UPLOAD STORE DATA");
+      console.log(storeData);
+    } catch (e) {
+      console.log("MONGO ERROR FOR ARTICLE UPLOAD: " + url);
+      console.log(e.message);
+    }
+  }
+
+  kcnaState.scrapeStep = "PIC SET UPLOAD KCNA";
+  kcnaState.scrapeMessage = `FINISHED UPLOADING ${articlePostArray.length} NEW ARTICLES TO TG`;
+  await updateLogKCNA();
+
+  return articlePostArray;
+};
+
+export const postArticleTG = async (inputObj) => {
+  if (!inputObj) return null;
+  const { url, date, picArray } = inputObj;
+  s;
+
+  const tgInputs = await normalizeInputsTG(url, date);
+  const uploadObj = { ...inputObj, ...tgInputs };
+
+  await postArticleTitleTG(uploadObj);
+
+  //post pics if exist
+  if (picArray && picArray.length) await postArticlePicsTG(uploadObj);
+
+  await postArticleContentTG(uploadObj);
+
+  return uploadObj;
+};
+
+export const postArticleTitleTG = async (inputObj) => {
+  if (!inputObj) return null;
+  const { tgChannelId } = inputObj;
+
+  try {
+    const titleText = await buildArticleTitleText(inputObj);
+
+    const params = {
+      chat_id: tgChannelId,
+      text: titleText,
+      parse_mode: "HTML",
+    };
+
+    const data = await tgSendMessage(params);
+    return data;
+  } catch (e) {
+    console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+    return null;
+  }
+};
+
+export const postArticlePicsTG = async (inputObj) => {
+  if (!inputObj || !inputObj.picArray || !inputObj.picArray.length) return null;
+  const { picArray } = inputObj;
+
+  //add caption to each pic
+  const picArrayWithCaption = [];
+  for (let i = 0; i < picArray.length; i++) {
+    if (!kcnaState.scrapeActive) return picArrayWithCaption;
+
+    const picObj = picArray[i];
+    picObj.picIndex = i + 1;
+    picObj.picCount = picArray.length;
+    const articlePicCaption = await buildArticlePicCaption(picObj);
+    if (!articlePicCaption) continue;
+
+    picObj.caption = articlePicCaption;
+    picArrayWithCaption.push(picObj);
+  }
+
+  const data = await postPicArrayTG(picArrayWithCaption);
+  return data;
+};
+
+export const postArticleContentTG = async (inputObj) => {
+  if (!inputObj || !inputObj.text) return null;
+  const { text, title, dateNormal, urlNormal, tgChannelId } = inputObj;
+  const { tgMaxLength } = CONFIG;
+
+  const maxLength = tgMaxLength - title.length - dateNormal.length - urlNormal.length - 100;
+  const chunkTotal = Math.ceil(text.length / maxLength);
+
+  const chunkObj = { ...inputObj, chunkTotal };
+  const chunkArray = [];
+  for (let i = 0; i < chunkTotal; i++) {
+    if (!kcnaState.scrapeActive) return chunkArray;
+
+    const chunk = text.substring(i * maxLength, (i + 1) * maxLength);
+    const chunkText = await buildChunkText(chunk, chunkObj, i);
+    if (!chunkText) continue;
+
+    const params = {
+      chat_id: tgChannelId,
+      text: chunkText,
+      parse_mode: "HTML",
+    };
+
+    const data = await tgSendMessage(params);
+    if (!data) continue;
+    chunkObj.chunkData = data;
+
+    chunkArray.push(chunkObj);
+  }
+
+  return chunkArray;
+};
+
+//--------------------------------
+
+export const buildArticleTitleText = async (inputObj) => {
+  if (!inputObj) return null;
+  const { title, dateNormal, articleType, articleId, urlNormal } = inputObj;
+
+  const titleText = `🇰🇵 🇰🇵 🇰🇵
+  
+-----------------
+    
+<b>${title}</b>
+  
+-----------------
+  
+<b>KCNA ARTICLE:</b> ${articleType} | <b>ID:</b> ${articleId} | <b>DATE:</b> <i>${dateNormal}</i> | <b>URL:</b> 
+<i>${urlNormal}</i>
+  `;
+
+  return titleText;
+};
+
+export const buildArticlePicCaption = async (inputObj) => {
+  if (!inputObj) return null;
+  const { picIndex, picCount, date, url } = inputObj;
+
+  //run again bc nested
+  const normalInputs = await normalizeInputsTG(url, date);
+  const { dateNormal, urlNormal } = normalInputs;
+
+  const articlePicCaption = `
+<b>ARTICLE PIC: ${picIndex} OF ${picCount}</b> | <b>DATE:</b> <i>${dateNormal}</i> | <b>PIC URL:</b>
+<i>${urlNormal}</i>
+`;
+
+  return articlePicCaption;
+};
+
+export const buildChunkText = async (chunk, inputObj, chunkIndex) => {
+  if (!inputObj) return null;
+  const { urlNormal, chunkTotal } = inputObj;
+
+  switch (chunkIndex) {
+    case 0:
+      return "<b>[ARTICLE TEXT]:</b>" + "\n\n" + chunk;
+
+    case chunkTotal - 1:
+      return chunk + "\n\n" + "<b>URL:</b> <i>" + urlNormal + "</i>";
+
+    default:
+      return chunk;
+  }
+};

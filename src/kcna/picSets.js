@@ -5,8 +5,10 @@ import CONFIG from "../../config/config.js";
 import kcnaState from "../util/state.js";
 import NORK from "../../models/nork-model.js";
 import dbModel from "../../models/db-model.js";
+import { tgSendMessage } from "../tg-api.js";
+import { postPicArrayTG } from "./pics.js";
 import { updateLogKCNA } from "../util/log.js";
-import { buildNumericId, extractItemDate } from "../util/util.js";
+import { buildNumericId, extractItemDate, sortArrayByDate, normalizeInputsTG } from "../util/util.js";
 
 export const scrapePicSetURLsKCNA = async (inputObj) => {
   if (!kcnaState.scrapeActive) return null;
@@ -230,4 +232,143 @@ export const extractPicSetPicArray = async (document, date) => {
 
 //+++++++++++++++++++++++++++++++++
 
-export const uploadPicSetsKCNA = async () => {};
+export const uploadPicSetsKCNA = async () => {
+  const { picSets, tgChannelId } = CONFIG;
+  if (!kcnaState.scrapeActive) return null;
+
+  const picSetModel = new dbModel({ keyExists: "url", keyEmpty: "uploaded" }, picSets);
+  const picSetArray = await picSetModel.findEmptyItems();
+  if (!picSetArray || !picSetArray.length) return null;
+
+  const picSetArraySorted = await sortArrayByDate(picSetArray, "picSets");
+
+  const picSetPostArray = [];
+  for (const picSetObj of picSetArraySorted) {
+    if (!kcnaState.scrapeActive) return picSetPostArray;
+
+    const { url } = picSetObj;
+
+    //add channelId HERE
+    picSetObj.tgChannelId = tgChannelId;
+
+    //post article
+    const picSetPostData = await postPicSetTG(picSetObj);
+    if (!picSetPostData) continue;
+
+    //add uploaded flag
+    picSetPostData.uploaded = true;
+
+    // console.log("PIC SET POST DATA");
+    // console.log(picSetPostData);
+    picSetPostArray.push(picSetPostData);
+
+    //store data
+    try {
+      const storeModel = new dbModel({ keyToLookup: "url", itemValue: url, updateObj: picSetPostData }, picSets);
+      const storeData = await storeModel.updateObjItem();
+      console.log("PIC SET UPLOAD STORE DATA");
+      console.log(storeData);
+    } catch (e) {
+      console.log("MONGO ERROR FOR PIC SET UPLOAD: " + url);
+      console.log(e.message);
+    }
+  }
+
+  kcnaState.scrapeStep = "VID PAGE UPLOAD KCNA";
+  kcnaState.scrapeMessage = `FINISHED UPLOADING ${picSetPostArray.length} NEW PIC SETS TO TG`;
+  await updateLogKCNA();
+
+  return picSetPostArray;
+};
+
+export const postPicSetTG = async (inputObj) => {
+  if (!inputObj) return null;
+  const { url, date } = inputObj;
+
+  //normalize url and date
+  const tgInputs = await normalizeInputsTG(url, date);
+  const uploadObj = { ...inputObj, ...tgInputs };
+
+  await postPicSetTitleTG(uploadObj);
+  await postPicSetPicsTG(uploadObj);
+
+  return uploadObj;
+};
+
+export const postPicSetTitleTG = async (inputObj) => {
+  if (!inputObj) return null;
+  const { tgChannelId } = inputObj;
+
+  const titleText = await buildPicSetTitleText(inputObj);
+
+  const params = {
+    chat_id: tgChannelId,
+    text: titleText,
+    parse_mode: "HTML",
+  };
+
+  const data = await tgSendMessage(params);
+  return data;
+};
+
+export const postPicSetPicsTG = async (inputObj) => {
+  if (!inputObj || !inputObj.picArray || !inputObj.picArray.length) return null;
+  const { picArray } = inputObj;
+
+  //add caption to each pic
+  const uploadPicArray = [];
+  for (let i = 0; i < picArray.length; i++) {
+    if (!kcnaState.scrapeActive) return uploadPicArray;
+
+    const picObj = picArray[i];
+    picObj.picIndex = i + 1;
+    picObj.picCount = picArray.length;
+    const picSetPicCaption = await buildPicSetPicCaption(picObj);
+    if (!picSetPicCaption) continue;
+
+    picObj.caption = picSetPicCaption;
+    uploadPicArray.push(picObj);
+  }
+
+  const data = await postPicArrayTG(uploadPicArray);
+  return data;
+};
+
+//---------------------------
+
+export const buildPicSetTitleText = async (inputObj) => {
+  if (!inputObj) return null;
+  const { title, dateNormal, picSetId, picArray, urlNormal } = inputObj;
+
+  const picCount = picArray.length;
+
+  const titleText = `🇰🇵 🇰🇵 🇰🇵
+  
+-----------------
+    
+<b>${title}</b>
+  
+-----------------
+
+<b>KCNA PIC SET ID:</b> ${picSetId} | <b>TOTAL PICS:</b> ${picCount} | <b>DATE:</b> <i>${dateNormal}</i> | <b>URL:</b> 
+<i>${urlNormal}</i>
+  `;
+
+  return titleText;
+};
+
+export const buildPicSetPicCaption = async (inputObj) => {
+  if (!inputObj) return null;
+  const { picIndex, picCount, date, url } = inputObj;
+
+  //run again bc nested
+  const normalInputs = await normalizeInputsTG(url, date);
+  const { dateNormal, urlNormal } = normalInputs;
+
+  const picSetPicCaption = `
+<b>PIC ${picIndex} OF ${picCount} IN PIC SET</b> | <b>DATE:</b> <i>${dateNormal}</i> | <b>PIC URL:</b> 
+<i>${urlNormal}</i>
+`;
+
+  return picSetPicCaption;
+};

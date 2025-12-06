@@ -94,3 +94,56 @@ export const extractItemDate = async (linkElement) => {
 
   return normalDate;
 };
+
+//-----------------
+
+export const sortArrayByDate = async (inputArray, itemType = "articles") => {
+  if (!inputArray || !inputArray.length) return null;
+
+  if (!kcnaState.scrapeActive) return null;
+
+  const prefix = itemType.slice(0, -1);
+  const typeKey = `${prefix}Id`;
+
+  // Create a copy of the array to avoid modifying the original
+  const sortArray = [...inputArray];
+
+  //sort input array by DATE OLDEST to NEWEST
+  sortArray.sort((a, b) => {
+    // Convert datetime strings to Date objects if needed
+    const dateA = new Date(a.date);
+    const dateB = new Date(b.date);
+
+    const dateCompare = dateA - dateB;
+
+    if (dateCompare === 0) return a[typeKey] - b[typeKey];
+
+    return dateCompare;
+  });
+
+  return sortArray;
+};
+
+export const normalizeInputsTG = async (url, date) => {
+  if (!url || !date) return null;
+
+  const urlNormal = await normalizeURL(url);
+  const dateNormal = await normalizeDate(date);
+
+  const returnObj = {
+    urlNormal: urlNormal,
+    dateNormal: dateNormal,
+  };
+
+  return returnObj;
+};
+
+export const normalizeURL = async (url) => {
+  if (!url) return null;
+  return url.replace(/\./g, "[.]").replace(/:/g, "[:]").replace(/\?/g, "[?]");
+};
+
+export const normalizeDate = async (date) => {
+  if (!date) return null;
+  return new Date(date).toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" });
+};
