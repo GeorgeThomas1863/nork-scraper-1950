@@ -6,6 +6,8 @@ export const updatePicDataKCNA = async () => {
   // console.log("UPDATING PIC DATA");
   if (!kcnaState.scrapeActive) return null;
 
+  console.log("UPDATING PIC DATA");
+
   const updateArray = [];
   const updateArticleData = await updateArticlePics();
   const updatePicSetData = await updatePicSetPics();
@@ -23,9 +25,12 @@ export const updateArticlePics = async () => {
   const articleDataArray = await articleDataModel.findEmptyItemsNested();
   if (!articleDataArray || !articleDataArray.length) return null;
 
+  console.log("ARTICLE DATA TO UPDATE: " + articleDataArray.length);
+
   //update articles
   const updateArticleArray = [];
   for (const article of articleDataArray) {
+    console.log("UPDATING ARTICLE: " + article.url);
     if (!kcnaState.scrapeActive) return updateArticleArray;
 
     const updateArticleData = await updateArticleItem(article);
@@ -71,8 +76,11 @@ export const updatePicSetPics = async () => {
   const picSetDataArray = await picSetDataModel.findEmptyItemsNested();
   if (!picSetDataArray || !picSetDataArray.length) return null;
 
+  console.log("PIC SET DATA TO UPDATE: " + picSetDataArray.length);
+
   const updatePicSetArray = [];
   for (const picSet of picSetDataArray) {
+    console.log("UPDATING PIC SET: " + picSet.url);
     if (!kcnaState.scrapeActive) return updatePicSetArray;
 
     const updatePicSetData = await updatePicSetItem(picSet);
