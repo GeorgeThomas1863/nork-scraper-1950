@@ -286,14 +286,19 @@ export const uploadArticlesKCNA = async () => {
   const { articles, tgChannelId } = CONFIG;
   if (!kcnaState.scrapeActive) return null;
 
+  console.log("UPLOADING ARTICLES KCNA");
+
   const articleModel = new dbModel({ keyExists: "url", keyEmpty: "uploaded" }, articles);
   const articleArray = await articleModel.findEmptyItems();
   if (!articleArray || !articleArray.length) return null;
+
+  console.log("ARTICLE ARRAY TO UPLOAD: " + articleArray.length);
 
   const sortArray = await sortArrayByDate(articleArray);
 
   const articlePostArray = [];
   for (const articleObj of sortArray) {
+    console.log("UPLOADING ARTICLE: " + articleObj.url);
     const { url } = articleObj;
     if (!kcnaState.scrapeActive) return articlePostArray;
 
@@ -328,7 +333,6 @@ export const uploadArticlesKCNA = async () => {
 export const postArticleTG = async (inputObj) => {
   if (!inputObj) return null;
   const { url, date, picArray } = inputObj;
-  s;
 
   const tgInputs = await normalizeInputsTG(url, date);
   const uploadObj = { ...inputObj, ...tgInputs };

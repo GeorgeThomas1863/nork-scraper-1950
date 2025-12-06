@@ -240,10 +240,13 @@ export const uploadPicSetsKCNA = async () => {
   const picSetArray = await picSetModel.findEmptyItems();
   if (!picSetArray || !picSetArray.length) return null;
 
+  console.log("PIC SET ARRAY TO UPLOAD: " + picSetArray.length);
+
   const picSetArraySorted = await sortArrayByDate(picSetArray, "picSets");
 
   const picSetPostArray = [];
   for (const picSetObj of picSetArraySorted) {
+    console.log("UPLOADING PIC SET: " + picSetObj.url);
     if (!kcnaState.scrapeActive) return picSetPostArray;
 
     const { url } = picSetObj;
