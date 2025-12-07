@@ -1,24 +1,32 @@
 import kcnaState from "./util/state.js";
 import { scrapeKCNA } from "./kcna/scrape-kcna.js";
-// import { startSchedulerKCNA, stopSchedulerKCNA } from "./util/scheduler.js";
+import { startSchedulerKCNA, stopSchedulerKCNA } from "./util/scheduler.js";
 import { logScrapeStopKCNA } from "./util/log.js";
-// import { stopWatchdog } from "./kcna/util/watchdog.js";
 
 export const runScraper = async (inputParams) => {
   const { command } = inputParams;
 
   switch (command) {
     case "admin-start-scrape":
-      return await runNewScrape(inputParams);
+      if (kcnaState.scrapeActive) return { data: "ALREADY SCRAPING FAGGOT" };
+      kcnaState.scrapeActive = true;
+      return await scrapeKCNA(inputParams);
 
     case "admin-stop-scrape":
-      return await runStopScrape(inputParams);
+      if (!kcnaState.scrapeActive) return { data: "NOT SCRAPING FAGGOT" };
+      kcnaState.scrapeActive = false; //immediately stop
+      await logScrapeStopKCNA();
+      return kcnaState;
 
     case "admin-start-scheduler":
-      return await runStartScheduler(inputParams);
+      if (kcnaState.schedulerActive) return { data: "SCHEDULER ALREADY ON FAGGOT" };
+      kcnaState.schedulerActive = true;
+      return await startSchedulerKCNA();
 
     case "admin-stop-scheduler":
-      return await runStopScheduler(inputParams);
+      if (!kcnaState.schedulerActive) return { data: "SCHEDULER NOT ON FAGGOT" };
+      kcnaState.schedulerActive = false;
+      return await stopSchedulerKCNA();
 
     case "admin-scrape-status":
       return kcnaState;
@@ -29,59 +37,26 @@ export const runScraper = async (inputParams) => {
 };
 
 //check which site should be targeted
-export const runNewScrape = async (inputParams) => {
-  const { site } = inputParams;
-
-  switch (site) {
-    case "kcna":
-      if (kcnaState.scrapeActive) return { data: "ALREADY SCRAPING FAGGOT" };
-      return await scrapeKCNA(inputParams);
-
-    case "watch":
-      return await scrapeWatch();
-
-    default:
-      return null;
-  }
-};
-
-export const runStopScrape = async (inputParams) => {
-  const { site } = inputParams;
-
-  switch (site) {
-    case "kcna":
-      //turns off scraper and resets state, kill watchdog first
-      // await stopWatchdog();
-      await logScrapeStopKCNA();
-      return { data: "STOPPING KCNA SCRAPE" };
-
-    default:
-      return null;
-  }
-};
-
-// export const runStartScheduler = async (inputParams) => {
+// export const runNewScrape = async (inputParams) => {
 //   const { site } = inputParams;
-
-//   // console.log("AHHHHHHHHHHHHHHHHHHHH");
 
 //   switch (site) {
 //     case "kcna":
-//       if (kcnaState.schedulerActive) return { data: "SCHEDULER ALREADY ACTIVE" };
-//       return await startSchedulerKCNA();
+
+//     case "watch":
+//       return await scrapeWatch();
 
 //     default:
 //       return null;
 //   }
 // };
 
-// export const runStopScheduler = async (inputParams) => {
+// export const runStopScrape = async (inputParams) => {
 //   const { site } = inputParams;
 
 //   switch (site) {
 //     case "kcna":
-//       if (!kcnaState.schedulerActive) return { data: "SCHEDULER NOT ACTIVE" };
-//       return await stopSchedulerKCNA();
+//       return { data: "STOPPING KCNA SCRAPE" };
 
 //     default:
 //       return null;
