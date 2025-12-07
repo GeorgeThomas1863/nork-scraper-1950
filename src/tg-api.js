@@ -26,11 +26,15 @@ export const tgPostPicFS = async (inputParams) => {
   const token = tokenArray[tokenIndex];
   const url = `https://api.telegram.org/bot${token}/sendPhoto`;
 
-  const picForm = await buildPicForm(inputParams);
-  // console.log("PIC FORM");
-  // console.log(picForm);
-  if (!picForm) return null;
+  console.log("TOKEN");
+  console.log(token);
+  console.log("INPUT PARAMS");
+  console.log(inputParams);
+
   try {
+    const picForm = await buildPicForm(inputParams);
+
+    if (!picForm) return null;
     const data = await tgPostPicReq(url, picForm);
     const checkData = await checkToken(data);
 
