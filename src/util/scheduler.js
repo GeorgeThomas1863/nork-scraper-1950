@@ -17,14 +17,14 @@ export const startSchedulerKCNA = async () => {
   //RUN IMMEDIATELY ON START
   if (!kcnaState.scrapeActive) {
     console.log("STARTING INITIAL SCRAPE");
-    await scrapeKCNA();
+    await scrapeKCNA({ howMuch: "admin-scrape-new" });
   }
 
   intervalId = setInterval(async () => {
     if (kcnaState.scrapeActive) return null;
 
     console.log("STARTING NEW SCRAPE");
-    await scrapeKCNA();
+    await scrapeKCNA({ howMuch: "admin-scrape-new" });
   }, scrapeInterval); //RESET
 
   return true;

@@ -9,12 +9,13 @@ export const runScraper = async (inputParams) => {
 
   switch (command) {
     case "admin-start-scrape":
-      await resetScrapeMessageKCNA();
+      // await resetScrapeMessageKCNA();
       if (kcnaState.scrapeActive) {
         kcnaState.scrapeMessage = "ALREADY SCRAPING FAGGOT";
         return kcnaState;
       }
       kcnaState.scrapeActive = true;
+      kcnaState.scrapeMessage = "STARTING NEW SCRAPE KCNA";
       return await scrapeKCNA(inputParams);
 
     case "admin-stop-scrape":
@@ -33,6 +34,7 @@ export const runScraper = async (inputParams) => {
         return kcnaState;
       }
       kcnaState.schedulerActive = true;
+      kcnaState.scrapeMessage = "STARTING NEW SCHEDULER KCNA";
       return await startSchedulerKCNA();
 
     case "admin-stop-scheduler":
@@ -44,6 +46,7 @@ export const runScraper = async (inputParams) => {
       return await stopSchedulerKCNA();
 
     case "admin-scrape-status":
+      kcnaState.scrapeMessage = "GETTING SCRAPE STATUS KCNA";
       return kcnaState;
 
     default:
