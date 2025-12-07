@@ -127,7 +127,7 @@ export const checkToken = async (data) => {
   console.log("AHHHHHHHHHHHHH");
   tokenIndex++;
 
-  if (tokenIndex > 11) tokenIndex = 0;
+  if (tokenIndex > 10) tokenIndex = 0;
 
   console.log("CANT GET UPDATES TRYING NEW FUCKING BOT. TOKEN INDEX:" + tokenIndex);
   return null;
