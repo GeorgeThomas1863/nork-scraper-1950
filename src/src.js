@@ -7,8 +7,6 @@ import { logScrapeStopKCNA } from "./util/log.js";
 export const runScraper = async (inputParams) => {
   const { command } = inputParams;
 
-  kcnaState.scrapeMessage = null;
-
   switch (command) {
     case "admin-start-scrape":
       if (kcnaState.scrapeActive) {
@@ -47,6 +45,7 @@ export const runScraper = async (inputParams) => {
       return kcnaState;
 
     default:
+      kcnaState.scrapeMessage = null;
       return null;
   }
 };
