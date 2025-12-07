@@ -1,10 +1,13 @@
 import kcnaState from "./util/state.js";
+import { resetStateKCNA } from "./util/state.js";
 import { scrapeKCNA } from "./kcna/scrape-kcna.js";
 import { startSchedulerKCNA, stopSchedulerKCNA } from "./util/scheduler.js";
 import { logScrapeStopKCNA } from "./util/log.js";
 
 export const runScraper = async (inputParams) => {
   const { command } = inputParams;
+
+  await resetStateKCNA();
 
   switch (command) {
     case "admin-start-scrape":
