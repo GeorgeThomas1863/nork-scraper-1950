@@ -46,7 +46,7 @@ export const runScraper = async (inputParams) => {
       return await stopSchedulerKCNA();
 
     case "admin-scrape-status":
-      kcnaState.scrapeMessage = "GETTING SCRAPE STATUS KCNA";
+      // kcnaState.scrapeMessage = "GETTING SCRAPE STATUS KCNA";
       return kcnaState;
 
     default:
