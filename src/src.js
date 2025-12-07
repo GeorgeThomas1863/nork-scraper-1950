@@ -8,23 +8,35 @@ export const runScraper = async (inputParams) => {
 
   switch (command) {
     case "admin-start-scrape":
-      if (kcnaState.scrapeActive) return { data: "ALREADY SCRAPING FAGGOT" };
+      if (kcnaState.scrapeActive) {
+        kcnaState.scrapeMessage = "ALREADY SCRAPING FAGGOT";
+        return kcnaState;
+      }
       kcnaState.scrapeActive = true;
       return await scrapeKCNA(inputParams);
 
     case "admin-stop-scrape":
-      if (!kcnaState.scrapeActive) return { data: "NOT SCRAPING FAGGOT" };
+      if (!kcnaState.scrapeActive) {
+        kcnaState.scrapeMessage = "NOT SCRAPING FAGGOT";
+        return kcnaState;
+      }
       kcnaState.scrapeActive = false; //immediately stop
       await logScrapeStopKCNA();
       return kcnaState;
 
     case "admin-start-scheduler":
-      if (kcnaState.schedulerActive) return { data: "SCHEDULER ALREADY ON FAGGOT" };
+      if (kcnaState.schedulerActive) {
+        kcnaState.scrapeMessage = "SCHEDULER ALREADY ON FAGGOT";
+        return kcnaState;
+      }
       kcnaState.schedulerActive = true;
       return await startSchedulerKCNA();
 
     case "admin-stop-scheduler":
-      if (!kcnaState.schedulerActive) return { data: "SCHEDULER NOT ON FAGGOT" };
+      if (!kcnaState.schedulerActive) {
+        kcnaState.scrapeMessage = "SCHEDULER NOT ON FAGGOT";
+        return kcnaState;
+      }
       kcnaState.schedulerActive = false;
       return await stopSchedulerKCNA();
 
