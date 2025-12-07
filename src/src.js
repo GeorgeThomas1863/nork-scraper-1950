@@ -28,7 +28,7 @@ export const runScraper = async (inputParams) => {
       return kcnaState;
 
     case "admin-start-scheduler":
-      await resetScrapeMessageKCNA();
+      // await resetScrapeMessageKCNA();
       if (kcnaState.schedulerActive) {
         kcnaState.scrapeMessage = "SCHEDULER ALREADY ON FAGGOT";
         return kcnaState;
