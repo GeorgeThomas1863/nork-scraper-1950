@@ -7,7 +7,7 @@ import { logScrapeStopKCNA } from "./util/log.js";
 export const runScraper = async (inputParams) => {
   const { command } = inputParams;
 
-  // await resetStateKCNA();
+  kcnaState.scrapeMessage = null;
 
   switch (command) {
     case "admin-start-scrape":
