@@ -26,6 +26,8 @@ export const tgPostPicFS = async (inputParams) => {
   const token = tokenArray[tokenIndex];
   const url = `https://api.telegram.org/bot${token}/sendPhoto`;
 
+  console.log("TOKEN INDEX");
+  console.log(tokenIndex);
   console.log("TOKEN");
   console.log(token);
   console.log("INPUT PARAMS");
