@@ -1,11 +1,13 @@
 import kcnaState from "./util/state.js";
-import { resetStateKCNA } from "./util/state.js";
+import { resetStateMessageKCNA } from "./util/state.js";
 import { scrapeKCNA } from "./kcna/scrape-kcna.js";
 import { startSchedulerKCNA, stopSchedulerKCNA } from "./util/scheduler.js";
 import { logScrapeStopKCNA } from "./util/log.js";
 
 export const runScraper = async (inputParams) => {
   const { command } = inputParams;
+
+  await resetStateMessageKCNA();
 
   switch (command) {
     case "admin-start-scrape":
@@ -45,7 +47,6 @@ export const runScraper = async (inputParams) => {
       return kcnaState;
 
     default:
-      kcnaState.scrapeMessage = null;
       return null;
   }
 };
