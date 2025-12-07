@@ -23,7 +23,7 @@ export const resetStateKCNA = async () => {
   kcnaState.scrapeStep = null;
 };
 
-export const resetStateMessageKCNA = async () => {
+export const resetScrapeMessageKCNA = async () => {
   kcnaState.scrapeMessage = null;
 };
 

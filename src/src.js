@@ -1,5 +1,5 @@
 import kcnaState from "./util/state.js";
-import { resetStateMessageKCNA } from "./util/state.js";
+import { resetScrapeMessageKCNA } from "./util/state.js";
 import { scrapeKCNA } from "./kcna/scrape-kcna.js";
 import { startSchedulerKCNA, stopSchedulerKCNA } from "./util/scheduler.js";
 import { logScrapeStopKCNA } from "./util/log.js";
@@ -7,10 +7,9 @@ import { logScrapeStopKCNA } from "./util/log.js";
 export const runScraper = async (inputParams) => {
   const { command } = inputParams;
 
-  await resetStateMessageKCNA();
-
   switch (command) {
     case "admin-start-scrape":
+      await resetScrapeMessageKCNA();
       if (kcnaState.scrapeActive) {
         kcnaState.scrapeMessage = "ALREADY SCRAPING FAGGOT";
         return kcnaState;
@@ -28,6 +27,7 @@ export const runScraper = async (inputParams) => {
       return kcnaState;
 
     case "admin-start-scheduler":
+      await resetScrapeMessageKCNA();
       if (kcnaState.schedulerActive) {
         kcnaState.scrapeMessage = "SCHEDULER ALREADY ON FAGGOT";
         return kcnaState;
