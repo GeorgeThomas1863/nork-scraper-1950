@@ -24,6 +24,7 @@ export const runScraper = async (inputParams) => {
         return kcnaState;
       }
       kcnaState.scrapeActive = false; //immediately stop
+      kcnaState.scrapeMessage = "STOPPING SCRAPE KCNA";
       await logScrapeStopKCNA();
       return kcnaState;
 
@@ -43,6 +44,7 @@ export const runScraper = async (inputParams) => {
         return kcnaState;
       }
       kcnaState.schedulerActive = false;
+      kcnaState.scrapeMessage = "STOPPING SCHEDULER KCNA";
       return await stopSchedulerKCNA();
 
     case "admin-scrape-status":
