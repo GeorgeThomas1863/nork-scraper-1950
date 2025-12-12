@@ -25,12 +25,12 @@ export const updateArticlePics = async () => {
   const articleDataArray = await articleDataModel.findEmptyItemsNested();
   if (!articleDataArray || !articleDataArray.length) return null;
 
-  console.log("ARTICLE DATA TO UPDATE: " + articleDataArray.length);
+  // console.log("ARTICLE DATA TO UPDATE: " + articleDataArray.length);
 
   //update articles
   const updateArticleArray = [];
   for (const article of articleDataArray) {
-    console.log("UPDATING ARTICLE: " + article.url);
+    // console.log("UPDATING ARTICLE: " + article.url);
     if (!kcnaState.scrapeActive) return updateArticleArray;
 
     const updateArticleData = await updateArticleItem(article);

@@ -82,13 +82,13 @@ export const parseArticleLinkElement = async (linkElement, pageURL, type) => {
   const articleLink = linkElement.getAttribute("href");
   const articleURL = kcnaBaseURL + articleLink;
 
-  const checkModel = new dbModel({ url: articleURL }, articles);
-  const checkData = await checkModel.urlExistsCheck();
+  // const checkModel = new dbModel({ url: articleURL }, articles);
+  // const checkData = await checkModel.urlExistsCheck();
 
-  if (checkData) {
-    console.log(`URL ALREADY STORED: ${articleURL} `);
-    return null;
-  }
+  // if (checkData) {
+  //   console.log(`URL ALREADY STORED: ${articleURL} `);
+  //   return null;
+  // }
 
   const articleDate = await extractItemDate(linkElement);
   const articleId = await buildNumericId("articles");
