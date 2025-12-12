@@ -26,8 +26,8 @@ export const scrapeArticleURLsKCNA = async (inputObj) => {
       if (!kcnaState.scrapeActive) return articleTypeData;
 
       const articleListArray = await parseArticleListPage(pageURL, type);
-      // console.log("ARTICLE LIST ARRAY FOR PAGE: " + pageURL);
-      // console.log(articleListArray);
+      console.log("ARTICLE LIST ARRAY FOR PAGE: " + pageURL);
+      console.log(articleListArray);
 
       if (!articleListArray) continue;
       articleCount += articleListArray.length;
