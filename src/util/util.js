@@ -17,7 +17,7 @@ export const calcHowMuchKCNA = async (howMuch, type) => {
     let itemLength = typeArr.length;
     if (howMuch === "admin-scrape-new" && itemLength > 2) itemLength = 2;
 
-    //get last items you moron
+    //get last items you moron //fuck you cursor
     const pageArray = typeArr.slice(typeArr.length - itemLength);
 
     const returnObj = {
