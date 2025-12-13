@@ -17,15 +17,18 @@ export const calcHowMuchKCNA = async (howMuch, type) => {
     let itemLength = typeArr.length;
     if (howMuch === "admin-scrape-new" && itemLength > 2) itemLength = 2;
 
+    //get last items you moron
+    const pageArray = typeArr.slice(typeArr.length - itemLength);
+
     const returnObj = {
       typeArr: typeKey,
-      pageArray: [],
+      pageArray: pageArray,
     };
 
-    for (let i = 0; i < itemLength; i++) {
-      const pageURL = typeArr[i];
-      returnObj.pageArray.push(pageURL);
-    }
+    // for (let i = 0; i < itemLength; i++) {
+    //   const pageURL = typeArr[i];
+    //   returnObj.pageArray.push(pageURL);
+    // }
 
     dataArray.push(returnObj);
   }
