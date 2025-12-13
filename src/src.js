@@ -56,31 +56,4 @@ export const runScraper = async (inputParams) => {
   }
 };
 
-//check which site should be targeted
-// export const runNewScrape = async (inputParams) => {
-//   const { site } = inputParams;
-
-//   switch (site) {
-//     case "kcna":
-
-//     case "watch":
-//       return await scrapeWatch();
-
-//     default:
-//       return null;
-//   }
-// };
-
-// export const runStopScrape = async (inputParams) => {
-//   const { site } = inputParams;
-
-//   switch (site) {
-//     case "kcna":
-//       return { data: "STOPPING KCNA SCRAPE" };
-
-//     default:
-//       return null;
-//   }
-// };
-
 export const scrapeWatch = async () => {};

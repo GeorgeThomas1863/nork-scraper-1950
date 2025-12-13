@@ -1,7 +1,7 @@
 import { JSDOM } from "jsdom";
 
 import CONFIG from "../../config/config.js";
-// import { articleURLs } from "../../config/urls.js";
+
 import kcnaState from "../util/state.js";
 import NORK from "../../models/nork-model.js";
 import dbModel from "../../models/db-model.js";
@@ -12,7 +12,7 @@ import { buildNumericId, extractItemDate, sortArrayByDate, normalizeInputsTG } f
 
 export const scrapeArticleURLsKCNA = async (inputObj) => {
   if (!kcnaState.scrapeActive) return null;
-  console.log("SCRAPING KCNA ARTICLES; GETTING URLS");
+  // console.log("SCRAPING KCNA ARTICLES; GETTING URLS");
 
   const articleTypeData = [];
   let articleCount = 0;
@@ -27,7 +27,7 @@ export const scrapeArticleURLsKCNA = async (inputObj) => {
 
       const articleListArray = await parseArticleListPage(pageURL, type);
       console.log("ARTICLE LIST ARRAY FOR PAGE: " + pageURL);
-      console.log(articleListArray);
+      // console.log(articleListArray);
 
       if (!articleListArray) continue;
       articleCount += articleListArray.length;
@@ -82,13 +82,13 @@ export const parseArticleLinkElement = async (linkElement, pageURL, type) => {
   const articleLink = linkElement.getAttribute("href");
   const articleURL = kcnaBaseURL + articleLink;
 
-  // const checkModel = new dbModel({ url: articleURL }, articles);
-  // const checkData = await checkModel.urlExistsCheck();
+  const checkModel = new dbModel({ url: articleURL }, articles);
+  const checkData = await checkModel.urlExistsCheck();
 
-  // if (checkData) {
-  //   console.log(`URL ALREADY STORED: ${articleURL} `);
-  //   return null;
-  // }
+  if (checkData) {
+    console.log(`URL ALREADY STORED: ${articleURL} `);
+    return null;
+  }
 
   const articleDate = await extractItemDate(linkElement);
   const articleId = await buildNumericId("articles");
@@ -102,8 +102,8 @@ export const parseArticleLinkElement = async (linkElement, pageURL, type) => {
     articleId: articleId,
   };
 
-  console.log("ARTICLE LIST PARAMS");
-  console.log(params);
+  // console.log("ARTICLE LIST PARAMS");
+  // console.log(params);
 
   try {
     //auto checks if new
@@ -266,8 +266,8 @@ export const extractArticlePicArray = async (url, date) => {
       date: date,
     };
 
-    console.log("ARTICLE PIC STORE PARAMS");
-    console.log(picParams);
+    // console.log("ARTICLE PIC STORE PARAMS");
+    // console.log(picParams);
     try {
       const storePicModel = new dbModel(picParams, pics);
       await storePicModel.storeUniqueURL();

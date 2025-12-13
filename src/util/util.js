@@ -25,11 +25,6 @@ export const calcHowMuchKCNA = async (howMuch, type) => {
       pageArray: pageArray,
     };
 
-    // for (let i = 0; i < itemLength; i++) {
-    //   const pageURL = typeArr[i];
-    //   returnObj.pageArray.push(pageURL);
-    // }
-
     dataArray.push(returnObj);
   }
 

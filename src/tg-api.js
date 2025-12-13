@@ -26,13 +26,6 @@ export const tgPostPicFS = async (inputParams) => {
   const token = tokenArray[tokenIndex];
   const url = `https://api.telegram.org/bot${token}/sendPhoto`;
 
-  console.log("TOKEN INDEX");
-  console.log(tokenIndex);
-  console.log("TOKEN");
-  console.log(token);
-  console.log("INPUT PARAMS");
-  console.log(inputParams);
-
   try {
     const picForm = await buildPicForm(inputParams);
 
@@ -132,80 +125,3 @@ export const checkToken = async (data) => {
   console.log("CANT GET UPDATES TRYING NEW FUCKING BOT. TOKEN INDEX:" + tokenIndex);
   return null;
 };
-
-//---------------------------
-
-// export const tgPostVidFS = async (inputParams) => {
-//   if (!inputParams) return null;
-//   const { chunkPath } = inputParams;
-
-//   const token = tokenArray[tokenIndex];
-//   const url = `https://api.telegram.org/bot${token}/sendVideo`;
-
-//   const vidChunkForm = await buildVidChunkForm(inputParams);
-//   if (!vidChunkForm) return null;
-
-//   console.log(`STARTING UPLOAD OF ${chunkPath}...`);
-
-//   const data = await tgPostVidReq(url, vidChunkForm);
-
-//   const checkData = await checkToken(data);
-
-//   if (!checkData) return await tgPostVidFS(inputParams);
-
-//   return data;
-// };
-
-// export const tgPostVidReq = async (url, form) => {
-//   if (!url || !form) return null;
-
-//   try {
-//     const res = await axios.post(url, form, {
-//       headers: form.getHeaders(),
-//       maxBodyLength: Infinity,
-//       maxContentLength: Infinity,
-//     });
-//     return res.data;
-//   } catch (e) {
-//     console.log(e.response.data);
-//     //axios throws error on 429, so need to return
-//     return e.response.data;
-//   }
-// };
-
-// export const buildVidChunkForm = async (inputObj) => {
-//   if (!inputObj) return null;
-//   const { chunkPath, tgChannelId, chunkName, caption, mode } = inputObj;
-
-//   try {
-//     const readStream = fs.createReadStream(chunkPath);
-
-//     // Create form data for this chunk
-//     const form = new FormData();
-//     form.append("chat_id", tgChannelId);
-//     form.append("video", readStream, {
-//       filename: chunkName,
-//     });
-
-//     //caption
-//     form.append("caption", caption);
-//     form.append("parse_mode", mode);
-
-//     //set setting for auto play / streaming
-//     form.append("supports_streaming", "true");
-//     form.append("width", "1280");
-//     form.append("height", "720");
-
-//     if (!form || !readStream) {
-//       const error = new Error("BUILD VID FORM FUCKED");
-//       error.content = "FORM DATA: " + form;
-//       error.function = "buildVidChunkForm";
-//       throw error;
-//     }
-
-//     return form;
-//   } catch (e) {
-//     console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
-//     return null;
-//   }
-// };
