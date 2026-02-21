@@ -33,5 +33,5 @@ export const scrapeKCNA = async (inputParams) => {
   await uploadPicSetsKCNA();
 
   //log stop
-  await logScrapeStopKCNA();
+  return await logScrapeStopKCNA();
 };

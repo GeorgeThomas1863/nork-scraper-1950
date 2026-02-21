@@ -465,14 +465,11 @@ export const buildChunkText = async (chunk, inputObj, chunkIndex) => {
   if (!inputObj) return null;
   const { urlNormal, chunkTotal } = inputObj;
 
-  switch (chunkIndex) {
-    case 0:
-      return "<b>[ARTICLE TEXT]:</b>" + "\n\n" + chunk;
+  const isFirst = chunkIndex === 0;
+  const isLast = chunkIndex === chunkTotal - 1;
 
-    case chunkTotal - 1:
-      return chunk + "\n\n" + "<b>URL:</b> <i>" + urlNormal + "</i>";
-
-    default:
-      return chunk;
-  }
+  let text = chunk;
+  if (isFirst) text = "<b>[ARTICLE TEXT]:</b>\n\n" + text;
+  if (isLast) text = text + "\n\n<b>URL:</b> <i>" + urlNormal + "</i>";
+  return text;
 };

@@ -5,23 +5,30 @@ import tokenArray from "../config/tg-bot.js";
 
 let tokenIndex = 0;
 
-export const tgSendMessage = async (inputParams) => {
-  //   if (!state.active) return null;
-  const token = tokenArray[tokenIndex];
+export const tgSendMessage = async (inputParams, attempt = 0) => {
+  if (attempt >= tokenArray.length) {
+    console.log("ALL TOKENS EXHAUSTED FOR sendMessage");
+    return null;
+  }
 
+  const token = tokenArray[tokenIndex];
   const url = `https://api.telegram.org/bot${token}/sendMessage`;
   const data = await tgPostReq(url, inputParams);
 
   const checkData = await checkToken(data);
 
-  //try again
-  if (!checkData) return await tgSendMessage(inputParams);
+  if (!checkData) return await tgSendMessage(inputParams, attempt + 1);
 
   return data;
 };
 
-export const tgPostPicFS = async (inputParams) => {
+export const tgPostPicFS = async (inputParams, attempt = 0) => {
   if (!inputParams) return null;
+
+  if (attempt >= tokenArray.length) {
+    console.log("ALL TOKENS EXHAUSTED FOR sendPhoto");
+    return null;
+  }
 
   const token = tokenArray[tokenIndex];
   const url = `https://api.telegram.org/bot${token}/sendPhoto`;
@@ -33,7 +40,7 @@ export const tgPostPicFS = async (inputParams) => {
     const data = await tgPostPicReq(url, picForm);
     const checkData = await checkToken(data);
 
-    if (!checkData) return await tgPostPicFS(inputParams);
+    if (!checkData) return await tgPostPicFS(inputParams, attempt + 1);
     return data;
   } catch (e) {
     console.log(e.response.data);
@@ -120,7 +127,7 @@ export const checkToken = async (data) => {
   console.log("AHHHHHHHHHHHHH");
   tokenIndex++;
 
-  if (tokenIndex > 10) tokenIndex = 0;
+  if (tokenIndex >= tokenArray.length) tokenIndex = 0;
 
   console.log("CANT GET UPDATES TRYING NEW FUCKING BOT. TOKEN INDEX:" + tokenIndex);
   return null;
