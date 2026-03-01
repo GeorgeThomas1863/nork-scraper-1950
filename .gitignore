@@ -4,6 +4,9 @@ config/
 /config/*
 .env
 
+**.env
+
+
 # logs
 logs
 *.log
@@ -43,4 +46,4 @@ package-lock.json
 .vscode/
 
 #ignore readme
-*.md
+#*.md
