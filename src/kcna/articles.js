@@ -1,7 +1,5 @@
 import { JSDOM } from "jsdom";
 
-import CONFIG from "../../config/config.js";
-
 import kcnaState from "../util/state.js";
 import NORK from "../../models/nork-model.js";
 import dbModel from "../../models/db-model.js";
@@ -77,7 +75,7 @@ export const parseArticleListPage = async (pageURL, type) => {
 
 export const parseArticleLinkElement = async (linkElement, pageURL, type) => {
   if (!linkElement || !pageURL || !type) return null;
-  const { kcnaBaseURL, articles } = CONFIG;
+  const kcnaBaseURL = process.env.KCNA_BASE_URL; const articles = process.env.ARTICLES_COLLECTION;
 
   const articleLink = linkElement.getAttribute("href");
   const articleURL = kcnaBaseURL + articleLink;
@@ -123,7 +121,7 @@ export const parseArticleLinkElement = async (linkElement, pageURL, type) => {
 //++++++++++++++++++++++++++++++++++
 
 export const scrapeArticleContentKCNA = async () => {
-  const { articles } = CONFIG;
+  const articles = process.env.ARTICLES_COLLECTION;
   if (!kcnaState.scrapeActive) return null;
 
   //find new article urls by those without text content
@@ -152,7 +150,7 @@ export const scrapeArticleContentKCNA = async () => {
 export const parseArticleContent = async (inputObj) => {
   if (!inputObj) return null;
   const { url, date } = inputObj;
-  const { articles } = CONFIG;
+  const articles = process.env.ARTICLES_COLLECTION;
 
   const kcna = new NORK({ url });
   const html = await kcna.getHTML();
@@ -230,7 +228,7 @@ export const extractArticlePicPage = async (document) => {
 };
 
 export const extractArticlePicArray = async (url, date) => {
-  const { pics, kcnaBaseURL } = CONFIG;
+  const pics = process.env.PICS_COLLECTION; const kcnaBaseURL = process.env.KCNA_BASE_URL;
   if (!url) return null;
 
   const kcna = new NORK({ url });
@@ -283,7 +281,7 @@ export const extractArticlePicArray = async (url, date) => {
 //+++++++++++++++++++++++++++++++++++
 
 export const uploadArticlesKCNA = async () => {
-  const { articles, tgChannelId } = CONFIG;
+  const articles = process.env.ARTICLES_COLLECTION; const tgChannelId = process.env.TG_CHANNEL_ID;
   if (!kcnaState.scrapeActive) return null;
 
   console.log("UPLOADING ARTICLES KCNA");
@@ -394,7 +392,7 @@ export const postArticlePicsTG = async (inputObj) => {
 export const postArticleContentTG = async (inputObj) => {
   if (!inputObj || !inputObj.text) return null;
   const { text, title, dateNormal, urlNormal, tgChannelId } = inputObj;
-  const { tgMaxLength } = CONFIG;
+  const tgMaxLength = parseInt(process.env.TG_MAX_LENGTH);
 
   const maxLength = tgMaxLength - title.length - dateNormal.length - urlNormal.length - 100;
   const chunkTotal = Math.ceil(text.length / maxLength);

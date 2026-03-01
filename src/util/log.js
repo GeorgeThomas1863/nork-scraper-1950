@@ -1,10 +1,9 @@
 import kcnaState from "./state.js";
 import dbModel from "../../models/db-model.js";
-import CONFIG from "../../config/config.js";
 import { resetStateKCNA } from "./state.js";
 
 export const logScrapeStartKCNA = async () => {
-  const { log } = CONFIG;
+  const log = process.env.LOG_COLLECTION;
 
   //RESET FIRST
   await resetStateKCNA();
@@ -69,7 +68,7 @@ export const logScrapeStopKCNA = async () => {
 
 export const updateLogKCNA = async () => {
   if (!kcnaState.scrapeId) return null;
-  const { log } = CONFIG;
+  const log = process.env.LOG_COLLECTION;
 
   const updateModel = new dbModel({ keyToLookup: "scrapeId", itemValue: kcnaState.scrapeId, updateObj: kcnaState }, log);
   const updateData = await updateModel.updateObjItem();

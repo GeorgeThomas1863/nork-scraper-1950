@@ -1,4 +1,3 @@
-import CONFIG from "../../config/config.js";
 import kcnaState from "./state.js";
 import dbModel from "../../models/db-model.js";
 
@@ -19,7 +18,7 @@ export const updatePicDataKCNA = async () => {
 };
 
 export const updateArticlePics = async () => {
-  const { articles } = CONFIG;
+  const articles = process.env.ARTICLES_COLLECTION;
 
   const articleDataModel = new dbModel({ keyExists: "url", arrayKey: "picArray", keyEmpty: "picSize" }, articles);
   const articleDataArray = await articleDataModel.findEmptyItemsNested();
@@ -43,7 +42,7 @@ export const updateArticlePics = async () => {
 export const updateArticleItem = async (inputObj) => {
   if (!inputObj || !inputObj.picArray || !inputObj.picArray.length) return null;
   const { url, picArray } = inputObj;
-  const { articles } = CONFIG;
+  const articles = process.env.ARTICLES_COLLECTION;
 
   const rebuiltPicArray = await rebuildPicArray(picArray);
   if (!rebuiltPicArray || !rebuiltPicArray.length) return null;
@@ -70,7 +69,7 @@ export const updateArticleItem = async (inputObj) => {
 
 //update pic sets
 export const updatePicSetPics = async () => {
-  const { picSets } = CONFIG;
+  const picSets = process.env.PICSETS_COLLECTION;
 
   const picSetDataModel = new dbModel({ keyExists: "url", arrayKey: "picArray", keyEmpty: "picSize" }, picSets);
   const picSetDataArray = await picSetDataModel.findEmptyItemsNested();
@@ -94,7 +93,7 @@ export const updatePicSetPics = async () => {
 export const updatePicSetItem = async (inputObj) => {
   if (!inputObj || !inputObj.picArray || !inputObj.picArray.length) return null;
   const { url, picArray } = inputObj;
-  const { picSets } = CONFIG;
+  const picSets = process.env.PICSETS_COLLECTION;
 
   const rebuiltPicArray = await rebuildPicArray(picArray);
   if (!rebuiltPicArray || !rebuiltPicArray.length) return null;
@@ -139,7 +138,7 @@ export const rebuildPicArray = async (inputArray) => {
 
 export const getPicData = async (url) => {
   if (!url) return null;
-  const { pics } = CONFIG;
+  const pics = process.env.PICS_COLLECTION;
 
   try {
     const lookupPicModel = new dbModel({ keyToLookup: "url", itemValue: url }, pics);

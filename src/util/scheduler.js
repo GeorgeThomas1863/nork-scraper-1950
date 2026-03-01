@@ -1,4 +1,3 @@
-import CONFIG from "../../config/config.js";
 import kcnaState from "./state.js";
 import { scrapeKCNA } from "../kcna/scrape-kcna.js";
 
@@ -6,7 +5,7 @@ import { scrapeKCNA } from "../kcna/scrape-kcna.js";
 let intervalId = null;
 
 export const startSchedulerKCNA = async () => {
-  const { scrapeInterval } = CONFIG;
+  const scrapeInterval = parseInt(process.env.SCRAPE_INTERVAL);
   kcnaState.schedulerActive = true;
 
   //NEEDS MORE DEBUGGING

@@ -1,5 +1,5 @@
 //import mongo
-import { dbGet, dbConnect } from "../config/db.js";
+import { dbGet, dbConnect } from "../middleware/db-config.js";
 
 //connect to db AGAIN here just to be safe
 await dbConnect();

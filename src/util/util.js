@@ -1,6 +1,6 @@
 import dbModel from "../../models/db-model.js";
 import kcnaState from "./state.js";
-import { articleURLs, picSetURLs } from "../../config/urls.js";
+import { articleURLs, picSetURLs } from "./define-things.js";
 
 export const calcHowMuchKCNA = async (howMuch, type) => {
   if (!howMuch || !type) return null;

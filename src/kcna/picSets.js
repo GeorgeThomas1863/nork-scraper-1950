@@ -1,7 +1,5 @@
 import { JSDOM } from "jsdom";
 
-import CONFIG from "../../config/config.js";
-// import { picSetURLs } from "../../config/urls.js";
 import kcnaState from "../util/state.js";
 import NORK from "../../models/nork-model.js";
 import dbModel from "../../models/db-model.js";
@@ -73,7 +71,7 @@ export const parsePicSetListPage = async (pageURL, type) => {
 
 export const parsePicSetLinkElement = async (linkElement, pageURL, type) => {
   if (!linkElement || !pageURL || !type) return null;
-  const { kcnaBaseURL, picSets } = CONFIG;
+  const kcnaBaseURL = process.env.KCNA_BASE_URL; const picSets = process.env.PICSETS_COLLECTION;
 
   const titleWrapper = linkElement.querySelector(".title a");
   const picSetLink = titleWrapper.getAttribute("href");
@@ -118,7 +116,7 @@ export const parsePicSetLinkElement = async (linkElement, pageURL, type) => {
 //+++++++++++++++++++++++++++++++++++++++++
 
 export const scrapePicSetContentKCNA = async () => {
-  const { picSets } = CONFIG;
+  const picSets = process.env.PICSETS_COLLECTION;
   if (!kcnaState.scrapeActive) return null;
 
   //find new article urls by those without text content
@@ -147,7 +145,7 @@ export const scrapePicSetContentKCNA = async () => {
 export const parsePicSetContent = async (inputObj) => {
   if (!inputObj) return null;
   const { url, date } = inputObj;
-  const { picSets } = CONFIG;
+  const picSets = process.env.PICSETS_COLLECTION;
 
   const kcna = new NORK({ url });
   const html = await kcna.getHTML();
@@ -191,7 +189,7 @@ export const extractPicSetTitle = async (document) => {
 
 export const extractPicSetPicArray = async (document, date) => {
   if (!document || !date) return null;
-  const { pics, kcnaBaseURL } = CONFIG;
+  const pics = process.env.PICS_COLLECTION; const kcnaBaseURL = process.env.KCNA_BASE_URL;
 
   const picElementArray = document.querySelectorAll(".content img");
 
@@ -233,7 +231,7 @@ export const extractPicSetPicArray = async (document, date) => {
 //+++++++++++++++++++++++++++++++++
 
 export const uploadPicSetsKCNA = async () => {
-  const { picSets, tgChannelId } = CONFIG;
+  const picSets = process.env.PICSETS_COLLECTION; const tgChannelId = process.env.TG_CHANNEL_ID;
   if (!kcnaState.scrapeActive) return null;
 
   const picSetModel = new dbModel({ keyExists: "url", keyEmpty: "uploaded" }, picSets);

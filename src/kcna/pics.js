@@ -2,14 +2,13 @@ import axios from "axios";
 import fs from "fs";
 import path from "path";
 
-import CONFIG from "../../config/config.js";
 import kcnaState from "../util/state.js";
 import dbModel from "../../models/db-model.js";
 import { tgPostPicFS } from "../tg-api.js";
 import { updateLogKCNA } from "../util/log.js";
 
 export const downloadPicsKCNA = async () => {
-  const { pics, picPath } = CONFIG;
+  const pics = process.env.PICS_COLLECTION; const picPath = process.env.PIC_PATH;
   if (!kcnaState.scrapeActive) return null;
 
   const picModel = new dbModel({ keyExists: "url", keyEmpty: "picSize" }, pics);
@@ -72,7 +71,7 @@ export const downloadPicsKCNA = async () => {
 
 export const downloadPicFS = async (url, savePath, picName) => {
   if (!url || !savePath || !picName) return null;
-  const { picProgressSize } = CONFIG;
+  const picProgressSize = parseInt(process.env.PIC_PROGRESS_SIZE);
 
   if (!kcnaState.scrapeActive) return null;
 
@@ -152,7 +151,7 @@ export const postPicArrayTG = async (inputArray) => {
 export const postPicTG = async (inputObj) => {
   if (!inputObj) return null;
   const { savePath, caption } = inputObj;
-  const { tgChannelId } = CONFIG;
+  const tgChannelId = process.env.TG_CHANNEL_ID;
 
   // if (!kcnaState.scrapeActive) return null;
 

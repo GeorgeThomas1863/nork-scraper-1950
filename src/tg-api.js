@@ -1,7 +1,8 @@
 import axios from "axios";
 import fs from "fs";
 import FormData from "form-data";
-import tokenArray from "../config/tg-bot.js";
+
+const tokenArray = process.env.TOKEN_ARRAY.split(',').map(key => process.env[key.trim()]).filter(Boolean);
 
 let tokenIndex = 0;
 
