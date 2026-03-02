@@ -8,30 +8,25 @@ import { updatePicDataKCNA } from "../util/update-db.js";
 export const scrapeKCNA = async (inputParams) => {
   const { howMuch } = inputParams;
 
-  //start it first
-  await logScrapeStartKCNA();
+  try {
+    await logScrapeStartKCNA();
 
-  //calc input data
-  const articleInput = await calcHowMuchKCNA(howMuch, "articles");
-  const picSetInput = await calcHowMuchKCNA(howMuch, "picSets");
-  if (!articleInput || !picSetInput) return null;
+    const articleInput = await calcHowMuchKCNA(howMuch, "articles");
+    const picSetInput = await calcHowMuchKCNA(howMuch, "picSets");
 
-  //URLs
-  await scrapeArticleURLsKCNA(articleInput);
-  await scrapePicSetURLsKCNA(picSetInput);
-
-  //CONTENT
-  await scrapeArticleContentKCNA();
-  await scrapePicSetContentKCNA();
-
-  //MEDIA
-  await downloadPicsKCNA();
-  await updatePicDataKCNA();
-
-  //TG
-  await uploadArticlesKCNA();
-  await uploadPicSetsKCNA();
-
-  //log stop
-  return await logScrapeStopKCNA();
+    if (articleInput && picSetInput) {
+      await scrapeArticleURLsKCNA(articleInput);
+      await scrapePicSetURLsKCNA(picSetInput);
+      await scrapeArticleContentKCNA();
+      await scrapePicSetContentKCNA();
+      await downloadPicsKCNA();
+      await updatePicDataKCNA();
+      await uploadArticlesKCNA();
+      await uploadPicSetsKCNA();
+    }
+  } catch (e) {
+    console.log("SCRAPE ERROR: " + e.message);
+  } finally {
+    return await logScrapeStopKCNA();
+  }
 };

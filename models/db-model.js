@@ -1,8 +1,5 @@
 //import mongo
-import { dbGet, dbConnect } from "../middleware/db-config.js";
-
-//connect to db AGAIN here just to be safe
-await dbConnect();
+import { dbGet } from "../middleware/db-config.js";
 
 //IF HATE SELF REFACTOR INTO EXTENDED CLASSES (one for each functionality / category)
 

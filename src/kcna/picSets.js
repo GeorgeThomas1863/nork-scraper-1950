@@ -74,6 +74,7 @@ export const parsePicSetLinkElement = async (linkElement, pageURL, type) => {
   const kcnaBaseURL = process.env.KCNA_BASE_URL; const picSets = process.env.PICSETS_COLLECTION;
 
   const titleWrapper = linkElement.querySelector(".title a");
+  if (!titleWrapper) return null;
   const picSetLink = titleWrapper.getAttribute("href");
   const picSetDate = await extractItemDate(linkElement);
   const picSetURL = kcnaBaseURL + picSetLink;
@@ -241,6 +242,7 @@ export const uploadPicSetsKCNA = async () => {
   console.log("PIC SET ARRAY TO UPLOAD: " + picSetArray.length);
 
   const picSetArraySorted = await sortArrayByDate(picSetArray, "picSets");
+  if (!picSetArraySorted) return null;
 
   const picSetPostArray = [];
   for (const picSetObj of picSetArraySorted) {
@@ -324,6 +326,7 @@ export const postPicSetPicsTG = async (inputObj) => {
     const picObj = picArray[i];
     picObj.picIndex = i + 1;
     picObj.picCount = picArray.length;
+    picObj.tgChannelId = inputObj.tgChannelId;
     const picSetPicCaption = await buildPicSetPicCaption(picObj);
     if (!picSetPicCaption) continue;
 

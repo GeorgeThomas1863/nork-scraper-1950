@@ -44,7 +44,7 @@ export const tgPostPicFS = async (inputParams, attempt = 0) => {
     if (!checkData) return await tgPostPicFS(inputParams, attempt + 1);
     return data;
   } catch (e) {
-    console.log(e.response.data);
+    console.log(e.response?.data ?? e.message);
   }
 };
 
@@ -57,9 +57,9 @@ export const tgGetReq = async (url) => {
     const res = await axios.get(url);
     return res.data;
   } catch (e) {
-    console.log(e.response.data);
+    console.log(e.response?.data ?? e.message);
     //axios throws error on 429, so need to return
-    return e.response.data;
+    return e.response?.data;
   }
 };
 
@@ -71,9 +71,9 @@ export const tgPostReq = async (url, params) => {
     const res = await axios.post(url, params);
     return res.data;
   } catch (e) {
-    console.log(e.response.data);
+    console.log(e.response?.data ?? e.message);
     //axios throws error on 429, so need to return
-    return e.response.data;
+    return e.response?.data;
   }
 };
 
@@ -86,9 +86,9 @@ export const tgPostPicReq = async (url, form) => {
     });
     return res.data;
   } catch (e) {
-    console.log(e.response.data);
+    console.log(e.response?.data ?? e.message);
     //axios throws error on 429, so need to return
-    return e.response.data;
+    return e.response?.data;
   }
 };
 
@@ -96,21 +96,17 @@ export const buildPicForm = async (inputObj) => {
   if (!inputObj) return null;
   const { chatId, savePath, caption, mode } = inputObj;
 
+  if (!fs.existsSync(savePath)) {
+    console.log("PIC FILE NOT FOUND: " + savePath);
+    return null;
+  }
+
   try {
-    //build form
     const form = new FormData();
     form.append("chat_id", chatId);
     form.append("photo", fs.createReadStream(savePath));
     form.append("caption", caption);
     form.append("parse_mode", mode);
-
-    if (!form || !fs.createReadStream(savePath)) {
-      const error = new Error("BUILD PIC FORM FUCKED");
-      error.content = "FORM DATA: " + form;
-      error.function = "buildPicForm";
-      throw error;
-    }
-
     return form;
   } catch (e) {
     console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);

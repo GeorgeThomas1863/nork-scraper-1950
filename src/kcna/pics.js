@@ -150,8 +150,7 @@ export const postPicArrayTG = async (inputArray) => {
 
 export const postPicTG = async (inputObj) => {
   if (!inputObj) return null;
-  const { savePath, caption } = inputObj;
-  const tgChannelId = process.env.TG_CHANNEL_ID;
+  const { savePath, caption, tgChannelId } = inputObj;
 
   // if (!kcnaState.scrapeActive) return null;
 

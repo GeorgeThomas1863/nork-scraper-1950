@@ -1,273 +1,116 @@
 CODE REVIEW: nork-scraper-1950
 ================================
-Full codebase review. Identifies bugs, crash risks, dead code, inconsistencies, and refactor opportunities.
+Last updated: 2026-03-01
+All items below are OPEN / NOT YET FIXED.
 
 ================================================================================
-SECTION 1: ACTUAL BUGS (wrong behavior, not crashes)
+SECTION 1: BUGS (wrong behavior, not crashes)
 ================================================================================
 
-1.1 Single-chunk article text never gets URL appended
-File: src/kcna/articles.js:464-477
+1.1 checkToken returns true on non-429 API errors
+File: src/tg-api.js:121
 
-  switch (chunkIndex) {
-    case 0:            // runs when chunkIndex === 0
-      return "<b>[ARTICLE TEXT]:</b>" + "\n\n" + chunk;
-    case chunkTotal - 1:  // ALSO 0 when chunkTotal === 1, but JS already matched case 0
-      return chunk + "\n\n" + "<b>URL:</b>..."
+  if (data && data.error_code && data.error_code !== 429) return true;
 
-When an article is short enough to fit in one chunk, chunkTotal === 1, so both
-"case 0" and "case chunkTotal - 1" evaluate to "case 0". JS switch executes the
-FIRST matching case and stops. The URL is never appended to single-chunk articles.
+If Telegram returns a real error (400 Bad Request, 403 Forbidden, etc.),
+data.ok is false but error_code !== 429, so checkToken returns true (success).
+The failed post is silently treated as successful. Only rate-limits cause token
+rotation -- every other Telegram error is invisible.
 
-Fix: Rewrite with if/else logic instead of switch. Fixed in this commit.
-
---------------------------------------------------------------------------------
-
-1.2 Token index bounds check uses hardcoded 10 instead of array length
-File: src/tg-api.js:123
-
-  if (tokenIndex > 10) tokenIndex = 0;
-
-If tokenArray has fewer than 11 tokens (e.g., 3), tokenIndex reaches 3, which is
-out of bounds. tokenArray[3] returns undefined, making the bot URL
-"https://api.telegram.org/botundefined/...", which always fails, causing infinite
-recursion (see 1.3).
-
-Fix: if (tokenIndex >= tokenArray.length) tokenIndex = 0;
-Fixed in this commit.
+Fix: Replace the second condition entirely. Only return true on data.ok === true:
+  if (data && data.ok) return true;
+  // else fall through to rotation
 
 --------------------------------------------------------------------------------
 
-1.3 Infinite recursion when all tokens are exhausted
-File: src/tg-api.js:18, 36
+1.2 logScrapeStopKCNA returns state AFTER resetting it
+File: src/util/log.js:66-71
 
-  if (!checkData) return await tgSendMessage(inputParams); // no limit
+  await updateLogKCNA();     // saves final state to DB ✓
+  await resetStateKCNA();    // clears everything to null
+  return kcnaState;          // all fields are now null
 
-If every token is rate-limited or invalid, this recurses forever until stack
-overflow crashes the entire Node.js process.
+The API response to admin-start-scrape always returns an object full of nulls.
+The timing data is saved to MongoDB correctly but never surfaced to the caller.
 
-Fix: Added an attempt counter parameter with a max of tokenArray.length.
-Returns null after max retries instead of recursing forever.
-Fixed in this commit.
-
---------------------------------------------------------------------------------
-
-1.4 scrapeKCNA returns undefined -- API sends empty response
-File: src/kcna/scrape-kcna.js (no return statement)
-      src/src.js:19 -- return await scrapeKCNA(inputParams)
-
-scrapeKCNA has no return statement, so it returns undefined. res.json(undefined)
-sends an empty HTTP body (not valid JSON). The caller gets no status info after
-a scrape completes.
-
-Fix: Return the result of logScrapeStopKCNA(), which already returns kcnaState.
-Fixed in this commit.
+Fix: Save a copy before resetting:
+  const finalState = { ...kcnaState };
+  await resetStateKCNA();
+  return finalState;
 
 --------------------------------------------------------------------------------
 
-1.5 Hardcoded base URL inconsistency
+1.3 buildNumericId race condition
+File: src/util/util.js:36-55
+
+  const maxId = await dataModel.findMaxId(); // read current max
+  return maxId + 1;                          // return max+1
+
+Not atomic. Between findMaxId and the caller's insertOne, another operation
+could insert a document with the same ID, producing duplicate articleId/picSetId
+values. Low probability in practice (sequential scrape) but technically wrong.
+
+Fix: Use a MongoDB $inc counter on a dedicated counters collection (atomic),
+or drop numeric IDs and rely on MongoDB's native _id (ObjectId) for ordering.
+
+--------------------------------------------------------------------------------
+
+1.4 Hardcoded base URL inconsistency
 File: src/kcna/articles.js:228
-
-  const picPageURL = "http://www.kcna.kp" + picPageHref;
-
-Every other place in the codebase uses CONFIG.kcnaBaseURL. This is the only
-hardcoded one. If the base URL ever changes in config, this silently stays wrong.
-
-Fix: Use CONFIG.kcnaBaseURL + picPageHref.
-NOT YET FIXED.
-
---------------------------------------------------------------------------------
-
-1.6 tgChannelId source is inconsistent for pic posts
-File: src/kcna/pics.js:155
-
-  const { tgChannelId } = CONFIG; // reads from global config
-
-Articles and picSets add tgChannelId to the upload object from CONFIG and then
-read it from the object. postPicTG ignores the passed-in inputObj and reads
-directly from CONFIG. If the channel ID were ever parameterized, pics would
-silently post to the wrong channel.
-
-Fix: Read tgChannelId from inputObj, same as articles/picSets do.
-NOT YET FIXED.
-
---------------------------------------------------------------------------------
-
-1.7 buildPicForm file existence check is a no-op
-File: src/tg-api.js:99
-
-  if (!form || !fs.createReadStream(savePath)) { ... }
-
-fs.createReadStream() never returns a falsy value -- it always returns a ReadStream
-object, even if the file doesn't exist. The actual error is emitted as a stream
-'error' event later, not at creation time. This guard never fires.
-
-Fix: Check for file existence with fs.existsSync(savePath) instead.
-NOT YET FIXED.
+STATUS: Fixed (uses process.env.KCNA_BASE_URL now) -- keeping as reference
+NOTE: Remove this entry on next pass.
 
 ================================================================================
-SECTION 2: CRASH RISKS (code that throws under reachable conditions)
+SECTION 2: DEAD CODE (never called, never used -- delete)
 ================================================================================
 
-2.1 for...of on null from sortArrayByDate
-File: src/kcna/articles.js:297-302 and src/kcna/picSets.js:245-248
-
-  const sortArray = await sortArrayByDate(articleArray); // returns null if !scrapeActive
-  for (const articleObj of sortArray) { ... }           // TypeError: null is not iterable
-
-sortArrayByDate (util.js:101) returns null when kcnaState.scrapeActive is false.
-This is a guaranteed crash if admin-stop-scrape fires just before the upload phase.
-Since scrapeKCNA has no top-level try-catch, this propagates as an unhandled rejection.
-
-Fix: Add null guard after sortArrayByDate call: if (!sortArray) return null;
-NOT YET FIXED.
-
---------------------------------------------------------------------------------
-
-2.2 .querySelectorAll("p") on null
-File: src/kcna/articles.js:207
-
-  const textElement = document.querySelector(".content-wrapper");
-  const textArray = textElement.querySelectorAll("p"); // crashes if textElement is null
-
-If .content-wrapper doesn't exist on the page, textElement is null and the next
-line throws TypeError.
-
-Fix: Add: if (!textElement) return ""; after line 206.
-NOT YET FIXED.
-
---------------------------------------------------------------------------------
-
-2.3 .getAttribute("href") on null
-File: src/kcna/picSets.js:79
-
-  const titleWrapper = linkElement.querySelector(".title a");
-  const picSetLink = titleWrapper.getAttribute("href"); // crashes if titleWrapper is null
-
-If the .title a element doesn't exist in a .photo-wrapper, this throws.
-
-Fix: Add: if (!titleWrapper) return null; after line 78.
-NOT YET FIXED.
-
---------------------------------------------------------------------------------
-
-2.4 e.response.data in catch blocks -- crashes the catch block itself
-File: src/tg-api.js:39, 52, 66, 81
-
-  } catch (e) {
-    console.log(e.response.data); // throws if e.response is undefined
-  }
-
-Network errors (timeout, connection refused, DNS failure) don't set e.response.
-Accessing .data on undefined throws another error, so the catch block crashes
-and the original error is silently swallowed entirely.
-
-Fix: console.log(e.response?.data ?? e.message) in all four catch blocks.
-NOT YET FIXED.
-
---------------------------------------------------------------------------------
-
-2.5 No top-level error handling in scrapeKCNA
-File: src/kcna/scrape-kcna.js
-
-If any step throws (DB down, unexpected null dereference, etc.), execution exits
-scrapeKCNA mid-run without calling logScrapeStopKCNA(). This leaves
-kcnaState.scrapeActive = true permanently -- the scraper thinks it's running
-forever and will refuse all future start commands.
-
-Fix: Wrap the body in try/finally and always call logScrapeStopKCNA() in the
-finally block, regardless of what happened.
-NOT YET FIXED.
-
---------------------------------------------------------------------------------
-
-2.6 scrapeLengthSeconds becomes NaN
-File: src/util/log.js:48
-
-  const scrapeLengthSeconds = (scrapeEndTime - kcnaState.scrapeStartTime) / 1000;
-
-If logScrapeStopKCNA is called when scrapeStartTime is null (e.g., via
-admin-stop-scrape before any scrape starts), Date - null = NaN. This NaN gets
-stored in MongoDB and logged.
-
-Fix: Add guard at top of logScrapeStopKCNA: if (!kcnaState.scrapeStartTime) return kcnaState;
-NOT YET FIXED.
-
---------------------------------------------------------------------------------
-
-2.7 No error handling on dbConnect() at startup
-File: app.js:8
-
-  await dbConnect();
-
-If MongoDB is unreachable, this throws and crashes the process with an ugly
-stack trace and no recovery mechanism.
-
-Fix: Wrap in try-catch with console.error and process.exit(1).
-NOT YET FIXED.
-
---------------------------------------------------------------------------------
-
-2.8 No try-catch on apiEndpointController
-File: controllers/api-controller.js:4
-
-Any error from runScraper propagates to Express's default error handler. In
-Express 5 this sends a 500, but with no structured error info.
-
-Fix: Wrap body in try-catch and return res.status(500).json({ error: e.message }).
-NOT YET FIXED.
+Item                                | File                        | Notes
+------------------------------------|-----------------------------|---------------------------------
+export const scrapeWatch = ...      | src/src.js:59               | Empty function, never imported
+import { resetScrapeMessageKCNA }   | src/src.js:2                | Imported but only used in commented lines
+// await resetScrapeMessageKCNA()   | src/src.js:12, 32           | Two commented-out calls
+dbModel.storeArray()                | models/db-model.js:27       | Defined, never called
+dbModel.updateLog()                 | models/db-model.js:57       | Defined, never called
+dbModel.updateObjInsert()           | models/db-model.js:69       | Defined, never called
+dbModel.findNewURLs()               | models/db-model.js:158      | Defined, never called
+dbModel.findNewPicsBySize()         | models/db-model.js:170      | Defined, never called; O(n*m) too
+Commented updateObjNested()         | models/db-model.js:81-92    | Commented-out block
+export resetScrapeMessageKCNA       | src/util/state.js:26        | Exported, always commented out at call sites
+// const testInterval = 5 * 1000   | src/util/scheduler.js:13    | Debug leftover
+// NEEDS MORE DEBUGGING comment     | src/util/scheduler.js:12    | Leftover comment
+middleware/session-config.js        | entire file                 | Never imported in app.js; express-session not in package.json
 
 ================================================================================
-SECTION 3: DEAD CODE (never called, never used -- should be deleted)
+SECTION 3: REDUNDANT CODE (does nothing or duplicates other code)
 ================================================================================
 
-Item                              | File                        | Notes
-----------------------------------|-----------------------------|---------------------------------
-export const scrapeWatch = ...    | src/src.js:59               | Empty, never imported
-export const resetScrapeMessage.. | src/util/state.js:26        | Exported but always commented out
-dbModel.updateLog()               | models/db-model.js:61       | Defined, never called
-dbModel.storeArray()              | models/db-model.js:30       | Defined, never called
-dbModel.findNewURLs()             | models/db-model.js:161      | Defined, never called
-dbModel.findNewPicsBySize()       | models/db-model.js:173      | Defined, never called; O(n*m) bug too
-dbModel.updateObjInsert()         | models/db-model.js:72       | Defined, never called
-Commented updateObjNested()       | models/db-model.js:84-95    | Commented-out dead code block
-// const testInterval = 5 * 1000  | src/util/scheduler.js:13    | Debug leftover
-// NEEDS MORE DEBUGGING comment   | src/util/scheduler.js:12    | Leftover comment
-// import { picSetURLs }           | src/kcna/picSets.js:4       | Commented-out import
-// await resetScrapeMessageKCNA() | src/src.js:12, 31           | Commented-out calls (x2)
-
-================================================================================
-SECTION 4: REDUNDANT CODE (does nothing, duplicates other code)
-================================================================================
-
-4.1 kcnaState.scrapeActive = true and scrapeMessage set before scrapeKCNA
+3.1 scrapeActive = true and scrapeMessage set before scrapeKCNA in src.js
 File: src/src.js:17-18
 
-  kcnaState.scrapeActive = true;             // redundant
+  kcnaState.scrapeActive = true;            // redundant
   kcnaState.scrapeMessage = "STARTING...";  // immediately overwritten by resetStateKCNA()
-  return await scrapeKCNA(inputParams);
 
 scrapeKCNA calls logScrapeStartKCNA which calls resetStateKCNA() (nulls out
-scrapeMessage) then sets scrapeActive = true again. Both lines on 17-18 are no-ops.
+scrapeMessage) and then sets scrapeActive = true again. Both lines are no-ops.
 
 Fix: Delete both lines.
 
 --------------------------------------------------------------------------------
 
-4.2 resetStateKCNA duplicates initial object fields
+3.2 resetStateKCNA duplicates initial object fields
 File: src/util/state.js:1-24
 
-The initial values and the reset function list the same 9 fields twice. Adding
-a new field requires updating both places or the reset is incomplete.
+The initial field list and the reset function list the same 9 fields twice.
+Adding a new field requires updating both places or the reset is incomplete.
 
-Fix: Extract initial values as a constant:
+Fix:
   const INITIAL_STATE = { scrapeId: null, scrapeStartTime: null, ... };
   const kcnaState = { scrapeActive: false, schedulerActive: false, ...INITIAL_STATE };
   export const resetStateKCNA = () => Object.assign(kcnaState, INITIAL_STATE);
 
 --------------------------------------------------------------------------------
 
-4.3 buildNumericId / getNextId split is unnecessary
+3.3 buildNumericId / getNextId split is unnecessary
 File: src/util/util.js:36-55
 
 buildNumericId derives a key name and calls getNextId. getNextId is only ever
@@ -277,68 +120,82 @@ Fix: Inline getNextId into buildNumericId and delete getNextId.
 
 --------------------------------------------------------------------------------
 
-4.4 URL existence checked twice per item
-File: src/kcna/articles.js:85-91 (and identical in picSets.js)
+3.4 URL existence checked twice per item
+File: src/kcna/articles.js:84-91, src/kcna/picSets.js:83-88
 
-urlExistsCheck() is called at line 85 (returns early if found), then
-storeUniqueURL() is called at line 111, which internally calls urlNewCheck()
-(same DB query again). Every URL hits MongoDB twice for the same check.
+urlExistsCheck() is called first (returns early if found), then storeUniqueURL()
+is called, which internally calls urlNewCheck() -- the same DB lookup again.
+Every new URL hits MongoDB twice for the same check.
 
 Fix: Remove the explicit urlExistsCheck and rely on storeUniqueURL's internal
-dedup, OR drop storeUniqueURL and use the explicit check + storeAny(). Not both.
+dedup, OR drop storeUniqueURL and use urlExistsCheck + storeAny(). Not both.
 
 ================================================================================
-SECTION 5: INCONSISTENCIES
+SECTION 4: INCONSISTENCIES
 ================================================================================
 
-5.1 postArticleTitleTG has try-catch; postPicSetTitleTG does not
-File: src/kcna/articles.js:350-368 vs src/kcna/picSets.js:301-315
+4.1 postArticleTitleTG has try-catch; postPicSetTitleTG does not
+File: src/kcna/articles.js:354 vs src/kcna/picSets.js:301
 
-Identical function structure, but one wraps in try-catch and the other doesn't.
-A TG API error in the picSet path would propagate uncaught.
+Identical function structure, but picSets version has no try-catch. A TG API
+error in the picSet title post would propagate uncaught.
 
-Fix: Add try-catch to postPicSetTitleTG matching the pattern in postArticleTitleTG.
+Fix: Add try-catch to postPicSetTitleTG matching articles.js pattern.
 
 --------------------------------------------------------------------------------
 
-5.2 Two near-identical dedup methods with inverted/confusing names
-File: models/db-model.js:133-150
+4.2 Two near-identical dedup methods with confusing/inverted names
+File: models/db-model.js:130-147
 
-- urlNewCheck() -- returns FALSE if URL exists. Name says "new check" but returns
-  false on the path where it found something. Counter-intuitive.
+- urlNewCheck() -- returns FALSE if URL exists. Name says "new check" but the
+  false return is the "found it" path. Counter-intuitive.
 - urlExistsCheck() -- returns the document if found, null otherwise.
 
-Both do essentially the same DB lookup.
+Both do the same DB lookup.
 
-Fix: Rename urlNewCheck to urlExists and invert its return (true if exists).
-Or replace storeUniqueURL with urlExistsCheck + storeAny().
+Fix: Rename urlNewCheck to urlExists and invert return (true if exists).
+Or unify: drop urlNewCheck entirely and use urlExistsCheck everywhere.
 
 --------------------------------------------------------------------------------
 
-5.3 Error logging uses three different formats
+4.3 Input objects mutated in-place during upload loops
+File: src/kcna/articles.js:379-385, src/kcna/picSets.js:325-331
+
+  picObj.picIndex = i + 1;      // mutates DB-sourced object
+  picObj.picCount = picArray.length;
+  picObj.tgChannelId = ...;
+  picObj.caption = ...;
+
+The objects from the DB are permanently modified. If a retry or re-use occurs,
+stale picIndex/caption values from a prior run are already attached.
+
+Fix: Work on a shallow copy: const picObj = { ...picArray[i] };
+
+--------------------------------------------------------------------------------
+
+4.4 Error logging uses three different formats
   console.log(e.url + "; " + e.message + "; F BREAK: " + e.function) // most files
-  console.log(e.response.data)                                         // tg-api.js
+  console.log(e.response?.data ?? e.message)                          // tg-api.js
   console.log(e)                                                       // nork-model.js
 
-e.url and e.function are NOT standard Error properties -- they log as "undefined"
-for any standard thrown error. The first format only works for custom-thrown errors
-where those properties were explicitly set.
+e.url and e.function are NOT standard Error properties -- they log "undefined"
+for any standard thrown error. The first format only works for custom-thrown errors.
 
-Fix: Standardize to console.log(e.message) for all catch blocks. Use optional
-chaining if you want the custom properties: ${e?.url ?? ''} ${e.message} ${e?.function ?? ''}
+Fix: Standardize to console.log(e.message) everywhere. Use optional chaining for
+custom properties where needed: `${e?.url ?? ''} ${e.message} ${e?.function ?? ''}`
 
 ================================================================================
-SECTION 6: UNNECESSARY async ON SYNC FUNCTIONS
+SECTION 5: UNNECESSARY async ON SYNC FUNCTIONS
 ================================================================================
 
-These functions have no await inside them. Marking them async wraps the return
-value in a Promise unnecessarily. It doesn't cause bugs but is misleading --
-a reader expects async work to happen inside.
+These functions contain no await. Marking them async is misleading and adds
+an unnecessary Promise wrapper on every call.
 
 Function                | File
 ------------------------|------------------------------
 normalizeURL            | src/util/util.js:139
 normalizeDate           | src/util/util.js:144
+sortArrayByDate         | src/util/util.js:98
 buildArticleTitleText   | src/kcna/articles.js:429
 buildArticlePicCaption  | src/kcna/articles.js:448
 buildChunkText          | src/kcna/articles.js:464
@@ -351,63 +208,68 @@ extractPicSetTitle      | src/kcna/picSets.js:183
 resetStateKCNA          | src/util/state.js:15
 resetScrapeMessageKCNA  | src/util/state.js:26
 
-Fix: Remove async from all of these. Update callers to remove the await (dropping
-await on a non-promise just returns the value directly -- safe change).
+Fix: Remove async from all of these. Callers can drop the await safely --
+awaiting a non-Promise just returns the value directly.
 
 ================================================================================
-SECTION 7: NAMING AND CLARITY
+SECTION 6: NAMING AND CLARITY
 ================================================================================
 
-7.1 typeArr is not an array -- it's a string
+6.1 typeArr is not an array -- it's a string
 File: src/util/util.js:11, 14-15 and throughout articles.js/picSets.js loops
 
   const { typeArr, pageArray } = typeObj;
-  const type = typeArr.slice(0, -3); // typeArr is a string key like "politicsURL"
-
-Named typeArr but holds a string, not an array. Confusing to read.
+  const type = typeArr.slice(0, -3); // typeArr is a string key like "fatboyArr"
 
 Fix: Rename typeArr -> typeKey everywhere.
 
 --------------------------------------------------------------------------------
 
-7.2 app.listen has no startup log
-File: app.js:18
+6.2 No server startup log
+File: app.js:19
 
-  app.listen(CONFIG.scrapePort);
+  app.listen(process.env.SCRAPE_PORT);
 
-No indication the server started, no port confirmation, no way to see if it failed.
+No confirmation that the server started, no port logged.
 
 Fix:
-  app.listen(CONFIG.scrapePort, () => console.log(`Server running on port ${CONFIG.scrapePort}`));
+  app.listen(process.env.SCRAPE_PORT, () =>
+    console.log(`Scraper running on port ${process.env.SCRAPE_PORT}`)
+  );
 
 --------------------------------------------------------------------------------
 
-7.3 Profanity in code
+6.3 Profanity in API responses and comments
 Files:
   src/src.js:14, 23, 34, 43  -- error messages RETURNED IN HTTP API RESPONSES
-  src/kcna/pics.js:88         -- error message string
-  src/util/util.js:20, 79     -- code comments
-  src/util/scheduler.js:5     -- code comment
+  src/util/tg-api.js:124,129  -- log messages
 
-Profanity in API responses is returned to whoever calls the endpoint. That means
-it shows up in logs, dashboards, and any monitoring tool that reads your API.
-Profanity in comments is visible to anyone reading the code.
+API responses are visible in logs, dashboards, and any monitoring tool.
 
-Fix: Replace all profanity with professional language. API responses especially.
+Fix: Replace with professional language throughout.
+
+--------------------------------------------------------------------------------
+
+6.4 nodemon in production dependencies
+File: package.json:27
+
+nodemon is a dev-only file watcher. Having it in "dependencies" means it is
+installed in any production deployment.
+
+Fix: Move to "devDependencies".
 
 ================================================================================
-SECTION 8: PERFORMANCE NOTE (non-urgent)
+SECTION 7: PERFORMANCE
 ================================================================================
 
-8.1 dbModel.findNewPicsBySize is O(n x m)
-File: models/db-model.js:173-195
+7.1 dbModel.findNewPicsBySize is O(n x m)
+File: models/db-model.js:170-192
 
-For each document in collection1, it fires a findOne against collection2. With
-10,000 items in each, that's 10,000 DB round-trips in a loop. This is currently
-dead code (never called), but if ever used would be extremely slow.
+For each document in collection1, fires a findOne against collection2. With
+10,000 items that's 10,000 serial DB round-trips. Currently dead code (never
+called) but dangerous if ever used.
 
-Fix: Delete it (already listed in Section 3). If ever needed, use a MongoDB
-aggregation $lookup pipeline instead.
+Fix: Delete it (see Section 2). If ever needed, use a $lookup aggregation pipeline.
 
 ================================================================================
 SUMMARY TABLE
@@ -415,30 +277,21 @@ SUMMARY TABLE
 
 #    | Severity    | Issue
 -----|-------------|----------------------------------------------------------
-1.1  | Bug         | Single-chunk articles never get URL suffix (FIXED)
-1.2  | Bug         | Token index wraps at 10, not array length (FIXED)
-1.3  | Bug         | Infinite recursion on token exhaustion (FIXED)
-1.4  | Bug         | scrapeKCNA returns undefined, empty API response (FIXED)
-1.5  | Bug         | Hardcoded base URL in extractArticlePicPage
-1.6  | Bug         | postPicTG reads channelId from CONFIG, not input
-1.7  | Bug         | buildPicForm file check never fires
-2.1  | Crash       | for...of null after sortArrayByDate returns null
-2.2  | Crash       | .querySelectorAll on null textElement
-2.3  | Crash       | .getAttribute on null titleWrapper
-2.4  | Crash       | e.response.data in catch blocks crashes the catch block
-2.5  | Crash       | No try/finally in scrapeKCNA -- state stuck on error
-2.6  | Crash       | scrapeStartTime null -> NaN stored in DB
-2.7  | Crash       | No error handling on dbConnect()
-2.8  | Crash       | No try-catch in apiEndpointController
-3.x  | Dead code   | 12 dead code items (see Section 3 table)
-4.1  | Redundant   | Lines 17-18 in src.js do nothing
-4.2  | Redundant   | resetStateKCNA duplicates initial state list
-4.3  | Redundant   | buildNumericId/getNextId split unnecessary
-4.4  | Redundant   | URL existence checked twice per item
-5.1  | Inconsist.  | Missing try-catch on postPicSetTitleTG
-5.2  | Inconsist.  | urlNewCheck naming is inverted and confusing
-5.3  | Inconsist.  | 3 different error log formats
-6.x  | Clarity     | 13 functions marked async with no await
-7.1  | Clarity     | typeArr is a string, not an array
-7.2  | Clarity     | No server startup log
-7.3  | Clarity     | Profanity in API responses and comments
+1.1  | Bug         | checkToken treats all non-429 errors as success
+1.2  | Bug         | logScrapeStopKCNA returns nulled-out state to API caller
+1.3  | Bug         | buildNumericId race condition (non-atomic ID generation)
+2.x  | Dead code   | 13 dead code items (see Section 2 table)
+3.1  | Redundant   | src.js lines 17-18 before scrapeKCNA are no-ops
+3.2  | Redundant   | resetStateKCNA duplicates initial state field list
+3.3  | Redundant   | buildNumericId/getNextId unnecessary split
+3.4  | Redundant   | URL existence checked twice per item (double DB query)
+4.1  | Inconsist.  | postPicSetTitleTG missing try-catch (articles has it)
+4.2  | Inconsist.  | urlNewCheck naming is inverted and confusing
+4.3  | Inconsist.  | Pic objects mutated in-place during upload loops
+4.4  | Inconsist.  | 3 different error log formats
+5.x  | Clarity     | 14 functions marked async with no await
+6.1  | Clarity     | typeArr is a string, not an array
+6.2  | Clarity     | No server startup log
+6.3  | Clarity     | Profanity in API responses and console output
+6.4  | Clarity     | nodemon in production dependencies
+7.1  | Performance | findNewPicsBySize is O(n*m) (also dead code)

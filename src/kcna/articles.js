@@ -202,6 +202,7 @@ export const extractArticleTitle = async (document) => {
 export const extractArticleText = async (document) => {
   //extract text content
   const textElement = document.querySelector(".content-wrapper");
+  if (!textElement) return "";
   const textArray = textElement.querySelectorAll("p"); //array of paragraph elements
 
   const paragraphArray = [];
@@ -223,7 +224,7 @@ export const extractArticlePicPage = async (document) => {
   if (!picPageHref) return null;
 
   //otherwise build pic / pic array
-  const picPageURL = "http://www.kcna.kp" + picPageHref;
+  const picPageURL = process.env.KCNA_BASE_URL + picPageHref;
   return picPageURL;
 };
 
@@ -293,6 +294,7 @@ export const uploadArticlesKCNA = async () => {
   console.log("ARTICLE ARRAY TO UPLOAD: " + articleArray.length);
 
   const sortArray = await sortArrayByDate(articleArray);
+  if (!sortArray) return null;
 
   const articlePostArray = [];
   for (const articleObj of sortArray) {
@@ -378,6 +380,7 @@ export const postArticlePicsTG = async (inputObj) => {
     const picObj = picArray[i];
     picObj.picIndex = i + 1;
     picObj.picCount = picArray.length;
+    picObj.tgChannelId = inputObj.tgChannelId;
     const articlePicCaption = await buildArticlePicCaption(picObj);
     if (!articlePicCaption) continue;
 
