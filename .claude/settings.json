@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /home/george/code/nork-scraper-1950/.claude/hooks/UserPromptSubmit/ultimate-prompt-hook.js"
+          }
+        ]
+      }
+    ]
+  }
+}
