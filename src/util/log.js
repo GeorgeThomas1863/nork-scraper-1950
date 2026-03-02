@@ -6,7 +6,7 @@ export const logScrapeStartKCNA = async () => {
   const log = process.env.LOG_COLLECTION;
 
   //RESET FIRST
-  await resetStateKCNA();
+  resetStateKCNA();
   // await stopWatchdog();
 
   //set scrape active
@@ -64,11 +64,12 @@ export const logScrapeStopKCNA = async () => {
   console.log(`SCRAPE LENGTH: ${scrapeLengthMinutes} minutes and ${(scrapeLengthSeconds % 60).toFixed(2)} seconds`);
 
   await updateLogKCNA();
-  await resetStateKCNA();
+  const finalState = { ...kcnaState };
+  resetStateKCNA();
 
   // await stopWatchdog();
 
-  return kcnaState;
+  return finalState;
 };
 
 export const updateLogKCNA = async () => {

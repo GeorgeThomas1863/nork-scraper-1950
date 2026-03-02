@@ -15,8 +15,8 @@ export const scrapePicSetURLsKCNA = async (inputObj) => {
   let picSetCount = 0;
   const picSetTypeData = [];
   for (const typeObj of inputObj) {
-    const { typeArr, pageArray } = typeObj;
-    const type = typeArr.slice(0, -3);
+    const { typeKey, pageArray } = typeObj;
+    const type = typeKey.slice(0, -3);
 
     console.log("TYPE: " + type + " | PAGE ARRAY LENGTH: " + pageArray.length);
 
@@ -76,12 +76,12 @@ export const parsePicSetLinkElement = async (linkElement, pageURL, type) => {
   const titleWrapper = linkElement.querySelector(".title a");
   if (!titleWrapper) return null;
   const picSetLink = titleWrapper.getAttribute("href");
-  const picSetDate = await extractItemDate(linkElement);
+  const picSetDate = extractItemDate(linkElement);
   const picSetURL = kcnaBaseURL + picSetLink;
 
   const checkModel = new dbModel({ url: picSetURL }, picSets);
-  const checkData = await checkModel.urlExistsCheck();
-  if (checkData) {
+  const exists = await checkModel.urlExists();
+  if (exists) {
     console.log(`URL ALREADY STORED: ${picSetURL}`);
     return null;
   }
@@ -102,7 +102,7 @@ export const parsePicSetLinkElement = async (linkElement, pageURL, type) => {
 
   try {
     const storeModel = new dbModel(params, picSets);
-    const storeData = await storeModel.storeUniqueURL();
+    const storeData = await storeModel.storeAny();
 
     console.log("PIC SET LIST STORE DATA");
     console.log(storeData);
@@ -120,7 +120,6 @@ export const scrapePicSetContentKCNA = async () => {
   const picSets = process.env.PICSETS_COLLECTION;
   if (!kcnaState.scrapeActive) return null;
 
-  //find new article urls by those without text content
   const newPicSetModel = new dbModel({ keyExists: "url", keyEmpty: "picArray" }, picSets);
   const newPicSetArray = await newPicSetModel.findEmptyItems();
   if (!newPicSetArray || !newPicSetArray.length) return null;
@@ -158,7 +157,7 @@ export const parsePicSetContent = async (inputObj) => {
   const dom = new JSDOM(html);
   const document = dom.window.document;
 
-  const picSetTitle = await extractPicSetTitle(document);
+  const picSetTitle = extractPicSetTitle(document);
   const picSetPicArray = await extractPicSetPicArray(document, date);
 
   const picSetParams = {
@@ -179,7 +178,7 @@ export const parsePicSetContent = async (inputObj) => {
   return picSetParams;
 };
 
-export const extractPicSetTitle = async (document) => {
+export const extractPicSetTitle = (document) => {
   if (!document) return null;
 
   const titleElement = document.querySelector(".title .main span");
@@ -203,7 +202,6 @@ export const extractPicSetPicArray = async (document, date) => {
     const picSetPicURL = kcnaBaseURL + picSrc;
     picSetPicArray.push(picSetPicURL);
 
-    //store urls to picDB (so dont have to do again); build params
     const picId = await buildNumericId("pics");
     const picParams = {
       picId: picId,
@@ -241,7 +239,7 @@ export const uploadPicSetsKCNA = async () => {
 
   console.log("PIC SET ARRAY TO UPLOAD: " + picSetArray.length);
 
-  const picSetArraySorted = await sortArrayByDate(picSetArray, "picSets");
+  const picSetArraySorted = sortArrayByDate(picSetArray, "picSets");
   if (!picSetArraySorted) return null;
 
   const picSetPostArray = [];
@@ -251,21 +249,15 @@ export const uploadPicSetsKCNA = async () => {
 
     const { url } = picSetObj;
 
-    //add channelId HERE
     picSetObj.tgChannelId = tgChannelId;
 
-    //post article
     const picSetPostData = await postPicSetTG(picSetObj);
     if (!picSetPostData) continue;
 
-    //add uploaded flag
     picSetPostData.uploaded = true;
 
-    // console.log("PIC SET POST DATA");
-    // console.log(picSetPostData);
     picSetPostArray.push(picSetPostData);
 
-    //store data
     try {
       const storeModel = new dbModel({ keyToLookup: "url", itemValue: url, updateObj: picSetPostData }, picSets);
       const storeData = await storeModel.updateObjItem();
@@ -288,8 +280,7 @@ export const postPicSetTG = async (inputObj) => {
   if (!inputObj) return null;
   const { url, date } = inputObj;
 
-  //normalize url and date
-  const tgInputs = await normalizeInputsTG(url, date);
+  const tgInputs = normalizeInputsTG(url, date);
   const uploadObj = { ...inputObj, ...tgInputs };
 
   await postPicSetTitleTG(uploadObj);
@@ -302,32 +293,35 @@ export const postPicSetTitleTG = async (inputObj) => {
   if (!inputObj) return null;
   const { tgChannelId } = inputObj;
 
-  const titleText = await buildPicSetTitleText(inputObj);
+  try {
+    const titleText = buildPicSetTitleText(inputObj);
 
-  const params = {
-    chat_id: tgChannelId,
-    text: titleText,
-    parse_mode: "HTML",
-  };
+    const params = {
+      chat_id: tgChannelId,
+      text: titleText,
+      parse_mode: "HTML",
+    };
 
-  const data = await tgSendMessage(params);
-  return data;
+    return await tgSendMessage(params);
+  } catch (e) {
+    console.log(e.message);
+    return null;
+  }
 };
 
 export const postPicSetPicsTG = async (inputObj) => {
   if (!inputObj || !inputObj.picArray || !inputObj.picArray.length) return null;
   const { picArray } = inputObj;
 
-  //add caption to each pic
   const uploadPicArray = [];
   for (let i = 0; i < picArray.length; i++) {
     if (!kcnaState.scrapeActive) return uploadPicArray;
 
-    const picObj = picArray[i];
+    const picObj = { ...picArray[i] };
     picObj.picIndex = i + 1;
     picObj.picCount = picArray.length;
     picObj.tgChannelId = inputObj.tgChannelId;
-    const picSetPicCaption = await buildPicSetPicCaption(picObj);
+    const picSetPicCaption = buildPicSetPicCaption(picObj);
     if (!picSetPicCaption) continue;
 
     picObj.caption = picSetPicCaption;
@@ -340,37 +334,36 @@ export const postPicSetPicsTG = async (inputObj) => {
 
 //---------------------------
 
-export const buildPicSetTitleText = async (inputObj) => {
+export const buildPicSetTitleText = (inputObj) => {
   if (!inputObj) return null;
   const { title, dateNormal, picSetId, picArray, urlNormal } = inputObj;
 
   const picCount = picArray.length;
 
   const titleText = `🇰🇵 🇰🇵 🇰🇵
-  
------------------
-    
-<b>${title}</b>
-  
+
 -----------------
 
-<b>KCNA PIC SET ID:</b> ${picSetId} | <b>TOTAL PICS:</b> ${picCount} | <b>DATE:</b> <i>${dateNormal}</i> | <b>URL:</b> 
+<b>${title}</b>
+
+-----------------
+
+<b>KCNA PIC SET ID:</b> ${picSetId} | <b>TOTAL PICS:</b> ${picCount} | <b>DATE:</b> <i>${dateNormal}</i> | <b>URL:</b>
 <i>${urlNormal}</i>
   `;
 
   return titleText;
 };
 
-export const buildPicSetPicCaption = async (inputObj) => {
+export const buildPicSetPicCaption = (inputObj) => {
   if (!inputObj) return null;
   const { picIndex, picCount, date, url } = inputObj;
 
-  //run again bc nested
-  const normalInputs = await normalizeInputsTG(url, date);
+  const normalInputs = normalizeInputsTG(url, date);
   const { dateNormal, urlNormal } = normalInputs;
 
   const picSetPicCaption = `
-<b>PIC ${picIndex} OF ${picCount} IN PIC SET</b> | <b>DATE:</b> <i>${dateNormal}</i> | <b>PIC URL:</b> 
+<b>PIC ${picIndex} OF ${picCount} IN PIC SET</b> | <b>DATE:</b> <i>${dateNormal}</i> | <b>PIC URL:</b>
 <i>${urlNormal}</i>
 `;
 

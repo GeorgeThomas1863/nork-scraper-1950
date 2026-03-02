@@ -8,8 +8,6 @@ export const startSchedulerKCNA = async () => {
   const scrapeInterval = parseInt(process.env.SCRAPE_INTERVAL);
   kcnaState.schedulerActive = true;
 
-  //NEEDS MORE DEBUGGING
-  // const testInterval = 5 * 1000; //5 seconds
   console.log("STARTING SCHEDULER");
   console.log(new Date().toISOString());
 

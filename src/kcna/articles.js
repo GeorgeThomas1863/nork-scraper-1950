@@ -10,13 +10,12 @@ import { buildNumericId, extractItemDate, sortArrayByDate, normalizeInputsTG } f
 
 export const scrapeArticleURLsKCNA = async (inputObj) => {
   if (!kcnaState.scrapeActive) return null;
-  // console.log("SCRAPING KCNA ARTICLES; GETTING URLS");
 
   const articleTypeData = [];
   let articleCount = 0;
   for (const typeObj of inputObj) {
-    const { typeArr, pageArray } = typeObj;
-    const type = typeArr.slice(0, -3);
+    const { typeKey, pageArray } = typeObj;
+    const type = typeKey.slice(0, -3);
 
     console.log("TYPE: " + type + " | PAGE ARRAY LENGTH: " + pageArray.length);
 
@@ -25,7 +24,6 @@ export const scrapeArticleURLsKCNA = async (inputObj) => {
 
       const articleListArray = await parseArticleListPage(pageURL, type);
       console.log("ARTICLE LIST ARRAY FOR PAGE: " + pageURL);
-      // console.log(articleListArray);
 
       if (!articleListArray) continue;
       articleCount += articleListArray.length;
@@ -81,14 +79,14 @@ export const parseArticleLinkElement = async (linkElement, pageURL, type) => {
   const articleURL = kcnaBaseURL + articleLink;
 
   const checkModel = new dbModel({ url: articleURL }, articles);
-  const checkData = await checkModel.urlExistsCheck();
+  const exists = await checkModel.urlExists();
 
-  if (checkData) {
+  if (exists) {
     console.log(`URL ALREADY STORED: ${articleURL} `);
     return null;
   }
 
-  const articleDate = await extractItemDate(linkElement);
+  const articleDate = extractItemDate(linkElement);
   const articleId = await buildNumericId("articles");
 
   const params = {
@@ -100,13 +98,9 @@ export const parseArticleLinkElement = async (linkElement, pageURL, type) => {
     articleId: articleId,
   };
 
-  // console.log("ARTICLE LIST PARAMS");
-  // console.log(params);
-
   try {
-    //auto checks if new
     const storeModel = new dbModel(params, articles);
-    const storeData = await storeModel.storeUniqueURL();
+    const storeData = await storeModel.storeAny();
 
     console.log("ARTICLE STORE DATA");
     console.log(storeData);
@@ -124,7 +118,6 @@ export const scrapeArticleContentKCNA = async () => {
   const articles = process.env.ARTICLES_COLLECTION;
   if (!kcnaState.scrapeActive) return null;
 
-  //find new article urls by those without text content
   const newArticleModel = new dbModel({ keyExists: "url", keyEmpty: "text" }, articles);
   const newArticleArray = await newArticleModel.findEmptyItems();
   if (!newArticleArray || !newArticleArray.length) return null;
@@ -162,9 +155,9 @@ export const parseArticleContent = async (inputObj) => {
   const dom = new JSDOM(html);
   const document = dom.window.document;
 
-  const articleTitle = await extractArticleTitle(document);
-  const articleText = await extractArticleText(document);
-  const articlePicPage = await extractArticlePicPage(document);
+  const articleTitle = extractArticleTitle(document);
+  const articleText = extractArticleText(document);
+  const articlePicPage = extractArticlePicPage(document);
   const articlePicArray = await extractArticlePicArray(articlePicPage, date);
 
   const params = {
@@ -193,37 +186,31 @@ export const parseArticleContent = async (inputObj) => {
   return params;
 };
 
-export const extractArticleTitle = async (document) => {
+export const extractArticleTitle = (document) => {
   const titleElement = document.querySelector(".article-main-title");
   const articleTitle = titleElement?.textContent?.replace(/\s+/g, " ").trim();
   return articleTitle;
 };
 
-export const extractArticleText = async (document) => {
-  //extract text content
+export const extractArticleText = (document) => {
   const textElement = document.querySelector(".content-wrapper");
   if (!textElement) return "";
-  const textArray = textElement.querySelectorAll("p"); //array of paragraph elements
+  const textArray = textElement.querySelectorAll("p");
 
   const paragraphArray = [];
   for (let i = 0; i < textArray.length; i++) {
     paragraphArray.push(textArray[i].textContent.trim());
   }
 
-  // Join paragraphs with double newlines for better readability
-  const articleText = paragraphArray.join("\n\n");
-  return articleText;
+  return paragraphArray.join("\n\n");
 };
 
-export const extractArticlePicPage = async (document) => {
-  //get article PAGE (if exists) where all pics are displayed
+export const extractArticlePicPage = (document) => {
   const mediaIconElement = document.querySelector(".media-icon");
   const picPageHref = mediaIconElement?.firstElementChild?.getAttribute("href");
 
-  //return null if  pic doesnt exist
   if (!picPageHref) return null;
 
-  //otherwise build pic / pic array
   const picPageURL = process.env.KCNA_BASE_URL + picPageHref;
   return picPageURL;
 };
@@ -243,7 +230,6 @@ export const extractArticlePicArray = async (url, date) => {
   const dom = new JSDOM(html);
   const document = dom.window.document;
 
-  //get and loop through img elements
   const picArray = [];
   const imgArray = document.querySelectorAll("img");
   for (let i = 0; i < imgArray.length; i++) {
@@ -256,7 +242,6 @@ export const extractArticlePicArray = async (url, date) => {
 
     picArray.push(articlePicURL);
 
-    //store url to picDB (so dont have to do again); build params
     const picId = await buildNumericId("pics");
     const picParams = {
       picId: picId,
@@ -265,8 +250,6 @@ export const extractArticlePicArray = async (url, date) => {
       date: date,
     };
 
-    // console.log("ARTICLE PIC STORE PARAMS");
-    // console.log(picParams);
     try {
       const storePicModel = new dbModel(picParams, pics);
       await storePicModel.storeUniqueURL();
@@ -293,7 +276,7 @@ export const uploadArticlesKCNA = async () => {
 
   console.log("ARTICLE ARRAY TO UPLOAD: " + articleArray.length);
 
-  const sortArray = await sortArrayByDate(articleArray);
+  const sortArray = sortArrayByDate(articleArray);
   if (!sortArray) return null;
 
   const articlePostArray = [];
@@ -302,7 +285,6 @@ export const uploadArticlesKCNA = async () => {
     const { url } = articleObj;
     if (!kcnaState.scrapeActive) return articlePostArray;
 
-    //add TG id
     articleObj.tgChannelId = tgChannelId;
 
     const postData = await postArticleTG(articleObj);
@@ -311,7 +293,6 @@ export const uploadArticlesKCNA = async () => {
     postData.uploaded = true;
     articlePostArray.push(postData);
 
-    //store data
     try {
       const storeModel = new dbModel({ keyToLookup: "url", itemValue: url, updateObj: postData }, articles);
       const storeData = await storeModel.updateObjItem();
@@ -334,12 +315,11 @@ export const postArticleTG = async (inputObj) => {
   if (!inputObj) return null;
   const { url, date, picArray } = inputObj;
 
-  const tgInputs = await normalizeInputsTG(url, date);
+  const tgInputs = normalizeInputsTG(url, date);
   const uploadObj = { ...inputObj, ...tgInputs };
 
   await postArticleTitleTG(uploadObj);
 
-  //post pics if exist
   if (picArray && picArray.length) await postArticlePicsTG(uploadObj);
 
   await postArticleContentTG(uploadObj);
@@ -352,7 +332,7 @@ export const postArticleTitleTG = async (inputObj) => {
   const { tgChannelId } = inputObj;
 
   try {
-    const titleText = await buildArticleTitleText(inputObj);
+    const titleText = buildArticleTitleText(inputObj);
 
     const params = {
       chat_id: tgChannelId,
@@ -363,7 +343,7 @@ export const postArticleTitleTG = async (inputObj) => {
     const data = await tgSendMessage(params);
     return data;
   } catch (e) {
-    console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+    console.log(e.message);
     return null;
   }
 };
@@ -372,16 +352,15 @@ export const postArticlePicsTG = async (inputObj) => {
   if (!inputObj || !inputObj.picArray || !inputObj.picArray.length) return null;
   const { picArray } = inputObj;
 
-  //add caption to each pic
   const picArrayWithCaption = [];
   for (let i = 0; i < picArray.length; i++) {
     if (!kcnaState.scrapeActive) return picArrayWithCaption;
 
-    const picObj = picArray[i];
+    const picObj = { ...picArray[i] };
     picObj.picIndex = i + 1;
     picObj.picCount = picArray.length;
     picObj.tgChannelId = inputObj.tgChannelId;
-    const articlePicCaption = await buildArticlePicCaption(picObj);
+    const articlePicCaption = buildArticlePicCaption(picObj);
     if (!articlePicCaption) continue;
 
     picObj.caption = articlePicCaption;
@@ -406,7 +385,7 @@ export const postArticleContentTG = async (inputObj) => {
     if (!kcnaState.scrapeActive) return chunkArray;
 
     const chunk = text.substring(i * maxLength, (i + 1) * maxLength);
-    const chunkText = await buildChunkText(chunk, chunkObj, i);
+    const chunkText = buildChunkText(chunk, chunkObj, i);
     if (!chunkText) continue;
 
     const params = {
@@ -427,31 +406,30 @@ export const postArticleContentTG = async (inputObj) => {
 
 //--------------------------------
 
-export const buildArticleTitleText = async (inputObj) => {
+export const buildArticleTitleText = (inputObj) => {
   if (!inputObj) return null;
   const { title, dateNormal, articleType, articleId, urlNormal } = inputObj;
 
   const titleText = `🇰🇵 🇰🇵 🇰🇵
-  
+
 -----------------
-    
+
 <b>${title}</b>
-  
+
 -----------------
-  
-<b>KCNA ARTICLE:</b> ${articleType} | <b>ID:</b> ${articleId} | <b>DATE:</b> <i>${dateNormal}</i> | <b>URL:</b> 
+
+<b>KCNA ARTICLE:</b> ${articleType} | <b>ID:</b> ${articleId} | <b>DATE:</b> <i>${dateNormal}</i> | <b>URL:</b>
 <i>${urlNormal}</i>
   `;
 
   return titleText;
 };
 
-export const buildArticlePicCaption = async (inputObj) => {
+export const buildArticlePicCaption = (inputObj) => {
   if (!inputObj) return null;
   const { picIndex, picCount, date, url } = inputObj;
 
-  //run again bc nested
-  const normalInputs = await normalizeInputsTG(url, date);
+  const normalInputs = normalizeInputsTG(url, date);
   const { dateNormal, urlNormal } = normalInputs;
 
   const articlePicCaption = `
@@ -462,7 +440,7 @@ export const buildArticlePicCaption = async (inputObj) => {
   return articlePicCaption;
 };
 
-export const buildChunkText = async (chunk, inputObj, chunkIndex) => {
+export const buildChunkText = (chunk, inputObj, chunkIndex) => {
   if (!inputObj) return null;
   const { urlNormal, chunkTotal } = inputObj;
 

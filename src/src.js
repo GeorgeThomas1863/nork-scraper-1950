@@ -1,5 +1,4 @@
 import kcnaState from "./util/state.js";
-import { resetScrapeMessageKCNA } from "./util/state.js";
 import { scrapeKCNA } from "./kcna/scrape-kcna.js";
 import { startSchedulerKCNA, stopSchedulerKCNA } from "./util/scheduler.js";
 import { logScrapeStopKCNA } from "./util/log.js";
@@ -9,18 +8,15 @@ export const runScraper = async (inputParams) => {
 
   switch (command) {
     case "admin-start-scrape":
-      // await resetScrapeMessageKCNA();
       if (kcnaState.scrapeActive) {
-        kcnaState.scrapeMessage = "ALREADY SCRAPING FAGGOT";
+        kcnaState.scrapeMessage = "Scrape already in progress";
         return kcnaState;
       }
-      kcnaState.scrapeActive = true;
-      kcnaState.scrapeMessage = "STARTING NEW SCRAPE KCNA";
       return await scrapeKCNA(inputParams);
 
     case "admin-stop-scrape":
       if (!kcnaState.scrapeActive) {
-        kcnaState.scrapeMessage = "NOT SCRAPING FAGGOT";
+        kcnaState.scrapeMessage = "No scrape in progress";
         return kcnaState;
       }
       kcnaState.scrapeActive = false; //immediately stop
@@ -29,9 +25,8 @@ export const runScraper = async (inputParams) => {
       return kcnaState;
 
     case "admin-start-scheduler":
-      // await resetScrapeMessageKCNA();
       if (kcnaState.schedulerActive) {
-        kcnaState.scrapeMessage = "SCHEDULER ALREADY ON FAGGOT";
+        kcnaState.scrapeMessage = "Scheduler already running";
         return kcnaState;
       }
       kcnaState.schedulerActive = true;
@@ -40,7 +35,7 @@ export const runScraper = async (inputParams) => {
 
     case "admin-stop-scheduler":
       if (!kcnaState.schedulerActive) {
-        kcnaState.scrapeMessage = "SCHEDULER NOT ON FAGGOT";
+        kcnaState.scrapeMessage = "Scheduler is not running";
         return kcnaState;
       }
       kcnaState.schedulerActive = false;
@@ -48,12 +43,9 @@ export const runScraper = async (inputParams) => {
       return await stopSchedulerKCNA();
 
     case "admin-scrape-status":
-      // kcnaState.scrapeMessage = "GETTING SCRAPE STATUS KCNA";
       return kcnaState;
 
     default:
       return null;
   }
 };
-
-export const scrapeWatch = async () => {};

@@ -51,7 +51,6 @@ export const tgPostPicFS = async (inputParams, attempt = 0) => {
 //-----------------------
 
 export const tgGetReq = async (url) => {
-  //   if (!state.active) return null;
   if (!url) return null;
   try {
     const res = await axios.get(url);
@@ -64,7 +63,6 @@ export const tgGetReq = async (url) => {
 };
 
 export const tgPostReq = async (url, params) => {
-  //   if (!state.active) return null;
   if (!url || !params) return null;
 
   try {
@@ -109,23 +107,19 @@ export const buildPicForm = async (inputObj) => {
     form.append("parse_mode", mode);
     return form;
   } catch (e) {
-    console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+    console.log(e.message);
     return null;
   }
 };
 
 export const checkToken = async (data) => {
-  //   if (!state.active) return null;
   if (data && data.ok) return true;
 
-  if (data && data.error_code && data.error_code !== 429) return true;
-
-  //otherwise bot fucked, return null
-  console.log("AHHHHHHHHHHHHH");
+  console.log("Token failed, rotating to next token.");
   tokenIndex++;
 
   if (tokenIndex >= tokenArray.length) tokenIndex = 0;
 
-  console.log("CANT GET UPDATES TRYING NEW FUCKING BOT. TOKEN INDEX:" + tokenIndex);
+  console.log("Trying next token. Index: " + tokenIndex);
   return null;
 };

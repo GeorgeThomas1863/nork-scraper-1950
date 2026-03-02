@@ -84,10 +84,7 @@ export const downloadPicFS = async (url, savePath, picName) => {
     });
 
     if (!res || !res.data || !res.headers) {
-      const error = new Error("AXIOS RES FUCKED");
-      error.url = url;
-      error.function = "downloadPicFS";
-      throw error;
+      throw new Error(`Empty axios response for ${url}`);
     }
 
     let downloadedSize = 0;
@@ -122,7 +119,7 @@ export const downloadPicFS = async (url, savePath, picName) => {
     console.log(`DOWNLOAD COMPLETE: ${picName} | FINAL SIZE: ${Math.round(downloadedSize / 1024)}KB`);
     return returnObj;
   } catch (e) {
-    console.log(e.url + "; " + e.message + "; F BREAK: " + e.function);
+    console.log(e.message);
     return null;
   }
 };

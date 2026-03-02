@@ -1,8 +1,5 @@
-const kcnaState = {
+const RESET_STATE = {
   scrapeId: null,
-  scrapeActive: false,
-  schedulerActive: false,
-
   scrapeStartTime: null,
   scrapeEndTime: null,
   scrapeLengthSeconds: null,
@@ -12,19 +9,12 @@ const kcnaState = {
   scrapeStep: null,
 };
 
-export const resetStateKCNA = async () => {
-  kcnaState.scrapeId = null;
-  kcnaState.scrapeStartTime = null;
-  kcnaState.scrapeEndTime = null;
-  kcnaState.scrapeLengthSeconds = null;
-  kcnaState.scrapeLengthMinutes = null;
-  kcnaState.scrapeError = null;
-  kcnaState.scrapeMessage = null;
-  kcnaState.scrapeStep = null;
+const kcnaState = {
+  scrapeActive: false,
+  schedulerActive: false,
+  ...RESET_STATE,
 };
 
-export const resetScrapeMessageKCNA = async () => {
-  kcnaState.scrapeMessage = null;
-};
+export const resetStateKCNA = () => Object.assign(kcnaState, RESET_STATE);
 
 export default kcnaState;
