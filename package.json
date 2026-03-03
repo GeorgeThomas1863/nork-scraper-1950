@@ -15,7 +15,8 @@
   "author": "GeorgeThomas1863",
   "main": "app.js",
   "scripts": {
-    "start": "nodemon app.js"
+    "start": "nodemon app.js",
+    "test": "vitest"
   },
   "dependencies": {
     "axios": "^1.13.2",
@@ -23,7 +24,8 @@
     "express": "^5.1.0",
     "form-data": "^4.0.5",
     "jsdom": "^27.2.0",
-    "mongodb": "^7.0.0"
+    "mongodb": "^7.0.0",
+    "vitest": "^4.0.18"
   },
   "devDependencies": {
     "nodemon": "^3.1.11"
