@@ -8,6 +8,8 @@ Keep your replies extremely concise and focus on providing necessary information
 
 Put all pictures / screenshots you take with the mcp plugin in the "pics" subfolder, under the .claude folder in THIS project.
 
+Do NOT commit anything to GitHub. The user will control all commits to GitHub. Do NOT edit or in any way change the user's Git history or interact with GitHub.
+
 ## Running the app
 
 ```bash
