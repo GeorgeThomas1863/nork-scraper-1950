@@ -7,11 +7,12 @@ vi.mock('axios', () => {
 })
 
 vi.mock('form-data', () => {
-  const MockFormData = vi.fn().mockImplementation(() => ({
-    append: vi.fn(),
-    getHeaders: vi.fn().mockReturnValue({ 'content-type': 'multipart/form-data' }),
-  }))
-  return { default: MockFormData }
+  return {
+    default: vi.fn().mockImplementation(function () {
+      this.append = vi.fn()
+      this.getHeaders = vi.fn().mockReturnValue({ 'content-type': 'multipart/form-data' })
+    }),
+  }
 })
 
 import axios from 'axios'
