@@ -15,7 +15,7 @@ export const calcHowMuchKCNA = async (howMuch, type) => {
     const pageURLs = defaultURLs[typeKey];
     if (!pageURLs || !pageURLs.length) continue;
     let itemLength = pageURLs.length;
-    if (howMuch === "admin-scrape-new" && itemLength > 2) itemLength = 2;
+    if (howMuch === "admin-scrape-new") itemLength = 1;
 
     const pageArray = pageURLs.slice(pageURLs.length - itemLength);
 
