@@ -42,6 +42,7 @@ import {
   buildArticleTitleText,
   buildArticlePicCaption,
   buildChunkText,
+  postArticleContentTG,
 } from '../src/kcna/articles.js'
 import { JSDOM } from 'jsdom'
 
@@ -56,7 +57,7 @@ beforeEach(() => {
 describe('extractArticleTitle', () => {
   it('returns null when element missing', () => {
     const dom = new JSDOM('<div></div>')
-    expect(extractArticleTitle(dom.window.document)).toBeUndefined()
+    expect(extractArticleTitle(dom.window.document)).toBeNull()
   })
 
   it('extracts and trims title text', () => {
@@ -162,6 +163,14 @@ describe('buildArticlePicCaption', () => {
     expect(buildArticlePicCaption(null)).toBeNull()
   })
 
+  it('returns null when url is missing', () => {
+    expect(buildArticlePicCaption({ picIndex: 1, picCount: 3, date: new Date(), url: null })).toBeNull()
+  })
+
+  it('returns null when date is missing', () => {
+    expect(buildArticlePicCaption({ picIndex: 1, picCount: 3, date: null, url: 'http://www.kcna.kp/pic1.jpg' })).toBeNull()
+  })
+
   it('includes pic index, count, date and url', () => {
     const result = buildArticlePicCaption({
       picIndex: 2,
@@ -203,5 +212,47 @@ describe('buildChunkText', () => {
     const result = buildChunkText('Only chunk', { urlNormal: 'http[:]//x[.]com', chunkTotal: 1 }, 0)
     expect(result).toContain('[ARTICLE TEXT]')
     expect(result).toContain('URL')
+  })
+})
+
+// ---- postArticleContentTG ----
+
+describe('postArticleContentTG', () => {
+  beforeEach(() => {
+    process.env.TG_MAX_LENGTH = '4096'
+  })
+
+  it('returns null when inputObj is falsy', async () => {
+    expect(await postArticleContentTG(null)).toBeNull()
+  })
+
+  it('returns null when text is missing', async () => {
+    expect(await postArticleContentTG({ title: 'Title' })).toBeNull()
+  })
+
+  it('does not crash when title is null', async () => {
+    const { tgSendMessage } = await import('../src/tg-api.js')
+    tgSendMessage.mockResolvedValue({ ok: true })
+
+    await expect(postArticleContentTG({
+      text: 'Article body',
+      title: null,
+      dateNormal: '06/15/2024',
+      urlNormal: 'http[:]//www[.]kcna[.]kp/article',
+      tgChannelId: '-100123',
+    })).resolves.not.toThrow()
+  })
+
+  it('does not crash when dateNormal and urlNormal are undefined', async () => {
+    const { tgSendMessage } = await import('../src/tg-api.js')
+    tgSendMessage.mockResolvedValue({ ok: true })
+
+    await expect(postArticleContentTG({
+      text: 'Article body',
+      title: 'Some Title',
+      dateNormal: undefined,
+      urlNormal: undefined,
+      tgChannelId: '-100123',
+    })).resolves.not.toThrow()
   })
 })

@@ -108,6 +108,14 @@ describe('buildPicSetPicCaption', () => {
     expect(buildPicSetPicCaption(null)).toBeNull()
   })
 
+  it('returns null when url is missing', () => {
+    expect(buildPicSetPicCaption({ picIndex: 1, picCount: 3, date: new Date(), url: null })).toBeNull()
+  })
+
+  it('returns null when date is missing', () => {
+    expect(buildPicSetPicCaption({ picIndex: 1, picCount: 3, date: null, url: 'http://www.kcna.kp/pic1.jpg' })).toBeNull()
+  })
+
   it('includes pic index, count, and normalized url', () => {
     const result = buildPicSetPicCaption({
       picIndex: 1,

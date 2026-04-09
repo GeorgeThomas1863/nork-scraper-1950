@@ -78,9 +78,10 @@ describe('runScraper', () => {
     kcnaState.schedulerActive = false
     startSchedulerKCNA.mockResolvedValue(true)
 
-    await runScraper({ command: 'admin-start-scheduler' })
+    const result = await runScraper({ command: 'admin-start-scheduler' })
 
     expect(startSchedulerKCNA).toHaveBeenCalled()
+    expect(result).toBe(kcnaState)
   })
 
   it('returns state with message when scheduler already running', async () => {
@@ -96,9 +97,10 @@ describe('runScraper', () => {
     kcnaState.schedulerActive = true
     stopSchedulerKCNA.mockResolvedValue(true)
 
-    await runScraper({ command: 'admin-stop-scheduler' })
+    const result = await runScraper({ command: 'admin-stop-scheduler' })
 
     expect(stopSchedulerKCNA).toHaveBeenCalled()
+    expect(result).toBe(kcnaState)
   })
 
   it('returns state with message when scheduler is not running', async () => {

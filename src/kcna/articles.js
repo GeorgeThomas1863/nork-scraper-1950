@@ -189,7 +189,7 @@ export const parseArticleContent = async (inputObj) => {
 export const extractArticleTitle = (document) => {
   const titleElement = document.querySelector(".article-main-title");
   const articleTitle = titleElement?.textContent?.replace(/\s+/g, " ").trim();
-  return articleTitle;
+  return articleTitle ?? null;
 };
 
 export const extractArticleText = (document) => {
@@ -374,7 +374,10 @@ export const postArticlePicsTG = async (inputObj) => {
 
 export const postArticleContentTG = async (inputObj) => {
   if (!inputObj || !inputObj.text) return null;
-  const { text, title, dateNormal, urlNormal, tgChannelId } = inputObj;
+  const { text, tgChannelId } = inputObj;
+  const title = inputObj.title ?? "";
+  const dateNormal = inputObj.dateNormal ?? "";
+  const urlNormal = inputObj.urlNormal ?? "";
   const tgMaxLength = parseInt(process.env.TG_MAX_LENGTH);
 
   const maxLength = tgMaxLength - title.length - dateNormal.length - urlNormal.length - 100;
@@ -431,6 +434,7 @@ export const buildArticlePicCaption = (inputObj) => {
   const { picIndex, picCount, date, url } = inputObj;
 
   const normalInputs = normalizeInputsTG(url, date);
+  if (!normalInputs) return null;
   const { dateNormal, urlNormal } = normalInputs;
 
   const articlePicCaption = `

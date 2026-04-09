@@ -31,7 +31,8 @@ export const runScraper = async (inputParams) => {
       }
       kcnaState.schedulerActive = true;
       kcnaState.scrapeMessage = "STARTING NEW SCHEDULER KCNA";
-      return await startSchedulerKCNA();
+      await startSchedulerKCNA();
+      return kcnaState;
 
     case "admin-stop-scheduler":
       if (!kcnaState.schedulerActive) {
@@ -40,7 +41,8 @@ export const runScraper = async (inputParams) => {
       }
       kcnaState.schedulerActive = false;
       kcnaState.scrapeMessage = "STOPPING SCHEDULER KCNA";
-      return await stopSchedulerKCNA();
+      await stopSchedulerKCNA();
+      return kcnaState;
 
     case "admin-scrape-status":
       return kcnaState;

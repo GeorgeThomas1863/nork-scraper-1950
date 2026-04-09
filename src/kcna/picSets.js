@@ -362,6 +362,7 @@ export const buildPicSetPicCaption = (inputObj) => {
   const { picIndex, picCount, date, url } = inputObj;
 
   const normalInputs = normalizeInputsTG(url, date);
+  if (!normalInputs) return null;
   const { dateNormal, urlNormal } = normalInputs;
 
   const picSetPicCaption = `
