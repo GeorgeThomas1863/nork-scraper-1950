@@ -45,6 +45,7 @@ export const tgPostPicFS = async (inputParams, attempt = 0) => {
     return data;
   } catch (e) {
     console.log(e.response?.data ?? e.message);
+    return null;
   }
 };
 

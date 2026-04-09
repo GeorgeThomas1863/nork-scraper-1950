@@ -283,7 +283,9 @@ export const postPicSetTG = async (inputObj) => {
   const tgInputs = normalizeInputsTG(url, date);
   const uploadObj = { ...inputObj, ...tgInputs };
 
-  await postPicSetTitleTG(uploadObj);
+  const titleData = await postPicSetTitleTG(uploadObj);
+  if (!titleData) return null;
+
   await postPicSetPicsTG(uploadObj);
 
   return uploadObj;

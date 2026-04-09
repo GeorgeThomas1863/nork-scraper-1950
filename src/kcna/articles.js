@@ -318,7 +318,8 @@ export const postArticleTG = async (inputObj) => {
   const tgInputs = normalizeInputsTG(url, date);
   const uploadObj = { ...inputObj, ...tgInputs };
 
-  await postArticleTitleTG(uploadObj);
+  const titleData = await postArticleTitleTG(uploadObj);
+  if (!titleData) return null;
 
   if (picArray && picArray.length) await postArticlePicsTG(uploadObj);
 
