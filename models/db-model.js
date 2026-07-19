@@ -91,6 +91,22 @@ class dbModel {
     return dataArray;
   }
 
+  async findEmptyArrayItems() {
+    const { keyExists, arrayKey } = this.dataObject;
+    const dataArray = await dbGet()
+      .collection(this.collection)
+      .find({
+        $or: [
+          { [arrayKey]: { $exists: false } },
+          { [arrayKey]: null },
+          { [arrayKey]: { $size: 0 } },
+        ],
+        [keyExists]: { $exists: true },
+      })
+      .toArray();
+    return dataArray;
+  }
+
   async findEmptyItemsNested() {
     const { keyExists, keyEmpty, arrayKey } = this.dataObject;
     const nestedPath = `${arrayKey}.${keyEmpty}`;

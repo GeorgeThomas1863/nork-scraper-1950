@@ -54,8 +54,10 @@ describe('apiEndpointController', () => {
     expect(res.json).toHaveBeenCalledWith(fakeState)
   })
 
-  it('returns 500 when runScraper throws', async () => {
-    runScraper.mockRejectedValue(new Error('DB exploded'))
+  it('returns the safe API message when runScraper throws', async () => {
+    const scrapeError = new Error('DB exploded')
+    scrapeError.apiMessage = 'Scrape failed during ARTICLE URLS KCNA'
+    runScraper.mockRejectedValue(scrapeError)
 
     const req = makeReq({ password: 'test-password', command: 'admin-start-scrape' })
     const res = makeRes()
@@ -64,7 +66,22 @@ describe('apiEndpointController', () => {
     await apiEndpointController(req, res)
 
     expect(res.status).toHaveBeenCalledWith(500)
-    expect(res.json).toHaveBeenCalledWith({ error: 'DB exploded' })
+    expect(res.json).toHaveBeenCalledWith({ error: 'Scrape failed during ARTICLE URLS KCNA' })
+    consoleSpy.mockRestore()
+  })
+
+  it('logs authenticated command context without the password', async () => {
+    runScraper.mockResolvedValue({ scrapeActive: false })
+    const req = makeReq({ password: 'test-password', command: 'admin-start-scrape', howMuch: 'admin-scrape-new' })
+    const res = makeRes()
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+
+    await apiEndpointController(req, res)
+
+    const loggedValues = []
+    for (const call of consoleSpy.mock.calls) loggedValues.push(...call)
+    expect(loggedValues).toContainEqual({ command: 'admin-start-scrape', howMuch: 'admin-scrape-new' })
+    expect(JSON.stringify(loggedValues)).not.toContain('test-password')
     consoleSpy.mockRestore()
   })
 })

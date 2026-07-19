@@ -1,15 +1,14 @@
 import kcnaState from "./util/state.js";
 import { scrapeKCNA } from "./kcna/scrape-kcna.js";
 import { startSchedulerKCNA, stopSchedulerKCNA } from "./util/scheduler.js";
-import { logScrapeStopKCNA } from "./util/log.js";
 
 export const runScraper = async (inputParams) => {
   const { command } = inputParams;
 
   switch (command) {
     case "admin-start-scrape":
-      if (kcnaState.scrapeActive) {
-        kcnaState.scrapeMessage = "Scrape already in progress";
+      if (kcnaState.scrapeRunning) {
+        kcnaState.scrapeMessage = buildRunningScrapeMessage();
         return kcnaState;
       }
       return await scrapeKCNA(inputParams);
@@ -19,9 +18,8 @@ export const runScraper = async (inputParams) => {
         kcnaState.scrapeMessage = "No scrape in progress";
         return kcnaState;
       }
-      kcnaState.scrapeActive = false; //immediately stop
+      kcnaState.scrapeActive = false; //request cancellation
       kcnaState.scrapeMessage = "STOPPING SCRAPE KCNA";
-      await logScrapeStopKCNA();
       return kcnaState;
 
     case "admin-start-scheduler":
@@ -50,4 +48,9 @@ export const runScraper = async (inputParams) => {
     default:
       return null;
   }
+};
+
+const buildRunningScrapeMessage = () => {
+  if (!kcnaState.scrapeActive) return "Scrape cancellation is still finalizing";
+  return "Scrape already in progress";
 };

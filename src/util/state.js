@@ -11,6 +11,7 @@ const RESET_STATE = {
 
 const kcnaState = {
   scrapeActive: false,
+  scrapeRunning: false,
   schedulerActive: false,
   ...RESET_STATE,
 };

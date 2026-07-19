@@ -6,6 +6,8 @@ config/
 
 **.env
 
+.claude/.tmp
+.claude/.pics
 
 # logs
 logs

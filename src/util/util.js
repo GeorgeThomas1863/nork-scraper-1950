@@ -17,7 +17,7 @@ export const calcHowMuchKCNA = async (howMuch, type) => {
     let itemLength = pageURLs.length;
     if (howMuch === "admin-scrape-new") itemLength = 1;
 
-    const pageArray = pageURLs.slice(pageURLs.length - itemLength);
+    const pageArray = pageURLs.slice(0, itemLength);
 
     const returnObj = {
       typeKey: typeKey,
@@ -45,7 +45,7 @@ export const extractItemDate = (linkElement) => {
   const { scrapeStartTime } = kcnaState;
   if (!linkElement) return null;
 
-  const dateElement = linkElement.querySelector(".publish-time");
+  const dateElement = linkElement.querySelector(".publish-time, nobr");
   if (!dateElement) return null;
 
   const dateRaw = dateElement.textContent.trim();

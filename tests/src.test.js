@@ -24,6 +24,7 @@ import { logScrapeStopKCNA } from '../src/util/log.js'
 beforeEach(() => {
   vi.clearAllMocks()
   kcnaState.scrapeActive = false
+  kcnaState.scrapeRunning = false
   kcnaState.schedulerActive = false
   kcnaState.scrapeMessage = null
 })
@@ -48,6 +49,7 @@ describe('runScraper', () => {
 
   it('returns state with message when scrape already active', async () => {
     kcnaState.scrapeActive = true
+    kcnaState.scrapeRunning = true
     const result = await runScraper({ command: 'admin-start-scrape' })
     expect(scrapeKCNA).not.toHaveBeenCalled()
     expect(result.scrapeMessage).toBe('Scrape already in progress')
@@ -55,14 +57,26 @@ describe('runScraper', () => {
 
   // ---- admin-stop-scrape ----
 
-  it('stops scrape by setting scrapeActive false and calling logScrapeStopKCNA', async () => {
+  it('requests active scrape cancellation without finalizing it', async () => {
     kcnaState.scrapeActive = true
-    logScrapeStopKCNA.mockResolvedValue({})
+
+    const result = await runScraper({ command: 'admin-stop-scrape' })
+
+    expect(result).toBe(kcnaState)
+    expect(kcnaState.scrapeActive).toBe(false)
+    expect(kcnaState.scrapeMessage).toBe('STOPPING SCRAPE KCNA')
+    expect(logScrapeStopKCNA).not.toHaveBeenCalled()
+  })
+
+  it('rejects a new scrape until a cancelled invocation finishes finalizing', async () => {
+    kcnaState.scrapeActive = true
+    kcnaState.scrapeRunning = true
 
     await runScraper({ command: 'admin-stop-scrape' })
+    const result = await runScraper({ command: 'admin-start-scrape', howMuch: 'admin-scrape-new' })
 
-    expect(kcnaState.scrapeActive).toBe(false)
-    expect(logScrapeStopKCNA).toHaveBeenCalled()
+    expect(scrapeKCNA).not.toHaveBeenCalled()
+    expect(result.scrapeMessage).toBe('Scrape cancellation is still finalizing')
   })
 
   it('returns state with message when no scrape in progress', async () => {

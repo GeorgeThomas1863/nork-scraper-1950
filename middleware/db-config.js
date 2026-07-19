@@ -1,6 +1,3 @@
-import dotenv from "dotenv";
-dotenv.config({ path: ".env" });
-
 import { MongoClient } from "mongodb";
 
 let db;

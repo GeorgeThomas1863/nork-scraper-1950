@@ -80,6 +80,36 @@ describe('logScrapeStartKCNA', () => {
     expect(col.insertOne).toHaveBeenCalled()
   })
 
+  it('retains enough state to finalize a created log when start initialization fails', async () => {
+    const col = getMockCollection()
+    col.insertOne.mockResolvedValue({ insertedId: { toString: () => 'created-id' } })
+    col.updateOne
+      .mockRejectedValueOnce(new Error('initial update failed'))
+      .mockResolvedValueOnce({ modifiedCount: 1 })
+
+    let startError
+    try {
+      await logScrapeStartKCNA()
+    } catch (error) {
+      startError = error
+    }
+
+    expect(startError.message).toBe('initial update failed')
+    expect(kcnaState.scrapeId).toBe('created-id')
+    expect(kcnaState.scrapeStartTime).toBeInstanceOf(Date)
+
+    const finalState = await logScrapeStopKCNA(startError)
+
+    expect(finalState.scrapeError).toBe('initial update failed')
+    expect(col.updateOne).toHaveBeenCalledTimes(2)
+    expect(col.updateOne).toHaveBeenLastCalledWith(
+      { _id: expect.any(Object) },
+      expect.objectContaining({
+        $set: expect.objectContaining({ scrapeError: 'initial update failed' }),
+      })
+    )
+  })
+
   it('sets scrapeStep and scrapeMessage', async () => {
     const col = getMockCollection()
     col.insertOne.mockResolvedValue({ insertedId: { toString: () => 'id' } })
@@ -120,6 +150,31 @@ describe('logScrapeStopKCNA', () => {
     expect(result.scrapeStep).toBe('FINISHED SCRAPE KCNA')
     expect(result.scrapeMessage).toBe('FINISHED SCRAPE KCNA')
     expect(result.scrapeActive).toBe(false)
+  })
+
+  it('records failure state before finalizing a failed scrape', async () => {
+    const col = getMockCollection()
+    col.updateOne.mockResolvedValue({})
+
+    kcnaState.scrapeStartTime = new Date(Date.now() - 1000)
+    kcnaState.scrapeId = 'test-id'
+    kcnaState.scrapeStep = 'ARTICLE URLS KCNA'
+
+    const result = await logScrapeStopKCNA(new Error('database connection failed'))
+
+    expect(result.scrapeError).toBe('database connection failed')
+    expect(result.scrapeStep).toBe('FAILED SCRAPE KCNA')
+    expect(result.scrapeMessage).toBe('Scrape failed during ARTICLE URLS KCNA')
+    expect(result.scrapeActive).toBe(false)
+    expect(col.updateOne).toHaveBeenLastCalledWith(
+      { scrapeId: 'test-id' },
+      expect.objectContaining({
+        $set: expect.objectContaining({
+          scrapeError: 'database connection failed',
+          scrapeMessage: 'Scrape failed during ARTICLE URLS KCNA',
+        }),
+      })
+    )
   })
 
   it('resets state after stop and returns a snapshot', async () => {

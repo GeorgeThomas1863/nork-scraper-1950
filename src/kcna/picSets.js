@@ -13,6 +13,7 @@ export const scrapePicSetURLsKCNA = async (inputObj) => {
   console.log("SCRAPING KCNA PIC SETS; GETTING URLS");
 
   let picSetCount = 0;
+  let candidateCount = 0;
   const picSetTypeData = [];
   for (const typeObj of inputObj) {
     const { typeKey, pageArray } = typeObj;
@@ -26,6 +27,7 @@ export const scrapePicSetURLsKCNA = async (inputObj) => {
       const picSetListArray = await parsePicSetListPage(pageURL, type);
 
       if (!picSetListArray) continue;
+      candidateCount += picSetListArray.candidateCount ?? 0;
       picSetCount += picSetListArray.length;
 
       picSetTypeData.push(...picSetListArray);
@@ -33,6 +35,8 @@ export const scrapePicSetURLsKCNA = async (inputObj) => {
 
     console.log(`PIC SET TYPE: ${type} | COUNT: ${picSetCount}`);
   }
+
+  if (!candidateCount) throw new Error("Gallery listing produced zero candidates");
 
   kcnaState.scrapeStep = "PIC SET CONTENT KCNA";
   kcnaState.scrapeMessage = `FINISHED SCRAPING ${picSetCount} NEW PIC SET URLS`;
@@ -54,10 +58,11 @@ export const parsePicSetListPage = async (pageURL, type) => {
   const dom = new JSDOM(html);
   const document = dom.window.document;
 
-  const photoWrapperArray = document.querySelectorAll(".photo-wrapper");
-  if (!photoWrapperArray || !photoWrapperArray.length) return null;
+  const photoWrapperArray = document.querySelectorAll(".thumb a[href*='/gallery/detail/']");
+  if (!photoWrapperArray.length) return [];
 
   const picSetListArray = [];
+  picSetListArray.candidateCount = photoWrapperArray.length;
   for (const linkElement of photoWrapperArray) {
     if (!kcnaState.scrapeActive) return picSetListArray;
 
@@ -71,13 +76,12 @@ export const parsePicSetListPage = async (pageURL, type) => {
 
 export const parsePicSetLinkElement = async (linkElement, pageURL, type) => {
   if (!linkElement || !pageURL || !type) return null;
-  const kcnaBaseURL = process.env.KCNA_BASE_URL; const picSets = process.env.PICSETS_COLLECTION;
+  const picSets = process.env.PICSETS_COLLECTION;
 
-  const titleWrapper = linkElement.querySelector(".title a");
-  if (!titleWrapper) return null;
-  const picSetLink = titleWrapper.getAttribute("href");
-  const picSetDate = extractItemDate(linkElement);
-  const picSetURL = kcnaBaseURL + picSetLink;
+  const picSetLink = linkElement.getAttribute("href");
+  const picSetDate = extractItemDate(linkElement.closest(".gallery") ?? linkElement);
+  const picSetURL = buildAbsoluteURL(picSetLink, pageURL);
+  if (!picSetURL) return null;
 
   const checkModel = new dbModel({ url: picSetURL }, picSets);
   const exists = await checkModel.urlExists();
@@ -103,15 +107,28 @@ export const parsePicSetLinkElement = async (linkElement, pageURL, type) => {
   try {
     const storeModel = new dbModel(params, picSets);
     const storeData = await storeModel.storeAny();
+    if (!storeData?.acknowledged) throw new Error(`Failed to store gallery URL: ${picSetURL}`);
 
     console.log("PIC SET LIST STORE DATA");
     console.log(storeData);
   } catch (e) {
     console.log("MONGO ERROR FOR PIC SET: " + picSetURL);
     console.log(e.message);
+    throw e;
   }
 
   return params;
+};
+
+const buildAbsoluteURL = (href, baseURL) => {
+  if (!href || !baseURL) return null;
+
+  try {
+    return new URL(href, baseURL).href;
+  } catch (error) {
+    console.log(`INVALID KCNA URL: ${href}`);
+    return null;
+  }
 };
 
 //+++++++++++++++++++++++++++++++++++++++++
@@ -120,9 +137,8 @@ export const scrapePicSetContentKCNA = async () => {
   const picSets = process.env.PICSETS_COLLECTION;
   if (!kcnaState.scrapeActive) return null;
 
-  const newPicSetModel = new dbModel({ keyExists: "url", keyEmpty: "picArray" }, picSets);
-  const newPicSetArray = await newPicSetModel.findEmptyItems();
-  if (!newPicSetArray || !newPicSetArray.length) return null;
+  const newPicSetArray = await fetchIncompletePicSets(picSets);
+  if (!newPicSetArray) return null;
 
   console.log("NEW PIC SET ARRAY");
   console.log(newPicSetArray.length);
@@ -142,6 +158,23 @@ export const scrapePicSetContentKCNA = async () => {
   return picSetContentArray;
 };
 
+const fetchIncompletePicSets = async (picSets) => {
+  const missingTitleModel = new dbModel({ keyExists: "url", keyEmpty: "title" }, picSets);
+  const missingPicsModel = new dbModel({ keyExists: "url", arrayKey: "picArray" }, picSets);
+  const missingTitles = await missingTitleModel.findEmptyItems();
+  const missingPics = await missingPicsModel.findEmptyArrayItems();
+  return mergeUniqueItems(missingTitles, missingPics);
+};
+
+const mergeUniqueItems = (...itemArrays) => {
+  const uniqueItems = new Map();
+  for (const itemArray of itemArrays) {
+    if (!itemArray) continue;
+    for (const item of itemArray) uniqueItems.set(item.url, item);
+  }
+  return uniqueItems.size ? [...uniqueItems.values()] : null;
+};
+
 export const parsePicSetContent = async (inputObj) => {
   if (!inputObj) return null;
   const { url, date } = inputObj;
@@ -158,73 +191,86 @@ export const parsePicSetContent = async (inputObj) => {
   const document = dom.window.document;
 
   const picSetTitle = extractPicSetTitle(document);
+  if (!picSetTitle) return null;
+
   const picSetPicArray = await extractPicSetPicArray(document, date);
+  if (!picSetPicArray?.length) return null;
 
   const picSetParams = {
     title: picSetTitle,
     picArray: picSetPicArray,
   };
 
+  const isStored = await storePicSetContent(url, picSetParams, picSets);
+  return isStored ? picSetParams : null;
+};
+
+const storePicSetContent = async (url, params, picSets) => {
   try {
-    const storeModel = new dbModel({ keyToLookup: "url", itemValue: url, updateObj: picSetParams }, picSets);
+    const storeModel = new dbModel({ keyToLookup: "url", itemValue: url, updateObj: params }, picSets);
     const storeData = await storeModel.updateObjItem();
     console.log("PIC SET CONTENT STORE DATA");
     console.log(storeData);
+    return Boolean(storeData?.acknowledged && storeData.matchedCount > 0);
   } catch (e) {
     console.log("MONGO ERROR FOR PIC SET: " + url);
     console.log(e.message);
+    return false;
   }
-
-  return picSetParams;
 };
 
 export const extractPicSetTitle = (document) => {
   if (!document) return null;
 
-  const titleElement = document.querySelector(".title .main span");
-  if (!titleElement) return null;
+  const titleElement = document.querySelector(".thumbnail-img img[alt]");
+  const currentTitle = titleElement?.getAttribute("alt")?.trim();
+  if (currentTitle) return currentTitle;
 
-  return titleElement.textContent.trim();
+  const legacyTitle = document.querySelector(".title .main span");
+  return legacyTitle?.textContent?.trim() ?? null;
 };
 
 export const extractPicSetPicArray = async (document, date) => {
   if (!document || !date) return null;
-  const pics = process.env.PICS_COLLECTION; const kcnaBaseURL = process.env.KCNA_BASE_URL;
+  const pics = process.env.PICS_COLLECTION;
 
-  const picElementArray = document.querySelectorAll(".content img");
+  const currentPics = document.querySelectorAll(".thumbnail-img img[src]");
+  const picElementArray = currentPics.length ? currentPics : document.querySelectorAll(".content img[src]");
 
   const picSetPicArray = [];
   for (const picElement of picElementArray) {
-    if (!kcnaState.scrapeActive) return picSetPicArray;
+    if (!kcnaState.scrapeActive) return null;
 
     const picSrc = picElement.getAttribute("src");
     if (!picSrc) continue;
-    const picSetPicURL = kcnaBaseURL + picSrc;
+    const picSetPicURL = buildAbsoluteURL(picSrc, process.env.KCNA_BASE_URL);
+    if (!picSetPicURL) continue;
+    await storePicSetPic(picSetPicURL, date, pics);
+    if (!kcnaState.scrapeActive) return null;
     picSetPicArray.push(picSetPicURL);
-
-    const picId = await buildNumericId("pics");
-    const picParams = {
-      picId: picId,
-      url: picSetPicURL,
-      scrapeId: kcnaState.scrapeId,
-      date: date,
-    };
-
-    console.log("PIC SET PIC PARAMS");
-    console.log(picParams);
-
-    try {
-      const storePicModel = new dbModel(picParams, pics);
-      const storeData = await storePicModel.storeUniqueURL();
-      console.log("STORE PIC DATA");
-      console.log(storeData);
-    } catch (e) {
-      console.log("MONGO ERROR FOR PIC SET PIC: " + picSetPicURL);
-      console.log(e.message);
-    }
   }
 
   return picSetPicArray;
+};
+
+const storePicSetPic = async (url, date, pics) => {
+  const picId = await buildNumericId("pics");
+  const picParams = { picId, url, scrapeId: kcnaState.scrapeId, date };
+
+  console.log("PIC SET PIC PARAMS");
+  console.log(picParams);
+
+  try {
+    const storePicModel = new dbModel(picParams, pics);
+    const storeData = await storePicModel.storeUniqueURL();
+    if (storeData && !storeData.acknowledged) throw new Error(`Failed to store gallery photo: ${url}`);
+    console.log("STORE PIC DATA");
+    console.log(storeData);
+  } catch (e) {
+    console.log("MONGO ERROR FOR PIC SET PIC: " + url);
+    console.log(e.message);
+    throw e;
+  }
 };
 
 //+++++++++++++++++++++++++++++++++
@@ -249,24 +295,16 @@ export const uploadPicSetsKCNA = async () => {
 
     const { url } = picSetObj;
 
-    picSetObj.tgChannelId = tgChannelId;
+    const uploadObj = { ...picSetObj, tgChannelId };
+    const storeProgress = (telegramDelivery) => storePicSetUpdate(url, { telegramDelivery }, picSets);
+    const isPosted = await postPicSetTG(uploadObj, storeProgress);
+    if (!isPosted) continue;
 
-    const picSetPostData = await postPicSetTG(picSetObj);
-    if (!picSetPostData) continue;
-
-    picSetPostData.uploaded = true;
+    const picSetPostData = buildPicSetUploadData(picSetObj);
+    const isStored = await storePicSetUpdate(url, picSetPostData, picSets);
+    if (!isStored) continue;
 
     picSetPostArray.push(picSetPostData);
-
-    try {
-      const storeModel = new dbModel({ keyToLookup: "url", itemValue: url, updateObj: picSetPostData }, picSets);
-      const storeData = await storeModel.updateObjItem();
-      console.log("PIC SET UPLOAD STORE DATA");
-      console.log(storeData);
-    } catch (e) {
-      console.log("MONGO ERROR FOR PIC SET UPLOAD: " + url);
-      console.log(e.message);
-    }
   }
 
   kcnaState.scrapeStep = "VID PAGE UPLOAD KCNA";
@@ -276,19 +314,42 @@ export const uploadPicSetsKCNA = async () => {
   return picSetPostArray;
 };
 
-export const postPicSetTG = async (inputObj) => {
-  if (!inputObj) return null;
-  const { url, date } = inputObj;
+const storePicSetUpdate = async (url, updateObj, collection) => {
+  try {
+    const storeModel = new dbModel({ keyToLookup: "url", itemValue: url, updateObj }, collection);
+    const storeData = await storeModel.updateObjItem();
+    return Boolean(storeData?.acknowledged && storeData.matchedCount > 0);
+  } catch (e) {
+    console.log("MONGO ERROR FOR PIC SET UPLOAD: " + url);
+    console.log(e.message);
+    return false;
+  }
+};
 
+const buildPicSetUploadData = (picSetObj) => {
+  const { tgChannelId, url, date, ...storedPicSet } = picSetObj;
+  const tgInputs = normalizeInputsTG(url, date);
+  return { ...storedPicSet, url, date, ...tgInputs, uploaded: true };
+};
+
+export const postPicSetTG = async (inputObj, storeProgress = async () => true) => {
+  if (!inputObj || !inputObj.picArray || !inputObj.picArray.length) return false;
+  const { url, date, picArray, telegramDelivery = {} } = inputObj;
   const tgInputs = normalizeInputsTG(url, date);
   const uploadObj = { ...inputObj, ...tgInputs };
+  const progress = {
+    titleSent: Boolean(telegramDelivery.titleSent),
+    photosSent: telegramDelivery.photosSent ?? 0,
+  };
 
-  const titleData = await postPicSetTitleTG(uploadObj);
-  if (!titleData) return null;
+  if (!progress.titleSent) {
+    const titleData = await postPicSetTitleTG(uploadObj);
+    if (!titleData) return false;
+    progress.titleSent = true;
+    if (!(await storeProgress({ ...progress }))) return false;
+  }
 
-  await postPicSetPicsTG(uploadObj);
-
-  return uploadObj;
+  return postPicSetPicsTG(uploadObj, progress, storeProgress);
 };
 
 export const postPicSetTitleTG = async (inputObj) => {
@@ -311,27 +372,32 @@ export const postPicSetTitleTG = async (inputObj) => {
   }
 };
 
-export const postPicSetPicsTG = async (inputObj) => {
-  if (!inputObj || !inputObj.picArray || !inputObj.picArray.length) return null;
+export const postPicSetPicsTG = async (inputObj, progress = { photosSent: 0 }, storeProgress = async () => true) => {
+  if (!inputObj || !inputObj.picArray || !inputObj.picArray.length) return false;
   const { picArray } = inputObj;
 
-  const uploadPicArray = [];
-  for (let i = 0; i < picArray.length; i++) {
-    if (!kcnaState.scrapeActive) return uploadPicArray;
+  for (let i = progress.photosSent; i < picArray.length; i++) {
+    if (!kcnaState.scrapeActive) return false;
 
-    const picObj = { ...picArray[i] };
-    picObj.picIndex = i + 1;
-    picObj.picCount = picArray.length;
-    picObj.tgChannelId = inputObj.tgChannelId;
-    const picSetPicCaption = buildPicSetPicCaption(picObj);
-    if (!picSetPicCaption) continue;
+    const picObj = buildPicSetPicUpload(inputObj, i);
+    if (!picObj) return false;
 
-    picObj.caption = picSetPicCaption;
-    uploadPicArray.push(picObj);
+    const data = await postPicArrayTG([picObj]);
+    if (!data?.length) return false;
+
+    progress.photosSent = i + 1;
+    if (!(await storeProgress({ ...progress }))) return false;
   }
 
-  const data = await postPicArrayTG(uploadPicArray);
-  return data;
+  return true;
+};
+
+const buildPicSetPicUpload = (inputObj, index) => {
+  const { picArray, tgChannelId } = inputObj;
+  const picObj = { ...picArray[index], picIndex: index + 1, picCount: picArray.length, tgChannelId };
+  const caption = buildPicSetPicCaption(picObj);
+  if (!caption) return null;
+  return { ...picObj, caption };
 };
 
 //---------------------------
@@ -339,19 +405,22 @@ export const postPicSetPicsTG = async (inputObj) => {
 export const buildPicSetTitleText = (inputObj) => {
   if (!inputObj) return null;
   const { title, dateNormal, picSetId, picArray, urlNormal } = inputObj;
-
+  const safeTitle = escapeTelegramHTML(title);
+  const safeDate = escapeTelegramHTML(dateNormal);
+  const safeId = escapeTelegramHTML(picSetId);
+  const safeURL = escapeTelegramHTML(urlNormal);
   const picCount = picArray.length;
 
   const titleText = `🇰🇵 🇰🇵 🇰🇵
 
 -----------------
 
-<b>${title}</b>
+<b>${safeTitle}</b>
 
 -----------------
 
-<b>KCNA PIC SET ID:</b> ${picSetId} | <b>TOTAL PICS:</b> ${picCount} | <b>DATE:</b> <i>${dateNormal}</i> | <b>URL:</b>
-<i>${urlNormal}</i>
+<b>KCNA PIC SET ID:</b> ${safeId} | <b>TOTAL PICS:</b> ${picCount} | <b>DATE:</b> <i>${safeDate}</i> | <b>URL:</b>
+<i>${safeURL}</i>
   `;
 
   return titleText;
@@ -367,8 +436,13 @@ export const buildPicSetPicCaption = (inputObj) => {
 
   const picSetPicCaption = `
 <b>PIC ${picIndex} OF ${picCount} IN PIC SET</b> | <b>DATE:</b> <i>${dateNormal}</i> | <b>PIC URL:</b>
-<i>${urlNormal}</i>
+<i>${escapeTelegramHTML(urlNormal)}</i>
 `;
 
   return picSetPicCaption;
+};
+
+const escapeTelegramHTML = (value) => {
+  if (value === null || value === undefined) return "";
+  return String(value).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 };

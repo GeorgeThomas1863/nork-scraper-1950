@@ -7,7 +7,9 @@ import {
   normalizeInputsTG,
   extractItemDate,
   sortArrayByDate,
+  calcHowMuchKCNA,
 } from '../src/util/util.js'
+import { articleURLs, picSetURLs, articleCategoryNames, picSetCategoryNames } from '../src/util/define-things.js'
 
 // calcHowMuchKCNA and buildNumericId touch DB — tested separately via mocks
 // These tests cover pure/near-pure functions
@@ -15,6 +17,48 @@ import {
 beforeEach(() => {
   kcnaState.scrapeActive = true
   kcnaState.scrapeStartTime = null
+})
+
+describe('current KCNA entry URLs', () => {
+  it('maps current homepage category names to their verified route hashes', () => {
+    expect(articleURLs).toEqual({
+      fatboyArr: ['http://www.kcna.kp/en/article/list/b0721b9f23054ddc7fe56c2811a12715'],
+      anecdoteArr: ['http://www.kcna.kp/en/article/list/503e9b606704f9b1c625fa5755928cd3'],
+      peopleArr: ['http://www.kcna.kp/en/article/list/7bc083f00425be6aadfb828fba1cb5a7'],
+      latestArr: ['http://www.kcna.kp/en/article/list/a666dda1282180e0ee1b4427b0574ae7'],
+      topArr: ['http://www.kcna.kp/en/article/list/6a47505ba5268fd7749c0fe11e4b24b4'],
+      homeArr: ['http://www.kcna.kp/en/article/list/2f7d854121ccbbfbe6feae9fdcc3556e'],
+      documentsArr: ['http://www.kcna.kp/en/article/list/1afa96195f9b303902490a126ab7285f'],
+      worldArr: ['http://www.kcna.kp/en/article/list/ecc14533d88be93068af4178946b1b05'],
+      societyArr: ['http://www.kcna.kp/en/article/list/680e40b40899891bbe75a7072e3285e7'],
+      externalArr: ['http://www.kcna.kp/en/article/list/e2f336db98b5e69c75e0da264e037e8d'],
+    })
+    expect(picSetURLs).toEqual({
+      photoArr: ['http://www.kcna.kp/en/gallery/list/6837a75abf5c6249d0e39ee758e763ea'],
+    })
+    expect(articleCategoryNames).toEqual({
+      fatboyArr: "WPK General Secretary Kim Jong Un's Revolutionary Activities",
+      anecdoteArr: 'Revolutionary Anecdote',
+      peopleArr: 'Always in Memory of People',
+      latestArr: 'Latest News',
+      topArr: 'Top News',
+      homeArr: 'Home News',
+      documentsArr: 'Documents',
+      worldArr: 'World',
+      societyArr: 'Social Life',
+      externalArr: 'External',
+    })
+    expect(picSetCategoryNames).toEqual({ photoArr: 'Photo' })
+  })
+
+  it('selects the first URL as the newest entry when scraping new content', async () => {
+    articleURLs.latestArr = ['newest', 'older']
+
+    const result = await calcHowMuchKCNA('admin-scrape-new', 'articles')
+    const latest = result.find(({ typeKey }) => typeKey === 'latestArr')
+
+    expect(latest.pageArray).toEqual(['newest'])
+  })
 })
 
 // ---- normalizeURL ----

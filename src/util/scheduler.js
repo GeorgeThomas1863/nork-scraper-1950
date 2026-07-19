@@ -1,39 +1,80 @@
 import kcnaState from "./state.js";
 import { scrapeKCNA } from "../kcna/scrape-kcna.js";
 
-// Store intervalId at module level instead of in state (fucked in state)
 let intervalId = null;
+let schedulerGeneration = 0;
 
 export const startSchedulerKCNA = async () => {
+  const ownedGeneration = claimSchedulerOwnership();
   const scrapeInterval = parseInt(process.env.SCRAPE_INTERVAL);
-  kcnaState.schedulerActive = true;
 
-  console.log("STARTING SCHEDULER");
-  console.log(new Date().toISOString());
+  logSchedulerStart();
 
-  //RUN IMMEDIATELY ON START
-  if (!kcnaState.scrapeActive) {
-    console.log("STARTING INITIAL SCRAPE");
-    await scrapeKCNA({ howMuch: "admin-scrape-new" });
+  try {
+    await runInitialScrape();
+  } catch (error) {
+    releaseSchedulerOwnership(ownedGeneration);
+    throw error;
   }
 
-  intervalId = setInterval(async () => {
-    if (kcnaState.scrapeActive) return null;
+  if (!ownsScheduler(ownedGeneration)) return null;
 
-    console.log("STARTING NEW SCRAPE");
-    await scrapeKCNA({ howMuch: "admin-scrape-new" });
-  }, scrapeInterval); //RESET
+  intervalId = setInterval(() => {
+    runScheduledScrape(ownedGeneration);
+  }, scrapeInterval);
 
   return true;
 };
 
+const claimSchedulerOwnership = () => {
+  schedulerGeneration += 1;
+  kcnaState.schedulerActive = true;
+  return schedulerGeneration;
+};
+
+const logSchedulerStart = () => {
+  console.log("STARTING SCHEDULER");
+  console.log(new Date().toISOString());
+};
+
+const runInitialScrape = async () => {
+  if (kcnaState.scrapeActive || kcnaState.scrapeRunning) return null;
+
+  console.log("STARTING INITIAL SCRAPE");
+  return await scrapeKCNA({ howMuch: "admin-scrape-new" });
+};
+
+const runScheduledScrape = async (ownedGeneration) => {
+  if (!ownsScheduler(ownedGeneration)) return null;
+  if (kcnaState.scrapeActive || kcnaState.scrapeRunning) return null;
+
+  console.log("STARTING NEW SCRAPE");
+
+  try {
+    return await scrapeKCNA({ howMuch: "admin-scrape-new" });
+  } catch (error) {
+    console.log("SCHEDULED SCRAPE ERROR: " + error.message);
+    return null;
+  }
+};
+
+const ownsScheduler = (ownedGeneration) => {
+  return kcnaState.schedulerActive && schedulerGeneration === ownedGeneration;
+};
+
+const releaseSchedulerOwnership = (ownedGeneration) => {
+  if (!ownsScheduler(ownedGeneration)) return;
+  kcnaState.schedulerActive = false;
+};
+
 export const stopSchedulerKCNA = async () => {
-  if (!intervalId) return null;
+  if (!kcnaState.schedulerActive && !intervalId) return null;
 
   console.log("STOPPING SCHEDULER AT:");
   console.log(new Date().toISOString());
 
-  clearInterval(intervalId);
+  schedulerGeneration += 1;
+  if (intervalId) clearInterval(intervalId);
   intervalId = null;
   kcnaState.schedulerActive = false;
 

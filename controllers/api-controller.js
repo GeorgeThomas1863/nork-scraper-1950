@@ -7,7 +7,7 @@ export const apiEndpointController = async (req, res) => {
   if (inputParams.password !== process.env.API_PASSWORD) return res.status(401).json({ error: "unauthorized" });
 
   console.log("API INCOMING DATA");
-  console.log(inputParams);
+  console.log(buildRequestContext(inputParams));
 
   try {
     const data = await runScraper(inputParams);
@@ -16,6 +16,11 @@ export const apiEndpointController = async (req, res) => {
     return res.json(data);
   } catch (e) {
     console.log("API ERROR: " + e.message);
-    return res.status(500).json({ error: e.message });
+    return res.status(500).json({ error: e.apiMessage || "Scraper command failed" });
   }
+};
+
+const buildRequestContext = (inputParams) => {
+  const { command, howMuch } = inputParams;
+  return { command, howMuch };
 };

@@ -1,6 +1,10 @@
-import express from "express";
-import routes from "./routes/router.js";
-import { dbConnect } from "./middleware/db-config.js";
+import dotenv from "dotenv";
+
+dotenv.config({ path: ".env" });
+
+const { default: express } = await import("express");
+const { default: routes } = await import("./routes/router.js");
+const { dbConnect } = await import("./middleware/db-config.js");
 
 try {
   await dbConnect();
