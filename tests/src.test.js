@@ -15,11 +15,16 @@ vi.mock('../src/util/log.js', () => ({
   updateLogKCNA: vi.fn(),
 }))
 
+vi.mock('../models/db-model.js', () => ({
+  default: vi.fn(),
+}))
+
 import kcnaState from '../src/util/state.js'
 import { runScraper } from '../src/src.js'
 import { scrapeKCNA } from '../src/kcna/scrape-kcna.js'
 import { startSchedulerKCNA, stopSchedulerKCNA } from '../src/util/scheduler.js'
 import { logScrapeStopKCNA } from '../src/util/log.js'
+import dbModel from '../models/db-model.js'
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -98,6 +103,24 @@ describe('runScraper', () => {
     expect(result).toBe(kcnaState)
   })
 
+  it('keeps the STARTING NEW SCHEDULER KCNA message when starting', async () => {
+    kcnaState.schedulerActive = false
+    startSchedulerKCNA.mockResolvedValue(true)
+
+    const result = await runScraper({ command: 'admin-start-scheduler' })
+
+    expect(result.scrapeMessage).toBe('STARTING NEW SCHEDULER KCNA')
+  })
+
+  it('leaves scheduler state persistence to startSchedulerKCNA', async () => {
+    kcnaState.schedulerActive = false
+    startSchedulerKCNA.mockResolvedValue(true)
+
+    await runScraper({ command: 'admin-start-scheduler' })
+
+    expect(dbModel).not.toHaveBeenCalled()
+  })
+
   it('returns state with message when scheduler already running', async () => {
     kcnaState.schedulerActive = true
     const result = await runScraper({ command: 'admin-start-scheduler' })
@@ -115,6 +138,24 @@ describe('runScraper', () => {
 
     expect(stopSchedulerKCNA).toHaveBeenCalled()
     expect(result).toBe(kcnaState)
+  })
+
+  it('keeps the STOPPING SCHEDULER KCNA message when stopping', async () => {
+    kcnaState.schedulerActive = true
+    stopSchedulerKCNA.mockResolvedValue(true)
+
+    const result = await runScraper({ command: 'admin-stop-scheduler' })
+
+    expect(result.scrapeMessage).toBe('STOPPING SCHEDULER KCNA')
+  })
+
+  it('leaves scheduler state persistence to stopSchedulerKCNA', async () => {
+    kcnaState.schedulerActive = true
+    stopSchedulerKCNA.mockResolvedValue(true)
+
+    await runScraper({ command: 'admin-stop-scheduler' })
+
+    expect(dbModel).not.toHaveBeenCalled()
   })
 
   it('returns state with message when scheduler is not running', async () => {

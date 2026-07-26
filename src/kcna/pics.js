@@ -36,8 +36,7 @@ export const downloadPicsKCNA = async () => {
       headers: picData.headers,
     };
 
-    console.log("PIC DOWNLOAD STORE PARAMS");
-    console.log(picParams);
+    console.log(`STORING PIC: ${picId} | ${picName} | ${Math.round(picData.downloadedSize / 1024)}KB`);
 
     const storeParams = {
       keyToLookup: "url",
@@ -49,8 +48,7 @@ export const downloadPicsKCNA = async () => {
       const storePicModel = new dbModel(storeParams, pics);
       const storeData = await storePicModel.updateObjItem();
       if (!storeData) continue;
-      console.log("PIC DOWNLOAD STORE DATA");
-      console.log(storeData);
+      console.log(`STORED PIC: ${picName} | MODIFIED: ${storeData.modifiedCount}`);
 
       downloadPicArray.push(storeParams);
     } catch (e) {
@@ -69,18 +67,20 @@ export const downloadPicsKCNA = async () => {
   return downloadPicArray;
 };
 
-export const downloadPicFS = async (url, savePath, picName) => {
+export const downloadPicFS = async (url, savePath, picName, attempt = 0) => {
   if (!url || !savePath || !picName) return null;
   const picProgressSize = parseInt(process.env.PIC_PROGRESS_SIZE);
 
   if (!kcnaState.scrapeActive) return null;
 
   try {
+    //KCNA's photo endpoint answers 200 with an empty body unless a Referer header is sent
     const res = await axios({
       method: "get",
       url: url,
       timeout: 60 * 1000, //1 minute
       responseType: "stream",
+      headers: { Referer: process.env.KCNA_BASE_URL + "/" },
     });
 
     if (!res || !res.data || !res.headers) {
@@ -111,6 +111,12 @@ export const downloadPicFS = async (url, savePath, picName) => {
       stream.on("error", reject);
     });
 
+    if (downloadedSize === 0) {
+      console.log(`EMPTY DOWNLOAD: ${picName} | ${url}`);
+      removePicFS(savePath);
+      return retryPicFS(url, savePath, picName, attempt);
+    }
+
     const returnObj = {
       headers: { ...res.headers }, //converts to normal obj
       downloadedSize: downloadedSize,
@@ -119,9 +125,26 @@ export const downloadPicFS = async (url, savePath, picName) => {
     console.log(`DOWNLOAD COMPLETE: ${picName} | FINAL SIZE: ${Math.round(downloadedSize / 1024)}KB`);
     return returnObj;
   } catch (e) {
-    console.log(e.message);
-    return null;
+    console.log(`DOWNLOAD ERROR: ${picName} | ${e.message}`);
+    removePicFS(savePath);
+    return retryPicFS(url, savePath, picName, attempt);
   }
+};
+
+const removePicFS = (savePath) => {
+  try {
+    fs.rmSync(savePath, { force: true });
+  } catch (e) {
+    console.log(`FAILED TO REMOVE PIC FILE: ${savePath} | ${e.message}`);
+  }
+};
+
+const retryPicFS = async (url, savePath, picName, attempt) => {
+  if (attempt !== 0) return null;
+  if (!kcnaState.scrapeActive) return null;
+
+  console.log(`RETRYING DOWNLOAD: ${picName}`);
+  return downloadPicFS(url, savePath, picName, 1);
 };
 
 //++++++++++++++++++++++++++++++++++++++++++
@@ -147,7 +170,7 @@ export const postPicArrayTG = async (inputArray) => {
 
 export const postPicTG = async (inputObj) => {
   if (!inputObj) return null;
-  const { savePath, caption, tgChannelId } = inputObj;
+  const { savePath, caption, tgChannelId, picName } = inputObj;
 
   // if (!kcnaState.scrapeActive) return null;
 
@@ -158,14 +181,12 @@ export const postPicTG = async (inputObj) => {
     mode: "html",
   };
 
-  console.log("POST PIC TG PARAMS");
-  console.log(params);
+  console.log(`POSTING PIC TG: ${picName || savePath} | CHAT: ${tgChannelId}`);
 
   const data = await tgPostPicFS(params);
   if (!data) return null;
 
-  console.log("PIC UPLOAD POST DATA");
-  console.log(data);
+  console.log(`POSTED PIC TG: ${picName || savePath} | MSG: ${data.result?.message_id}`);
 
   return data;
 };

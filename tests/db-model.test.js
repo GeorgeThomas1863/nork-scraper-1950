@@ -27,6 +27,23 @@ import { dbGet } from '../middleware/db-config.js'
 // Helper to get the mock collection
 const getMockCollection = () => dbGet().collection()
 
+// Evaluates the $exists/equality clauses findEmptyItems builds against a doc, mongo-style
+const matchesAnyClause = (doc, orClauses) => {
+  for (const clause of orClauses) {
+    const [key, expected] = Object.entries(clause)[0]
+    const present = Object.prototype.hasOwnProperty.call(doc, key)
+
+    if (expected && typeof expected === 'object' && '$exists' in expected) {
+      if (present === expected.$exists) return true
+      continue
+    }
+
+    if (expected === null && !present) return true
+    if (present && doc[key] === expected) return true
+  }
+  return false
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
 
@@ -245,6 +262,20 @@ describe('dbModel.findEmptyItems', () => {
     expect(callArg).toHaveProperty('url')
     expect(result).toEqual([{ url: 'x' }])
   })
+
+  it('treats a zero keyEmpty as empty so 0-byte pics are re-downloaded', async () => {
+    const col = getMockCollection()
+    col.find.mockReturnValue({ toArray: vi.fn().mockResolvedValue([]) })
+
+    const model = new dbModel({ keyExists: 'url', keyEmpty: 'picSize' }, 'pics')
+    await model.findEmptyItems()
+
+    const orClauses = col.find.mock.calls[0][0].$or
+    expect(orClauses).toContainEqual({ picSize: 0 })
+    expect(matchesAnyClause({ url: 'http://x', picSize: 0 }, orClauses)).toBe(true)
+    expect(matchesAnyClause({ url: 'http://x', picSize: 5000 }, orClauses)).toBe(false)
+    expect(matchesAnyClause({ url: 'http://x' }, orClauses)).toBe(true)
+  })
 })
 
 // ---- findEmptyItemsNested ----
@@ -260,6 +291,17 @@ describe('dbModel.findEmptyItemsNested', () => {
     const callArg = col.find.mock.calls[0][0]
     // nestedPath should be 'picArray.picSize'
     expect(JSON.stringify(callArg)).toContain('picArray.picSize')
+  })
+
+  it('treats a zero nested keyEmpty as empty so embedded 0-byte pics are refreshed', async () => {
+    const col = getMockCollection()
+    col.find.mockReturnValue({ toArray: vi.fn().mockResolvedValue([]) })
+
+    const model = new dbModel({ keyExists: 'url', keyEmpty: 'picSize', arrayKey: 'picArray' }, 'articles')
+    await model.findEmptyItemsNested()
+
+    const orClauses = col.find.mock.calls[0][0].$or
+    expect(orClauses).toContainEqual({ 'picArray.picSize': 0 })
   })
 })
 

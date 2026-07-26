@@ -27,7 +27,9 @@ export const scrapePicSetURLsKCNA = async (inputObj) => {
       const picSetListArray = await parsePicSetListPage(pageURL, type);
 
       if (!picSetListArray) continue;
-      candidateCount += picSetListArray.candidateCount ?? 0;
+      const pageCandidates = picSetListArray.candidateCount ?? 0;
+      console.log(`PIC SET LIST PAGE: ${pageURL} | NEW: ${picSetListArray.length} OF ${pageCandidates}`);
+      candidateCount += pageCandidates;
       picSetCount += picSetListArray.length;
 
       picSetTypeData.push(...picSetListArray);
@@ -85,10 +87,7 @@ export const parsePicSetLinkElement = async (linkElement, pageURL, type) => {
 
   const checkModel = new dbModel({ url: picSetURL }, picSets);
   const exists = await checkModel.urlExists();
-  if (exists) {
-    console.log(`URL ALREADY STORED: ${picSetURL}`);
-    return null;
-  }
+  if (exists) return null;
 
   const picSetId = await buildNumericId("picSets");
 
@@ -101,16 +100,12 @@ export const parsePicSetLinkElement = async (linkElement, pageURL, type) => {
     picSetId: picSetId,
   };
 
-  console.log("PIC SET LIST PARAMS");
-  console.log(params);
-
   try {
     const storeModel = new dbModel(params, picSets);
     const storeData = await storeModel.storeAny();
     if (!storeData?.acknowledged) throw new Error(`Failed to store gallery URL: ${picSetURL}`);
 
-    console.log("PIC SET LIST STORE DATA");
-    console.log(storeData);
+    console.log(`STORED PIC SET URL: ${picSetURL} | PIC SET ID: ${picSetId}`);
   } catch (e) {
     console.log("MONGO ERROR FOR PIC SET: " + picSetURL);
     console.log(e.message);
@@ -140,8 +135,7 @@ export const scrapePicSetContentKCNA = async () => {
   const newPicSetArray = await fetchIncompletePicSets(picSets);
   if (!newPicSetArray) return null;
 
-  console.log("NEW PIC SET ARRAY");
-  console.log(newPicSetArray.length);
+  console.log("NEW PIC SET ARRAY: " + newPicSetArray.length);
 
   let picSetCount = 0;
   const picSetContentArray = [];
@@ -209,9 +203,10 @@ const storePicSetContent = async (url, params, picSets) => {
   try {
     const storeModel = new dbModel({ keyToLookup: "url", itemValue: url, updateObj: params }, picSets);
     const storeData = await storeModel.updateObjItem();
-    console.log("PIC SET CONTENT STORE DATA");
-    console.log(storeData);
-    return Boolean(storeData?.acknowledged && storeData.matchedCount > 0);
+    const isStored = Boolean(storeData?.acknowledged && storeData.matchedCount > 0);
+    const status = isStored ? "STORED" : "NOT STORED";
+    console.log(`PIC SET CONTENT ${status}: ${url} | PICS: ${params.picArray?.length ?? 0}`);
+    return isStored;
   } catch (e) {
     console.log("MONGO ERROR FOR PIC SET: " + url);
     console.log(e.message);
@@ -257,15 +252,10 @@ const storePicSetPic = async (url, date, pics) => {
   const picId = await buildNumericId("pics");
   const picParams = { picId, url, scrapeId: kcnaState.scrapeId, date };
 
-  console.log("PIC SET PIC PARAMS");
-  console.log(picParams);
-
   try {
     const storePicModel = new dbModel(picParams, pics);
     const storeData = await storePicModel.storeUniqueURL();
     if (storeData && !storeData.acknowledged) throw new Error(`Failed to store gallery photo: ${url}`);
-    console.log("STORE PIC DATA");
-    console.log(storeData);
   } catch (e) {
     console.log("MONGO ERROR FOR PIC SET PIC: " + url);
     console.log(e.message);

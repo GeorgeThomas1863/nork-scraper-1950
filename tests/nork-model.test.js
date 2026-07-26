@@ -44,6 +44,17 @@ describe('NORK.getHTML', () => {
     consoleSpy.mockRestore()
   })
 
+  it('sends a Referer header built from KCNA_BASE_URL', async () => {
+    axios.mockResolvedValue({ data: '<html></html>' })
+
+    const nork = new NORK({ url: 'http://www.kcna.kp/en/article/test.kcmsf' })
+    await nork.getHTML()
+
+    expect(axios).toHaveBeenCalledWith(
+      expect.objectContaining({ headers: { Referer: process.env.KCNA_BASE_URL + '/' } })
+    )
+  })
+
   it('passes the url from dataObject to axios', async () => {
     axios.mockResolvedValue({ data: '<p>content</p>' })
 

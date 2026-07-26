@@ -15,6 +15,7 @@ class NORK {
         url: inputURL,
         timeout: 60000,
         responseType: "text",
+        headers: { Referer: process.env.KCNA_BASE_URL + "/" },
       });
 
       return res.data;

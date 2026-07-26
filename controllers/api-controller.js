@@ -11,8 +11,7 @@ export const apiEndpointController = async (req, res) => {
 
   try {
     const data = await runScraper(inputParams);
-    console.log("API INCOMING RESPONSE");
-    console.log(data);
+    console.log(`API RESPONSE: ${inputParams.command} | STEP: ${data?.scrapeStep} | ${data?.scrapeMessage}`);
     return res.json(data);
   } catch (e) {
     console.log("API ERROR: " + e.message);

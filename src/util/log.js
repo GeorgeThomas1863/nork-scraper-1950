@@ -23,12 +23,9 @@ export const logScrapeStartKCNA = async () => {
   activeLogId = startData.insertedId;
   kcnaState.scrapeId = activeLogId?.toString() || null;
 
-  console.log("NEW SCRAPE ID");
-  console.log(kcnaState.scrapeId);
+  console.log("NEW SCRAPE ID: " + kcnaState.scrapeId);
 
-  const logData = await updateLogKCNA();
-  console.log("LOG DATA");
-  console.log(logData);
+  await updateLogKCNA();
 
   return kcnaState;
 };

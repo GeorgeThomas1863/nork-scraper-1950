@@ -15,6 +15,7 @@ vi.mock('../models/db-model.js', () => ({
 }))
 
 import kcnaState, { resetStateKCNA } from '../src/util/state.js'
+import dbModel from '../models/db-model.js'
 import {
   getPicData,
   rebuildPicArray,
@@ -51,6 +52,25 @@ describe('getPicData', () => {
     const result = await getPicData('http://missing.com/pic.jpg')
     expect(result).toBeNull()
   })
+
+  it('looks up by entry.url when given an embedded pic doc object', async () => {
+    const freshDoc = { url: 'http://kcna.kp/pic.jpg', picSize: 9000, savePath: '/pics/kcna_pic_1.jpg' }
+    mockGetUniqueItem.mockResolvedValue(freshDoc)
+
+    const staleEntry = { url: 'http://kcna.kp/pic.jpg', picSize: 0, savePath: '/pics/kcna_pic_1.jpg' }
+    const result = await getPicData(staleEntry)
+
+    expect(result).toEqual(freshDoc)
+    expect(dbModel).toHaveBeenCalledWith(
+      { keyToLookup: 'url', itemValue: 'http://kcna.kp/pic.jpg' },
+      process.env.PICS_COLLECTION
+    )
+  })
+
+  it('returns null for an object entry without url', async () => {
+    expect(await getPicData({ picSize: 0 })).toBeNull()
+    expect(mockGetUniqueItem).not.toHaveBeenCalled()
+  })
 })
 
 // ---- rebuildPicArray ----
@@ -85,6 +105,16 @@ describe('rebuildPicArray', () => {
     const result = await rebuildPicArray(['http://a.com/pic.jpg', 'http://b.com/pic.jpg'])
     expect(result).toEqual([])
     expect(mockGetUniqueItem).not.toHaveBeenCalled()
+  })
+
+  it('refreshes already-embedded pic doc entries by their url', async () => {
+    const freshDoc = { url: 'http://kcna.kp/pic.jpg', picSize: 9000, savePath: '/pics/kcna_pic_1.jpg' }
+    mockGetUniqueItem.mockResolvedValue(freshDoc)
+
+    const result = await rebuildPicArray([{ url: 'http://kcna.kp/pic.jpg', picSize: 0 }])
+
+    expect(result).toHaveLength(1)
+    expect(result[0]).toEqual(freshDoc)
   })
 
   it('handles multiple URLs, returning docs for each found', async () => {

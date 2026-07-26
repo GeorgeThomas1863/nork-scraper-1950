@@ -84,7 +84,7 @@ class dbModel {
     const dataArray = await dbGet()
       .collection(this.collection)
       .find({
-        $or: [{ [keyEmpty]: { $exists: false } }, { [keyEmpty]: "" }, { [keyEmpty]: null }, { [keyEmpty]: false }],
+        $or: [{ [keyEmpty]: { $exists: false } }, { [keyEmpty]: "" }, { [keyEmpty]: null }, { [keyEmpty]: false }, { [keyEmpty]: 0 }],
         [keyExists]: { $exists: true },
       })
       .toArray();
@@ -112,7 +112,7 @@ class dbModel {
     const nestedPath = `${arrayKey}.${keyEmpty}`;
     const dataArray = await dbGet()
       .collection(this.collection)
-      .find({ $or: [{ [nestedPath]: { $exists: false } }, { [nestedPath]: "" }, { [nestedPath]: null }], [keyExists]: { $exists: true } })
+      .find({ $or: [{ [nestedPath]: { $exists: false } }, { [nestedPath]: "" }, { [nestedPath]: null }, { [nestedPath]: 0 }], [keyExists]: { $exists: true } })
       .toArray();
     return dataArray;
   }

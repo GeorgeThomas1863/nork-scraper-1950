@@ -23,7 +23,16 @@ import {
   buildPicForm,
   checkToken,
   tgSendMessage,
+  tgPostPicFS,
 } from '../src/tg-api.js'
+
+const TOKEN_COUNT = process.env.TOKEN_ARRAY.split(',').length
+
+// telegram error payload as axios throws it
+const tgError = (error_code, description) => ({ response: { data: { ok: false, error_code, description } } })
+
+// pulls the bot token out of each url axios.post was called with, in call order
+const tokensUsed = () => axios.post.mock.calls.map(([url]) => url.split('/bot')[1].split('/')[0])
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -102,6 +111,20 @@ describe('buildPicForm', () => {
     expect(await buildPicForm(undefined)).toBeNull()
   })
 
+  it('returns null without calling fs.existsSync when savePath is missing', async () => {
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    const existsSpy = vi.spyOn(fs, 'existsSync')
+
+    // fs.existsSync(undefined) emits a DEP0187 deprecation warning, so the guard must short-circuit first
+    const result = await buildPicForm({ chatId: '-1234', caption: 'test', mode: 'HTML' })
+
+    expect(result).toBeNull()
+    expect(existsSpy).not.toHaveBeenCalled()
+
+    existsSpy.mockRestore()
+    consoleSpy.mockRestore()
+  })
+
   it('returns null when savePath does not exist on filesystem', async () => {
     const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
     const result = await buildPicForm({
@@ -138,23 +161,37 @@ describe('buildPicForm', () => {
 // ---- checkToken ----
 
 describe('checkToken', () => {
-  it('returns true when data.ok is truthy', async () => {
-    const result = await checkToken({ ok: true })
-    expect(result).toBe(true)
+  it('returns "ok" when data.ok is truthy', () => {
+    expect(checkToken({ ok: true })).toBe('ok')
   })
 
-  it('returns null and rotates token index when data.ok is falsy', async () => {
-    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
-    const result = await checkToken({ ok: false })
-    expect(result).toBeNull()
-    consoleSpy.mockRestore()
+  it('returns "fatal" for client errors a different token cannot fix', () => {
+    expect(checkToken({ ok: false, error_code: 400, description: 'Bad Request: file must be non-empty' })).toBe('fatal')
+    expect(checkToken({ ok: false, error_code: 404, description: 'Not Found' })).toBe('fatal')
+    expect(checkToken({ ok: false, error_code: 413, description: 'Request Entity Too Large' })).toBe('fatal')
   })
 
-  it('returns null when data is null', async () => {
-    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
-    const result = await checkToken(null)
-    expect(result).toBeNull()
-    consoleSpy.mockRestore()
+  it('returns "retry" for 429 rate limits', () => {
+    expect(checkToken({ ok: false, error_code: 429, parameters: { retry_after: 5 } })).toBe('retry')
+  })
+
+  it('returns "retry" for 401 and 403 auth failures', () => {
+    expect(checkToken({ ok: false, error_code: 401, description: 'Unauthorized' })).toBe('retry')
+    expect(checkToken({ ok: false, error_code: 403, description: 'Forbidden: bot was kicked' })).toBe('retry')
+  })
+
+  it('returns "retry" for telegram 5xx', () => {
+    expect(checkToken({ ok: false, error_code: 500, description: 'Internal Server Error' })).toBe('retry')
+    expect(checkToken({ ok: false, error_code: 502, description: 'Bad Gateway' })).toBe('retry')
+  })
+
+  it('returns "retry" when there is no response at all', () => {
+    expect(checkToken(undefined)).toBe('retry')
+    expect(checkToken(null)).toBe('retry')
+  })
+
+  it('returns "retry" for a failure with no error_code', () => {
+    expect(checkToken({ ok: false })).toBe('retry')
   })
 })
 
@@ -176,5 +213,200 @@ describe('tgSendMessage', () => {
     const result = await tgSendMessage({ chat_id: '-1234', text: 'fail' }, 999)
     expect(result).toBeNull()
     consoleSpy.mockRestore()
+  })
+})
+
+// ---- rotation policy: rotate only when another token could plausibly help ----
+
+describe('tgSendMessage rotation policy', () => {
+  const params = { chat_id: '-1234', text: 'hello', parse_mode: 'HTML' }
+
+  beforeEach(() => {
+    vi.spyOn(console, 'log').mockImplementation(() => {})
+  })
+
+  it('does not rotate when the first token succeeds', async () => {
+    axios.post = vi.fn().mockResolvedValue({ data: { ok: true, result: { message_id: 1 } } })
+
+    const result = await tgSendMessage(params)
+    expect(result).toEqual({ ok: true, result: { message_id: 1 } })
+    expect(axios.post).toHaveBeenCalledTimes(1)
+
+    // a second send reusing the same token proves the index never moved
+    await tgSendMessage(params)
+    const [first, second] = tokensUsed()
+    expect(second).toBe(first)
+  })
+
+  it('fails fast on a 400 client error without rotating', async () => {
+    axios.post = vi.fn().mockRejectedValue(tgError(400, 'Bad Request: chat not found'))
+
+    const result = await tgSendMessage(params)
+    expect(result).toBeNull()
+    expect(axios.post).toHaveBeenCalledTimes(1)
+
+    // a second send reusing the same token proves the index never moved
+    await tgSendMessage(params)
+    const [first, second] = tokensUsed()
+    expect(second).toBe(first)
+  })
+
+  it('rotates to the next token and retries on 429', async () => {
+    axios.post = vi
+      .fn()
+      .mockRejectedValueOnce(tgError(429, 'Too Many Requests: retry after 5'))
+      .mockResolvedValueOnce({ data: { ok: true, result: { message_id: 2 } } })
+
+    const result = await tgSendMessage(params)
+    expect(result).toEqual({ ok: true, result: { message_id: 2 } })
+    expect(axios.post).toHaveBeenCalledTimes(2)
+
+    const [first, second] = tokensUsed()
+    expect(second).not.toBe(first)
+  })
+
+  it('rotates to the next token and retries on 401', async () => {
+    axios.post = vi
+      .fn()
+      .mockRejectedValueOnce(tgError(401, 'Unauthorized'))
+      .mockResolvedValueOnce({ data: { ok: true, result: { message_id: 3 } } })
+
+    const result = await tgSendMessage(params)
+    expect(result).toEqual({ ok: true, result: { message_id: 3 } })
+    expect(axios.post).toHaveBeenCalledTimes(2)
+
+    const [first, second] = tokensUsed()
+    expect(second).not.toBe(first)
+  })
+
+  it('rotates to the next token and retries on 403', async () => {
+    axios.post = vi
+      .fn()
+      .mockRejectedValueOnce(tgError(403, 'Forbidden: bot is not a member of the channel chat'))
+      .mockResolvedValueOnce({ data: { ok: true, result: { message_id: 4 } } })
+
+    const result = await tgSendMessage(params)
+    expect(result).toEqual({ ok: true, result: { message_id: 4 } })
+    expect(axios.post).toHaveBeenCalledTimes(2)
+
+    const [first, second] = tokensUsed()
+    expect(second).not.toBe(first)
+  })
+
+  it('retries on a network error and returns null once attempts are exhausted', async () => {
+    axios.post = vi.fn().mockRejectedValue(new Error('socket hang up'))
+
+    const result = await tgSendMessage(params)
+    expect(result).toBeNull()
+    expect(axios.post).toHaveBeenCalledTimes(TOKEN_COUNT)
+  })
+
+  it('retries on telegram 5xx and returns null once attempts are exhausted', async () => {
+    axios.post = vi.fn().mockRejectedValue(tgError(502, 'Bad Gateway'))
+
+    const result = await tgSendMessage(params)
+    expect(result).toBeNull()
+    expect(axios.post).toHaveBeenCalledTimes(TOKEN_COUNT)
+  })
+})
+
+describe('tgPostPicFS rotation policy', () => {
+  const params = {
+    chatId: '-1001234567890',
+    savePath: '/tmp/pics/kcna_pic_1.jpg',
+    caption: 'Test caption',
+    mode: 'HTML',
+  }
+
+  beforeEach(() => {
+    vi.spyOn(console, 'log').mockImplementation(() => {})
+    vi.spyOn(fs, 'existsSync').mockReturnValue(true)
+    vi.spyOn(fs, 'createReadStream').mockReturnValue('STREAM')
+  })
+
+  it('does not rotate when the first token succeeds', async () => {
+    axios.post = vi.fn().mockResolvedValue({ data: { ok: true, result: { message_id: 5 } } })
+
+    const result = await tgPostPicFS(params)
+    expect(result).toEqual({ ok: true, result: { message_id: 5 } })
+    expect(axios.post).toHaveBeenCalledTimes(1)
+
+    // a second post reusing the same token proves the index never moved
+    await tgPostPicFS(params)
+    const [first, second] = tokensUsed()
+    expect(second).toBe(first)
+  })
+
+  it('fails fast on "file must be non-empty" without rotating', async () => {
+    axios.post = vi.fn().mockRejectedValue(tgError(400, 'Bad Request: file must be non-empty'))
+
+    const result = await tgPostPicFS(params)
+    expect(result).toBeNull()
+    expect(axios.post).toHaveBeenCalledTimes(1)
+
+    // a second post reusing the same token proves the index never moved
+    await tgPostPicFS(params)
+    const [first, second] = tokensUsed()
+    expect(second).toBe(first)
+  })
+
+  it('logs the description once on a fatal client error', async () => {
+    axios.post = vi.fn().mockRejectedValue(tgError(400, 'Bad Request: file must be non-empty'))
+
+    await tgPostPicFS(params)
+
+    const fatalLines = console.log.mock.calls.filter(([line]) => typeof line === 'string' && line.includes('NOT RETRYING'))
+    expect(fatalLines).toHaveLength(1)
+    expect(fatalLines[0][0]).toContain('file must be non-empty')
+  })
+
+  it('rotates to the next token and retries on 429', async () => {
+    axios.post = vi
+      .fn()
+      .mockRejectedValueOnce(tgError(429, 'Too Many Requests: retry after 5'))
+      .mockResolvedValueOnce({ data: { ok: true, result: { message_id: 6 } } })
+
+    const result = await tgPostPicFS(params)
+    expect(result).toEqual({ ok: true, result: { message_id: 6 } })
+    expect(axios.post).toHaveBeenCalledTimes(2)
+
+    const [first, second] = tokensUsed()
+    expect(second).not.toBe(first)
+  })
+
+  it('rotates to the next token and retries on 401', async () => {
+    axios.post = vi
+      .fn()
+      .mockRejectedValueOnce(tgError(401, 'Unauthorized'))
+      .mockResolvedValueOnce({ data: { ok: true, result: { message_id: 7 } } })
+
+    const result = await tgPostPicFS(params)
+    expect(result).toEqual({ ok: true, result: { message_id: 7 } })
+    expect(axios.post).toHaveBeenCalledTimes(2)
+
+    const [first, second] = tokensUsed()
+    expect(second).not.toBe(first)
+  })
+
+  it('rotates to the next token and retries on 403', async () => {
+    axios.post = vi
+      .fn()
+      .mockRejectedValueOnce(tgError(403, 'Forbidden: bot was blocked by the user'))
+      .mockResolvedValueOnce({ data: { ok: true, result: { message_id: 8 } } })
+
+    const result = await tgPostPicFS(params)
+    expect(result).toEqual({ ok: true, result: { message_id: 8 } })
+    expect(axios.post).toHaveBeenCalledTimes(2)
+
+    const [first, second] = tokensUsed()
+    expect(second).not.toBe(first)
+  })
+
+  it('retries on a network error and returns null once attempts are exhausted', async () => {
+    axios.post = vi.fn().mockRejectedValue(new Error('ECONNRESET'))
+
+    const result = await tgPostPicFS(params)
+    expect(result).toBeNull()
+    expect(axios.post).toHaveBeenCalledTimes(TOKEN_COUNT)
   })
 })

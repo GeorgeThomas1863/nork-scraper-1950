@@ -8,6 +8,7 @@ afterEach(() => {
   vi.doUnmock("dotenv");
   vi.doUnmock("express");
   vi.doUnmock("../middleware/db-config.js");
+  vi.doUnmock("../src/util/scheduler.js");
   vi.resetModules();
 
   process.env.TOKEN_ARRAY = originalTokenArray;
@@ -51,6 +52,54 @@ describe("application startup", () => {
       "/api/startup-test",
       expect.any(Function),
     );
+  });
+});
+
+describe("scheduler resume on boot", () => {
+  const mockBootModules = (resumeSchedulerKCNA) => {
+    const use = vi.fn();
+    const listen = vi.fn();
+    const post = vi.fn();
+    const express = vi.fn(() => ({ use, listen }));
+    express.urlencoded = vi.fn(() => "urlencoded-middleware");
+    express.json = vi.fn(() => "json-middleware");
+    express.Router = vi.fn(() => ({ post }));
+
+    vi.doMock("dotenv", () => ({ default: { config: vi.fn() } }));
+    vi.doMock("express", () => ({ default: express }));
+    vi.doMock("../middleware/db-config.js", () => ({
+      dbConnect: vi.fn().mockResolvedValue(undefined),
+    }));
+    vi.doMock("../src/util/scheduler.js", () => ({
+      startSchedulerKCNA: vi.fn(),
+      stopSchedulerKCNA: vi.fn(),
+      resumeSchedulerKCNA,
+    }));
+
+    return { listen };
+  };
+
+  it("resumes the persisted scheduler state at startup", async () => {
+    vi.resetModules();
+    const resumeSchedulerKCNA = vi.fn().mockResolvedValue(true);
+    const { listen } = mockBootModules(resumeSchedulerKCNA);
+
+    await import("../app.js");
+
+    expect(listen).toHaveBeenCalledOnce();
+    expect(resumeSchedulerKCNA).toHaveBeenCalledOnce();
+  });
+
+  it("still boots when the scheduler resume fails", async () => {
+    vi.resetModules();
+    const resumeSchedulerKCNA = vi.fn().mockRejectedValue(new Error("mongo down"));
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    mockBootModules(resumeSchedulerKCNA);
+
+    await expect(import("../app.js")).resolves.toBeDefined();
+
+    expect(consoleSpy).toHaveBeenCalledWith("Failed to resume scheduler:", "mongo down");
+    consoleSpy.mockRestore();
   });
 });
 

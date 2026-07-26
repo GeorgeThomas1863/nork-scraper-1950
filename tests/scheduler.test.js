@@ -4,9 +4,27 @@ vi.mock('../src/kcna/scrape-kcna.js', () => ({
   scrapeKCNA: vi.fn().mockResolvedValue({}),
 }))
 
+// Mock dbModel at class level — intercept every `new dbModel(...)` call
+const mockGetUniqueItem = vi.fn()
+const mockStoreAny = vi.fn()
+const mockUpdateObjItem = vi.fn()
+
+vi.mock('../models/db-model.js', () => ({
+  default: vi.fn().mockImplementation(function (dataObject, collection) {
+    this.dataObject = dataObject
+    this.collection = collection
+    this.getUniqueItem = mockGetUniqueItem
+    this.storeAny = mockStoreAny
+    this.updateObjItem = mockUpdateObjItem
+  }),
+}))
+
 import kcnaState, { resetStateKCNA } from '../src/util/state.js'
-import { startSchedulerKCNA, stopSchedulerKCNA } from '../src/util/scheduler.js'
+import { startSchedulerKCNA, stopSchedulerKCNA, resumeSchedulerKCNA } from '../src/util/scheduler.js'
 import { scrapeKCNA } from '../src/kcna/scrape-kcna.js'
+import dbModel from '../models/db-model.js'
+
+const SCHEDULER_DOC = { configKey: 'schedulerState', schedulerOn: true }
 
 beforeEach(() => {
   resetStateKCNA()
@@ -15,6 +33,10 @@ beforeEach(() => {
   kcnaState.schedulerActive = false
   vi.clearAllMocks()
   vi.useFakeTimers()
+
+  mockGetUniqueItem.mockResolvedValue(null)
+  mockStoreAny.mockResolvedValue({ insertedId: 'config-id' })
+  mockUpdateObjItem.mockResolvedValue({ modifiedCount: 1 })
 })
 
 afterEach(async () => {
@@ -52,83 +74,53 @@ describe('startSchedulerKCNA', () => {
     expect(scrapeKCNA).toHaveBeenCalledWith({ howMuch: 'admin-scrape-new' })
   })
 
-  it('does not install an interval after being stopped during the initial scrape', async () => {
-    let finishInitialScrape
-    scrapeKCNA.mockImplementationOnce(() => new Promise((resolve) => {
-      finishInitialScrape = resolve
-    }))
+  it('returns before the initial scrape resolves', async () => {
+    scrapeKCNA.mockImplementationOnce(() => new Promise(() => {})) // never resolves
 
-    const startPromise = startSchedulerKCNA()
-    await vi.waitFor(() => expect(scrapeKCNA).toHaveBeenCalledTimes(1))
+    const result = await startSchedulerKCNA()
 
-    const stopResult = await stopSchedulerKCNA()
-    finishInitialScrape({})
-    const startResult = await startPromise
-
-    expect(stopResult).toBe(true)
-    expect(startResult).toBeNull()
-    expect(kcnaState.schedulerActive).toBe(false)
-    expect(vi.getTimerCount()).toBe(0)
+    expect(result).toBe(true)
+    expect(scrapeKCNA).toHaveBeenCalledTimes(1)
+    expect(vi.getTimerCount()).toBe(1)
   })
 
-  it('does not let an old initial scrape overwrite a restarted scheduler interval', async () => {
-    let finishOldScrape
-    scrapeKCNA
-      .mockImplementationOnce(() => new Promise((resolve) => {
-        finishOldScrape = resolve
-      }))
-      .mockResolvedValueOnce({})
+  it('keeps the interval alive when the initial scrape rejects', async () => {
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    scrapeKCNA.mockRejectedValueOnce(new Error('initial scrape failed'))
 
-    const oldStartPromise = startSchedulerKCNA()
-    await vi.waitFor(() => expect(scrapeKCNA).toHaveBeenCalledTimes(1))
+    const result = await startSchedulerKCNA()
+    await vi.advanceTimersByTimeAsync(0) // flush the rejection handler
+
+    expect(result).toBe(true)
+    expect(kcnaState.schedulerActive).toBe(true)
+    expect(vi.getTimerCount()).toBe(1)
+    expect(consoleSpy).toHaveBeenCalledWith('INITIAL SCRAPE ERROR: initial scrape failed')
+    consoleSpy.mockRestore()
+  })
+
+  it('retries on the next tick after the initial scrape rejects', async () => {
+    scrapeKCNA.mockRejectedValueOnce(new Error('initial scrape failed'))
+
+    await startSchedulerKCNA()
+    await vi.advanceTimersByTimeAsync(0)
+    vi.clearAllMocks()
+    await vi.advanceTimersByTimeAsync(3600000)
+
+    expect(scrapeKCNA).toHaveBeenCalledWith({ howMuch: 'admin-scrape-new' })
+  })
+
+  it('leaves exactly one interval after a stop and restart', async () => {
+    await startSchedulerKCNA()
     await stopSchedulerKCNA()
 
-    const restartedResult = await startSchedulerKCNA()
-    expect(restartedResult).toBe(true)
-    expect(vi.getTimerCount()).toBe(1)
+    const restartResult = await startSchedulerKCNA()
 
-    finishOldScrape({})
-    expect(await oldStartPromise).toBeNull()
-    expect(kcnaState.schedulerActive).toBe(true)
+    expect(restartResult).toBe(true)
     expect(vi.getTimerCount()).toBe(1)
 
     vi.clearAllMocks()
     await vi.advanceTimersByTimeAsync(3600000)
     expect(scrapeKCNA).toHaveBeenCalledTimes(1)
-  })
-
-  it('rolls back its ownership when the initial scrape rejects and allows restart', async () => {
-    scrapeKCNA.mockRejectedValueOnce(new Error('initial scrape failed'))
-
-    await expect(startSchedulerKCNA()).rejects.toThrow('initial scrape failed')
-
-    expect(kcnaState.schedulerActive).toBe(false)
-    expect(vi.getTimerCount()).toBe(0)
-
-    scrapeKCNA.mockResolvedValueOnce({})
-    expect(await startSchedulerKCNA()).toBe(true)
-    expect(kcnaState.schedulerActive).toBe(true)
-    expect(vi.getTimerCount()).toBe(1)
-  })
-
-  it('does not let an old initial rejection deactivate a restarted scheduler', async () => {
-    let rejectOldScrape
-    scrapeKCNA
-      .mockImplementationOnce(() => new Promise((resolve, reject) => {
-        rejectOldScrape = reject
-      }))
-      .mockResolvedValueOnce({})
-
-    const oldStartPromise = startSchedulerKCNA()
-    await vi.waitFor(() => expect(scrapeKCNA).toHaveBeenCalledTimes(1))
-    await stopSchedulerKCNA()
-    await startSchedulerKCNA()
-
-    rejectOldScrape(new Error('old scrape failed'))
-    await expect(oldStartPromise).rejects.toThrow('old scrape failed')
-
-    expect(kcnaState.schedulerActive).toBe(true)
-    expect(vi.getTimerCount()).toBe(1)
   })
 
   it('catches and logs scheduled scrape rejections', async () => {
@@ -168,5 +160,150 @@ describe('stopSchedulerKCNA', () => {
     vi.clearAllMocks()
     await vi.advanceTimersByTimeAsync(3600000 * 3)
     expect(scrapeKCNA).not.toHaveBeenCalled()
+  })
+
+  it('clears the interval and persists off when stopped during the initial scrape', async () => {
+    mockGetUniqueItem.mockResolvedValue(SCHEDULER_DOC)
+    scrapeKCNA.mockImplementationOnce(() => new Promise(() => {})) // still running
+
+    await startSchedulerKCNA()
+    expect(vi.getTimerCount()).toBe(1)
+
+    const stopResult = await stopSchedulerKCNA()
+
+    expect(stopResult).toBe(true)
+    expect(kcnaState.schedulerActive).toBe(false)
+    expect(vi.getTimerCount()).toBe(0)
+    expect(dbModel).toHaveBeenCalledWith(
+      expect.objectContaining({ updateObj: expect.objectContaining({ schedulerOn: false }) }),
+      'scrapeLog'
+    )
+  })
+})
+
+describe('scheduler state persistence', () => {
+  it('stores a new config doc with schedulerOn true when none exists', async () => {
+    mockGetUniqueItem.mockResolvedValue(null)
+
+    await startSchedulerKCNA()
+
+    expect(dbModel).toHaveBeenCalledWith(
+      { configKey: 'schedulerState', schedulerOn: true, updatedAt: expect.any(Date) },
+      'scrapeLog'
+    )
+    expect(mockStoreAny).toHaveBeenCalled()
+    expect(mockUpdateObjItem).not.toHaveBeenCalled()
+  })
+
+  it('updates the existing config doc instead of storing a duplicate', async () => {
+    mockGetUniqueItem.mockResolvedValue({ ...SCHEDULER_DOC, schedulerOn: false })
+
+    await startSchedulerKCNA()
+
+    expect(mockStoreAny).not.toHaveBeenCalled()
+    expect(dbModel).toHaveBeenCalledWith(
+      {
+        keyToLookup: 'configKey',
+        itemValue: 'schedulerState',
+        updateObj: { schedulerOn: true, updatedAt: expect.any(Date) },
+      },
+      'scrapeLog'
+    )
+    expect(mockUpdateObjItem).toHaveBeenCalled()
+  })
+
+  it('persists schedulerOn false when the scheduler stops', async () => {
+    await startSchedulerKCNA()
+    mockGetUniqueItem.mockResolvedValue(SCHEDULER_DOC)
+    vi.clearAllMocks()
+
+    await stopSchedulerKCNA()
+
+    expect(dbModel).toHaveBeenCalledWith(
+      expect.objectContaining({
+        updateObj: { schedulerOn: false, updatedAt: expect.any(Date) },
+      }),
+      'scrapeLog'
+    )
+  })
+
+  it('starts the scheduler even when persistence throws', async () => {
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    mockGetUniqueItem.mockRejectedValue(new Error('mongo down'))
+
+    const result = await startSchedulerKCNA()
+
+    expect(result).toBe(true)
+    expect(kcnaState.schedulerActive).toBe(true)
+    expect(vi.getTimerCount()).toBe(1)
+    expect(consoleSpy).toHaveBeenCalledWith('SCHEDULER STATE PERSIST ERROR: mongo down')
+    consoleSpy.mockRestore()
+  })
+
+  it('stops the scheduler even when persistence throws', async () => {
+    await startSchedulerKCNA()
+    mockGetUniqueItem.mockRejectedValue(new Error('mongo down'))
+
+    const result = await stopSchedulerKCNA()
+
+    expect(result).toBe(true)
+    expect(kcnaState.schedulerActive).toBe(false)
+    expect(vi.getTimerCount()).toBe(0)
+  })
+
+  it('reads and writes the scheduler config in LOG_COLLECTION only', async () => {
+    await startSchedulerKCNA()
+
+    const collections = dbModel.mock.calls.map((call) => call[1])
+    for (const collection of collections) {
+      expect(collection).toBe('scrapeLog')
+    }
+  })
+})
+
+describe('resumeSchedulerKCNA', () => {
+  it('starts the scheduler when the saved state is on', async () => {
+    mockGetUniqueItem.mockResolvedValue(SCHEDULER_DOC)
+
+    const result = await resumeSchedulerKCNA()
+
+    expect(result).toBe(true)
+    expect(kcnaState.schedulerActive).toBe(true)
+    expect(vi.getTimerCount()).toBe(1)
+  })
+
+  it('does not start the scheduler when the saved state is off', async () => {
+    mockGetUniqueItem.mockResolvedValue({ ...SCHEDULER_DOC, schedulerOn: false })
+
+    const result = await resumeSchedulerKCNA()
+
+    expect(result).toBeNull()
+    expect(kcnaState.schedulerActive).toBe(false)
+    expect(vi.getTimerCount()).toBe(0)
+    expect(scrapeKCNA).not.toHaveBeenCalled()
+  })
+
+  it('does not start the scheduler when no config doc exists', async () => {
+    mockGetUniqueItem.mockResolvedValue(null)
+
+    const result = await resumeSchedulerKCNA()
+
+    expect(result).toBeNull()
+    expect(kcnaState.schedulerActive).toBe(false)
+    expect(vi.getTimerCount()).toBe(0)
+    expect(scrapeKCNA).not.toHaveBeenCalled()
+  })
+
+  it('logs and does not start the scheduler when the state read throws', async () => {
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    mockGetUniqueItem.mockRejectedValue(new Error('mongo down'))
+
+    const result = await resumeSchedulerKCNA()
+
+    expect(result).toBeNull()
+    expect(kcnaState.schedulerActive).toBe(false)
+    expect(vi.getTimerCount()).toBe(0)
+    expect(consoleSpy).toHaveBeenCalledWith('SCHEDULER STATE READ ERROR: mongo down')
+    consoleSpy.mockRestore()
   })
 })

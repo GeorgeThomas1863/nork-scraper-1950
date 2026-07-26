@@ -5,6 +5,7 @@ dotenv.config({ path: ".env" });
 const { default: express } = await import("express");
 const { default: routes } = await import("./routes/router.js");
 const { dbConnect } = await import("./middleware/db-config.js");
+const { resumeSchedulerKCNA } = await import("./src/util/scheduler.js");
 
 try {
   await dbConnect();
@@ -23,3 +24,9 @@ app.use(routes);
 app.listen(process.env.SCRAPE_PORT, () =>
   console.log(`Scraper running on port ${process.env.SCRAPE_PORT}`)
 );
+
+try {
+  await resumeSchedulerKCNA();
+} catch (e) {
+  console.error("Failed to resume scheduler:", e.message);
+}

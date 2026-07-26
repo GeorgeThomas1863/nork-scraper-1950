@@ -107,9 +107,7 @@ export const updatePicSetItem = async (inputObj) => {
 
   try {
     const updatePicSetModel = new dbModel(updateParams, picSets);
-    const storeData = await updatePicSetModel.updateArrayNested();
-    console.log("UPDATE PIC SET STORE DATA");
-    console.log(storeData);
+    await updatePicSetModel.updateArrayNested();
   } catch (e) {
     console.log("MONGO ERROR FOR PIC SET PIC UPDATE: " + url);
     console.log(e.message);
@@ -136,7 +134,9 @@ export const rebuildPicArray = async (inputArray) => {
   return rebuiltPicArray;
 };
 
-export const getPicData = async (url) => {
+export const getPicData = async (inputItem) => {
+  //picArray entries are URL strings before the first embed, pic doc objects after
+  const url = typeof inputItem === "string" ? inputItem : inputItem?.url;
   if (!url) return null;
   const pics = process.env.PICS_COLLECTION;
 

@@ -24,10 +24,11 @@ export const scrapeArticleURLsKCNA = async (inputObj) => {
       if (!kcnaState.scrapeActive) return articleTypeData;
 
       const articleListArray = await parseArticleListPage(pageURL, type);
-      console.log("ARTICLE LIST ARRAY FOR PAGE: " + pageURL);
 
       if (!articleListArray) continue;
-      candidateCount += articleListArray.candidateCount ?? 0;
+      const pageCandidates = articleListArray.candidateCount ?? 0;
+      console.log(`ARTICLE LIST PAGE: ${pageURL} | NEW: ${articleListArray.length} OF ${pageCandidates}`);
+      candidateCount += pageCandidates;
       articleCount += articleListArray.length;
 
       articleTypeData.push(...articleListArray);
@@ -86,10 +87,7 @@ export const parseArticleLinkElement = async (linkElement, pageURL, type) => {
   const checkModel = new dbModel({ url: articleURL }, articles);
   const exists = await checkModel.urlExists();
 
-  if (exists) {
-    console.log(`URL ALREADY STORED: ${articleURL} `);
-    return null;
-  }
+  if (exists) return null;
 
   const articleDate = extractItemDate(linkElement.closest(".article") ?? linkElement);
   const articleId = await buildNumericId("articles");
@@ -108,8 +106,7 @@ export const parseArticleLinkElement = async (linkElement, pageURL, type) => {
     const storeData = await storeModel.storeAny();
     if (!storeData?.acknowledged) throw new Error(`Failed to store article URL: ${articleURL}`);
 
-    console.log("ARTICLE STORE DATA");
-    console.log(storeData);
+    console.log(`STORED ARTICLE URL: ${articleURL} | ARTICLE ID: ${articleId}`);
   } catch (e) {
     console.log("MONGO ERROR FOR ARTICLE: " + articleURL);
     console.log(e.message);
@@ -139,8 +136,7 @@ export const scrapeArticleContentKCNA = async () => {
   const newArticleArray = await fetchIncompleteArticles(articles);
   if (!newArticleArray) return null;
 
-  console.log("NEW ARTICLE ARRAY");
-  console.log(newArticleArray.length);
+  console.log("NEW ARTICLE ARRAY: " + newArticleArray.length);
 
   let articleCount = 0;
   const articleContentArray = [];
@@ -209,9 +205,6 @@ export const parseArticleContent = async (inputObj) => {
     params.picArray = articlePicArray;
   }
 
-  console.log("ARTICLE CONTENT PARAMS");
-  console.log(params);
-
   const isStored = await storeArticleContent(url, params, articles);
   return isStored ? params : null;
 };
@@ -220,9 +213,11 @@ const storeArticleContent = async (url, params, articles) => {
   try {
     const storeModel = new dbModel({ keyToLookup: "url", itemValue: url, updateObj: params }, articles);
     const storeData = await storeModel.updateObjItem();
-    console.log("STORE ARTICLE CONTENT DATA");
-    console.log(storeData);
-    return Boolean(storeData?.acknowledged && storeData.matchedCount > 0);
+    const isStored = Boolean(storeData?.acknowledged && storeData.matchedCount > 0);
+    const status = isStored ? "STORED" : "NOT STORED";
+    const textLength = params.text?.length ?? 0;
+    console.log(`ARTICLE CONTENT ${status}: ${url} | TEXT: ${textLength} CHARS | PICS: ${params.picArray?.length ?? 0}`);
+    return isStored;
   } catch (e) {
     console.log("MONGO ERROR FOR ARTICLE: " + url);
     console.log(e.message);
