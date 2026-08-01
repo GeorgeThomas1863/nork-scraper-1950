@@ -6,7 +6,7 @@ import dbModel from "../../models/db-model.js";
 import { tgSendMessage } from "../tg-api.js";
 import { postPicArrayTG } from "./pics.js";
 import { updateLogKCNA } from "../util/log.js";
-import { buildNumericId, extractItemDate, sortArrayByDate, normalizeInputsTG } from "../util/util.js";
+import { buildNumericId, extractItemDate, extractDatelineDate, sortArrayByDate, normalizeInputsTG } from "../util/util.js";
 
 export const scrapeArticleURLsKCNA = async (inputObj) => {
   if (!kcnaState.scrapeActive) return null;
@@ -191,14 +191,20 @@ export const parseArticleContent = async (inputObj) => {
   const articleText = extractArticleText(document);
   if (!articleTitle || !articleText) return null;
 
+  //list page had no date element for some articles; recover it from the dateline
+  const articleDate = date ?? extractDatelineDate(articleText);
+  if (!articleDate) console.log(`NO DATE FOUND FOR ARTICLE: ${url}`);
+
   const articlePicPage = extractArticlePicPage(document);
-  const articlePicArray = await extractArticlePicArray(articlePicPage, date);
+  const articlePicArray = await extractArticlePicArray(articlePicPage, articleDate);
   if (articlePicPage && !articlePicArray?.length) return null;
 
   const params = {
     title: articleTitle,
     text: articleText,
   };
+
+  if (!date && articleDate) params.date = articleDate;
 
   if (articlePicArray) {
     params.picPageURL = articlePicPage;

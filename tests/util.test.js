@@ -6,6 +6,7 @@ import {
   normalizeDate,
   normalizeInputsTG,
   extractItemDate,
+  extractDatelineDate,
   sortArrayByDate,
   calcHowMuchKCNA,
 } from '../src/util/util.js'
@@ -174,6 +175,71 @@ describe('extractItemDate', () => {
     const el = dom.window.document.querySelector('a')
     const result = extractItemDate(el)
     expect(result).toBeNull()
+  })
+})
+
+// ---- extractDatelineDate ----
+
+describe('extractDatelineDate', () => {
+  it('parses the publication date from a KCNA dateline', () => {
+    kcnaState.scrapeStartTime = new Date(2026, 6, 26, 21, 59)
+
+    const result = extractDatelineDate('Pyongyang, July 18 (KCNA) -- The respected Comrade Kim Jong Un met participants.')
+
+    expect(result).toBeInstanceOf(Date)
+    expect(result.getFullYear()).toBe(2026)
+    expect(result.getMonth()).toBe(6) // July = 6
+    expect(result.getDate()).toBe(18)
+  })
+
+  it('sets hours/minutes from scrapeStartTime like extractItemDate', () => {
+    kcnaState.scrapeStartTime = new Date(2026, 6, 26, 21, 59)
+
+    const result = extractDatelineDate('Pyongyang, July 18 (KCNA) -- Text.')
+
+    expect(result.getHours()).toBe(21)
+    expect(result.getMinutes()).toBe(59)
+  })
+
+  it('parses datelines from other cities', () => {
+    kcnaState.scrapeStartTime = new Date(2026, 6, 26, 12, 0)
+
+    const result = extractDatelineDate('Beijing, July 2 (KCNA) -- A delegation arrived.')
+
+    expect(result.getMonth()).toBe(6)
+    expect(result.getDate()).toBe(2)
+  })
+
+  it('infers the previous year across the December/January boundary', () => {
+    kcnaState.scrapeStartTime = new Date(2027, 0, 3, 8, 15)
+
+    const result = extractDatelineDate('Pyongyang, December 30 (KCNA) -- Year-end report.')
+
+    expect(result.getFullYear()).toBe(2026)
+    expect(result.getMonth()).toBe(11)
+    expect(result.getDate()).toBe(30)
+  })
+
+  it('returns null for text without a dateline', () => {
+    kcnaState.scrapeStartTime = new Date(2026, 6, 26, 12, 0)
+
+    const anecdote = 'One day in early autumn 1976, President Kim Il Sung visited the then Samjigang Cooperative Farm.'
+
+    expect(extractDatelineDate(anecdote)).toBeNull()
+  })
+
+  it('returns null for null, empty, and non-string input', () => {
+    expect(extractDatelineDate(null)).toBeNull()
+    expect(extractDatelineDate('')).toBeNull()
+    expect(extractDatelineDate(42)).toBeNull()
+  })
+
+  it('falls back to current time when scrapeStartTime is unset', () => {
+    const result = extractDatelineDate('Pyongyang, July 18 (KCNA) -- Text.')
+
+    expect(result).toBeInstanceOf(Date)
+    expect(result.getMonth()).toBe(6)
+    expect(result.getDate()).toBe(18)
   })
 })
 

@@ -98,3 +98,29 @@ const buildLogLookup = () => {
   if (activeLogId) return { keyToLookup: "_id", itemValue: activeLogId };
   return { keyToLookup: "scrapeId", itemValue: kcnaState.scrapeId };
 };
+
+//---
+
+//single-instance process: any log doc still scrapeActive at boot is a dead run
+export const closeStaleScrapes = async () => {
+  const log = process.env.LOG_COLLECTION;
+
+  const staleUpdate = {
+    scrapeActive: false,
+    scrapeRunning: false,
+    scrapeError: true,
+    scrapeStep: "FAILED SCRAPE KCNA",
+    scrapeMessage: "SCRAPE INTERRUPTED BY RESTART",
+  };
+
+  try {
+    const sweepModel = new dbModel({ filterObj: { scrapeActive: true }, updateObj: staleUpdate }, log);
+    const sweepData = await sweepModel.updateAllMatching();
+
+    if (sweepData?.modifiedCount) console.log("CLOSED " + sweepData.modifiedCount + " STALE SCRAPE LOG ENTRIES");
+    return sweepData;
+  } catch (e) {
+    console.log("STALE SCRAPE SWEEP ERROR: " + e.message);
+    return null;
+  }
+};

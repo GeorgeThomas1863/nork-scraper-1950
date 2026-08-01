@@ -35,6 +35,12 @@ class dbModel {
     return updateData;
   }
 
+  async updateAllMatching() {
+    const { filterObj, updateObj } = this.dataObject;
+    const updateData = await dbGet().collection(this.collection).updateMany(filterObj, { $set: { ...updateObj } }); //prettier-ignore
+    return updateData;
+  }
+
   //--------------
 
   //GETS STUFF

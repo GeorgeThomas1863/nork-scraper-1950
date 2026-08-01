@@ -72,6 +72,47 @@ export const extractItemDate = (linkElement) => {
   return normalDate;
 };
 
+//-------------------------------
+
+const DATELINE_MONTHS = {
+  january: 1,
+  february: 2,
+  march: 3,
+  april: 4,
+  may: 5,
+  june: 6,
+  july: 7,
+  august: 8,
+  september: 9,
+  october: 10,
+  november: 11,
+  december: 12,
+};
+
+//fallback when the list page had no date element: publication date from the
+//KCNA dateline ("Pyongyang, July 18 (KCNA) -- ..."); year inferred from scrape
+//time since the dateline omits it
+export const extractDatelineDate = (text) => {
+  if (typeof text !== "string" || !text) return null;
+
+  const match = text.match(/^\s*[A-Za-z .'-]+,\s+([A-Za-z]+)\s+(\d{1,2})\s+\(KCNA\)/);
+  if (!match) return null;
+
+  const month = DATELINE_MONTHS[match[1].toLowerCase()];
+  const day = parseInt(match[2]);
+  if (!month || !day || day > 31) return null;
+
+  const ref = kcnaState.scrapeStartTime ?? new Date();
+  let year = ref.getFullYear();
+  if (new Date(year, month - 1, day).getTime() - ref.getTime() > 30 * 86400000) year -= 1; //December article scraped in January
+
+  const itemDate = new Date(year, month - 1, day);
+  itemDate.setHours(ref.getHours());
+  itemDate.setMinutes(ref.getMinutes());
+
+  return itemDate;
+};
+
 //-----------------
 
 export const sortArrayByDate = (inputArray, itemType = "articles") => {

@@ -52,6 +52,13 @@ describe('runScraper', () => {
     expect(scrapeKCNA).toHaveBeenCalledWith({ command: 'admin-start-scrape', howMuch: 'admin-scrape-new' })
   })
 
+  it('returns immediately while the scrape runs unawaited', async () => {
+    scrapeKCNA.mockReturnValue(new Promise(() => {})) //never resolves
+    const result = await runScraper({ command: 'admin-start-scrape', howMuch: 'admin-scrape-new' })
+    expect(scrapeKCNA).toHaveBeenCalledWith({ command: 'admin-start-scrape', howMuch: 'admin-scrape-new' })
+    expect(result).toBe(kcnaState)
+  })
+
   it('returns state with message when scrape already active', async () => {
     kcnaState.scrapeActive = true
     kcnaState.scrapeRunning = true

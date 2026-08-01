@@ -11,7 +11,8 @@ export const runScraper = async (inputParams) => {
         kcnaState.scrapeMessage = buildRunningScrapeMessage();
         return kcnaState;
       }
-      return await scrapeKCNA(inputParams);
+      startScrapeUnawaited(inputParams);
+      return kcnaState;
 
     case "admin-stop-scrape":
       if (!kcnaState.scrapeActive) {
@@ -48,6 +49,15 @@ export const runScraper = async (inputParams) => {
     default:
       return null;
   }
+};
+
+//runs unawaited so the admin request returns before the scrape finishes;
+//the frontend status poll tracks progress
+const startScrapeUnawaited = (inputParams) => {
+  return scrapeKCNA(inputParams).catch((error) => {
+    console.log("ADMIN SCRAPE ERROR: " + error.message);
+    return null;
+  });
 };
 
 const buildRunningScrapeMessage = () => {

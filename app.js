@@ -6,6 +6,7 @@ const { default: express } = await import("express");
 const { default: routes } = await import("./routes/router.js");
 const { dbConnect } = await import("./middleware/db-config.js");
 const { resumeSchedulerKCNA } = await import("./src/util/scheduler.js");
+const { closeStaleScrapes } = await import("./src/util/log.js");
 
 try {
   await dbConnect();
@@ -14,6 +15,8 @@ try {
   process.exit(1);
 }
 
+await closeStaleScrapes();
+
 const app = express();
 
 app.use(express.urlencoded({ extended: true }));
@@ -21,7 +24,8 @@ app.use(express.json());
 
 app.use(routes);
 
-app.listen(process.env.SCRAPE_PORT, () =>
+//loopback only: the API's sole client is the displayer on this box
+app.listen(process.env.SCRAPE_PORT, "127.0.0.1", () =>
   console.log(`Scraper running on port ${process.env.SCRAPE_PORT}`)
 );
 
