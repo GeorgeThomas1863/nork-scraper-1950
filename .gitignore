@@ -1,16 +1,16 @@
-# Stuff
+# Private config repo + env
 config/
-/config*
-/config/*
 .env
+.env.*
 
-**.env
+# Claude / agent tooling
+.claude/
+.remember/
 
-.claude/.tmp
-.claude/.pics
-.claude/pics/
+# Local notes
+todo.txt
 
-# logs
+# Logs
 logs
 *.log
 
@@ -23,29 +23,21 @@ build/Release
 # Dependency directories
 node_modules/
 
-
 # Optional npm cache directory
 .npm
 
-
-# dotenv environment variable files
-.env
-.env.development.local
-.env.test.local
-.env.production.local
-.env.local
-.env.*
-
-
-# vitepress build output
+# vitepress build output / cache
 **/.vitepress/dist
-
-# vitepress cache directory
 **/.vitepress/cache
 
-# Stores VSCode versions used for testing VSCode extensions
-.vscode-test
+# Editor / OS junk
 .vscode/
+.vscode-test
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
 
-#ignore readme
-#*.md
+# Downloaded pics (if PIC_PATH ever points inside the repo)
+pics/
