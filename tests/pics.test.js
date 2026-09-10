@@ -27,7 +27,7 @@ vi.mock('fs', async (importOriginal) => {
   const actual = await importOriginal()
   return {
     ...actual,
-    default: { ...actual.default, createWriteStream: vi.fn(), rmSync: vi.fn() },
+    default: { ...actual.default, createWriteStream: vi.fn(), rmSync: vi.fn(), mkdirSync: vi.fn() },
   }
 })
 

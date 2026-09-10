@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+import { resolveListenHost } from "./middleware/listen-host.js";
 
 dotenv.config({ path: ".env" });
 
@@ -24,8 +25,7 @@ app.use(express.json());
 
 app.use(routes);
 
-//loopback only: the API's sole client is the displayer on this box
-app.listen(process.env.SCRAPE_PORT, "127.0.0.1", () =>
+app.listen(process.env.SCRAPE_PORT, resolveListenHost(process.env.HOST), () =>
   console.log(`Scraper running on port ${process.env.SCRAPE_PORT}`)
 );
 

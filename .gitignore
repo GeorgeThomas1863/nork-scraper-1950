@@ -2,10 +2,15 @@
 config/
 .env
 .env.*
+!.env.example
 
 # Claude / agent tooling
 .claude/
+.Codex/
 .remember/
+
+docs/
+to-copy.txt
 
 # Local notes
 todo.txt

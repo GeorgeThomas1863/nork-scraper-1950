@@ -11,6 +11,8 @@ export const downloadPicsKCNA = async () => {
   const pics = process.env.PICS_COLLECTION; const picPath = process.env.PIC_PATH;
   if (!kcnaState.scrapeActive) return null;
 
+  ensurePicDir(picPath);
+
   const picModel = new dbModel({ keyExists: "url", keyEmpty: "picSize" }, pics);
   const picArray = await picModel.findEmptyItems();
   if (!picArray || !picArray.length) return null;
@@ -65,6 +67,16 @@ export const downloadPicsKCNA = async () => {
   console.log(`DOWNLOADED ${downloadPicArray.length} PICS`);
 
   return downloadPicArray;
+};
+
+const ensurePicDir = (picPath) => {
+  if (!picPath) return;
+
+  try {
+    fs.mkdirSync(picPath, { recursive: true });
+  } catch (e) {
+    console.log(`FAILED TO CREATE PIC DIR: ${picPath} | ${e.message}`);
+  }
 };
 
 export const downloadPicFS = async (url, savePath, picName, attempt = 0) => {

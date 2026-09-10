@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+// Importing app.js pulls in the whole src tree. On a cold transform cache with every
+// test file running in parallel this can exceed the 5s default. A timed-out import keeps
+// evaluating in the background and bleeds into the next test's mocks, so give it room.
+vi.setConfig({ testTimeout: 30000 });
+
 const originalTokenArray = process.env.TOKEN_ARRAY;
 const originalBotToken = process.env.STARTUP_TEST_BOT_TOKEN;
 const originalApiScraper = process.env.API_SCRAPER;

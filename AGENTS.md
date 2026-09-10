@@ -13,24 +13,20 @@ Do NOT commit anything to GitHub. The user will control all commits to GitHub. D
 ## Running the app
 
 ```bash
-npm start                      # runs: nodemon app.js
-npm test                       # runs: vitest (13 test files under tests/)
+npm run dev                    # nodemon app.js (local dev)
+npm test                       # vitest run
 npx vitest run <pattern>       # run a single test file, e.g. npx vitest run articles
 ```
 
 The app runs on `SCRAPE_PORT` (default 1951 per `.env`).
 
-## Config setup
+Production runs as the `scraper` service of the Docker Compose stack in `../nork-displayer-1950` (`npm run docker:up` there). Compose overrides `HOST=0.0.0.0`, `MONGO_URI=mongodb://mongo:27017`, and `PIC_PATH=/data/pics`; everything else comes from this repo's `.env`. No ports are published; the displayer reaches the scraper at `http://scraper:<SCRAPE_PORT><API_SCRAPER>`.
 
-The `config/` directory is **gitignored** and stored in a separate private repo. Set it up via:
+## Config
 
-```bash
-bash setup-config.sh <config-repo-url>
-```
+There is no `config/` directory. MongoDB connects in `middleware/db-config.js` using `MONGO_URI` and `DB_NAME`.
 
-The config repo must export: `config/config.js` (main config), `config/db.js` (MongoDB connection), `config/urls.js` (KCNA page URLs), `config/tg-bot.js` (Telegram bot token array).
-
-Environment variables are in `.env` (also gitignored). Required vars:
+Environment variables live in `.env` (gitignored); `.env.example` is the reference list. Required vars:
 
 ```
 SCRAPE_PORT=1951
@@ -57,6 +53,12 @@ PIC_PROGRESS_SIZE=102400       # log download progress every N bytes
 API_PASSWORD=<password>
 API_SCRAPER=/api/scrape
 ```
+
+`HOST` is optional and defaults to `127.0.0.1`; Docker Compose sets it to `0.0.0.0`.
+
+## Tests
+
+`tests/` has 16 `.test.js` files: api-controller, articles, db-model, log, middleware/listen-host, nork-model, pics, picSets, repair-empty-pics, scheduler, scrape-kcna, src, startup-config, tg-api, update-db, util. Shared HTML fixtures live in `tests/fixtures/kcna-current.js`.
 
 ## Architecture
 
