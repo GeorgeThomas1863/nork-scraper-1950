@@ -37,7 +37,7 @@ DB_NAME=nork-scraper
 ARTICLES_COLLECTION=articles
 PICSETS_COLLECTION=picSets
 PICS_COLLECTION=pics
-LOG_COLLECTION=scrapeLog
+LOG_COLLECTION=log
 
 KCNA_BASE_URL=http://www.kcna.kp
 

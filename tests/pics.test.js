@@ -34,7 +34,7 @@ vi.mock('fs', async (importOriginal) => {
 import fs from 'fs'
 import { PassThrough, Writable } from 'stream'
 import axios from 'axios'
-import kcnaState, { resetStateKCNA } from '../src/util/state.js'
+import kcnaState from '../src/util/state.js'
 import { downloadPicsKCNA, downloadPicFS, postPicArrayTG, postPicTG } from '../src/kcna/pics.js'
 import { dbGet } from '../middleware/db-config.js'
 import { tgPostPicFS } from '../src/tg-api.js'
@@ -285,43 +285,5 @@ describe('postPicTG', () => {
     })
     expect(result).toBeNull()
     consoleSpy.mockRestore()
-  })
-})
-
-// ---- scrapeStats ----
-
-describe('pic download scrapeStats', () => {
-  const picDoc = (picId) => ({ picId, url: `http://www.kcna.kp/photo/pic${picId}` })
-
-  beforeEach(() => {
-    resetStateKCNA()
-    kcnaState.scrapeActive = true
-  })
-
-  it('records only successfully downloaded and stored pics in scrapeStats.pics', async () => {
-    getMockCollection().find.mockReturnValue({ toArray: vi.fn().mockResolvedValue([picDoc(1), picDoc(2)]) })
-    axios
-      .mockImplementationOnce(() => emptyResponse()) //pic 1, first attempt
-      .mockImplementationOnce(() => emptyResponse()) //pic 1, retry
-      .mockImplementationOnce(() => jpegResponse(5120)) //pic 2
-
-    const result = await downloadPicsKCNA()
-
-    expect(result).toHaveLength(1)
-    expect(kcnaState.scrapeStats.pics).toBe(1)
-  })
-
-  it('keeps the partial pic count when the scrape is stopped mid-loop', async () => {
-    getMockCollection().find.mockReturnValue({ toArray: vi.fn().mockResolvedValue([picDoc(1), picDoc(2)]) })
-    axios.mockImplementation(() => jpegResponse(1024))
-    getMockCollection().updateOne.mockImplementation(async () => {
-      kcnaState.scrapeActive = false
-      return { modifiedCount: 1 }
-    })
-
-    const result = await downloadPicsKCNA()
-
-    expect(result).toHaveLength(1)
-    expect(kcnaState.scrapeStats.pics).toBe(1)
   })
 })

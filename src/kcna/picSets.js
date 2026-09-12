@@ -31,7 +31,6 @@ export const scrapePicSetURLsKCNA = async (inputObj) => {
       console.log(`PIC SET LIST PAGE: ${pageURL} | NEW: ${picSetListArray.length} OF ${pageCandidates}`);
       candidateCount += pageCandidates;
       picSetCount += picSetListArray.length;
-      kcnaState.scrapeStats.picSetURLs = picSetCount;
 
       picSetTypeData.push(...picSetListArray);
     }
@@ -146,7 +145,6 @@ export const scrapePicSetContentKCNA = async () => {
     const picSetContentData = await parsePicSetContent(picSetObj);
     if (!picSetContentData) continue;
     picSetCount++;
-    kcnaState.scrapeStats.picSets = picSetCount;
 
     picSetContentArray.push(picSetContentData);
   }
@@ -297,7 +295,6 @@ export const uploadPicSetsKCNA = async () => {
     if (!isStored) continue;
 
     picSetPostArray.push(picSetPostData);
-    kcnaState.scrapeStats.picSetsTG = picSetPostArray.length;
   }
 
   kcnaState.scrapeStep = "VID PAGE UPLOAD KCNA";

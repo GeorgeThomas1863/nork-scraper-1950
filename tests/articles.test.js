@@ -36,7 +36,7 @@ vi.mock('../models/nork-model.js', () => ({
   }),
 }))
 
-import kcnaState, { resetStateKCNA } from '../src/util/state.js'
+import kcnaState from '../src/util/state.js'
 import {
   extractArticleTitle,
   extractArticleText,
@@ -651,86 +651,5 @@ describe('article Telegram delivery', () => {
     expect(titleText).toContain('news &amp; analysis')
     expect(chunkText).toContain('Body &lt;tag&gt; &amp; text')
     expect(article.title).toBe(title)
-  })
-})
-
-// ---- scrapeStats ----
-
-describe('article scrapeStats', () => {
-  const listPageURL = 'http://www.kcna.kp/en/article/list/6a47505ba5268fd7749c0fe11e4b24b4'
-
-  beforeEach(() => {
-    process.env.TG_MAX_LENGTH = '4096'
-    resetStateKCNA()
-    kcnaState.scrapeActive = true
-    kcnaState.scrapeId = 'test-scrape-id'
-  })
-
-  it('records new article URLs found in scrapeStats.articleURLs', async () => {
-    mockHTMLByURL.set(listPageURL, currentArticleListHTML)
-    mockCollection.findOne
-      .mockResolvedValueOnce(null)
-      .mockResolvedValue({ seq: 40 })
-    mockCollection.findOneAndUpdate.mockResolvedValue({ seq: 41 })
-    mockCollection.insertOne.mockResolvedValue({ acknowledged: true })
-
-    const result = await scrapeArticleURLsKCNA([{ typeKey: 'topArr', pageArray: [listPageURL] }])
-
-    expect(result).toHaveLength(1)
-    expect(kcnaState.scrapeStats.articleURLs).toBe(1)
-    expect(kcnaState.scrapeStats.articles).toBe(0)
-  })
-
-  it('keeps articleURLs at zero when every listing link is already stored', async () => {
-    mockHTMLByURL.set(listPageURL, currentArticleListHTML)
-    mockCollection.findOne.mockResolvedValue({ url: 'already stored' })
-
-    await scrapeArticleURLsKCNA([{ typeKey: 'topArr', pageArray: [listPageURL] }])
-
-    expect(kcnaState.scrapeStats.articleURLs).toBe(0)
-  })
-
-  it('records scraped article content in scrapeStats.articles', async () => {
-    const articleURL = 'http://www.kcna.kp/en/article/detail/99d235cb100ee217cd6678bb8fc80e4d'
-    mockHTMLByURL.set(articleURL, currentArticleDetailHTML)
-    mockHTMLByURL.set('http://www.kcna.kp/en/gallery/detail/b13bb492c9ddf31add8a84cbe137c5a6', currentGalleryDetailHTML)
-    mockCollection.find
-      .mockReturnValueOnce({ toArray: vi.fn().mockResolvedValue([{ url: articleURL, date: new Date(2026, 6, 19) }]) })
-      .mockReturnValueOnce({ toArray: vi.fn().mockResolvedValue([]) })
-      .mockReturnValueOnce({ toArray: vi.fn().mockResolvedValue([]) })
-    mockCollection.findOne.mockResolvedValue({ seq: 0 })
-    mockCollection.findOneAndUpdate.mockResolvedValue({ seq: 1 })
-    mockCollection.insertOne.mockResolvedValue({ acknowledged: true })
-
-    const result = await scrapeArticleContentKCNA()
-
-    expect(result).toHaveLength(1)
-    expect(kcnaState.scrapeStats.articles).toBe(1)
-  })
-
-  it('records Telegram-uploaded articles in scrapeStats.articlesTG', async () => {
-    const { tgSendMessage } = await import('../src/tg-api.js')
-    tgSendMessage.mockResolvedValue({ ok: true })
-    mockCollection.find.mockReturnValue({ toArray: vi.fn().mockResolvedValue([
-      { url: 'http://www.kcna.kp/article-1', date: new Date(2024, 5, 15), title: 'One', text: 'Body', articleType: 'news', articleId: 1 },
-      { url: 'http://www.kcna.kp/article-2', date: new Date(2024, 5, 16), title: 'Two', text: 'Body', articleType: 'news', articleId: 2 },
-    ]) })
-
-    const result = await uploadArticlesKCNA()
-
-    expect(result).toHaveLength(2)
-    expect(kcnaState.scrapeStats.articlesTG).toBe(2)
-  })
-
-  it('does not count an article upload that Telegram rejects', async () => {
-    const { tgSendMessage } = await import('../src/tg-api.js')
-    tgSendMessage.mockResolvedValueOnce({ ok: true }).mockResolvedValueOnce(null)
-    mockCollection.find.mockReturnValue({ toArray: vi.fn().mockResolvedValue([
-      { url: 'http://www.kcna.kp/article', date: new Date(2024, 5, 15), title: 'Title', text: 'Body', articleType: 'news', articleId: 1 },
-    ]) })
-
-    await uploadArticlesKCNA()
-
-    expect(kcnaState.scrapeStats.articlesTG).toBe(0)
   })
 })

@@ -1,13 +1,3 @@
-export const buildEmptyScrapeStats = () => ({
-  articleURLs: 0,
-  articles: 0,
-  picSetURLs: 0,
-  picSets: 0,
-  pics: 0,
-  articlesTG: 0,
-  picSetsTG: 0,
-});
-
 const buildResetState = () => ({
   scrapeId: null,
   scrapeStartTime: null,
@@ -17,7 +7,6 @@ const buildResetState = () => ({
   scrapeError: null,
   scrapeMessage: null,
   scrapeStep: null,
-  scrapeStats: buildEmptyScrapeStats(),
 });
 
 const kcnaState = {
