@@ -1,5 +1,4 @@
-# Private config repo + env
-config/
+# Env
 .env
 .env.*
 !.env.example
