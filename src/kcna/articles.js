@@ -30,6 +30,7 @@ export const scrapeArticleURLsKCNA = async (inputObj) => {
       console.log(`ARTICLE LIST PAGE: ${pageURL} | NEW: ${articleListArray.length} OF ${pageCandidates}`);
       candidateCount += pageCandidates;
       articleCount += articleListArray.length;
+      kcnaState.scrapeStats.articleURLs = articleCount;
 
       articleTypeData.push(...articleListArray);
     }
@@ -146,6 +147,7 @@ export const scrapeArticleContentKCNA = async () => {
     const articleContentData = await parseArticleContent(articleObj);
     if (!articleContentData) continue;
     articleCount++;
+    kcnaState.scrapeStats.articles = articleCount;
 
     articleContentArray.push(articleContentData);
   }
@@ -341,6 +343,7 @@ export const uploadArticlesKCNA = async () => {
     if (!isStored) continue;
 
     articlePostArray.push(postData);
+    kcnaState.scrapeStats.articlesTG = articlePostArray.length;
   }
 
   kcnaState.scrapeStep = "PIC SET UPLOAD KCNA";

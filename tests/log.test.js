@@ -55,6 +55,25 @@ describe('updateLogKCNA', () => {
     )
     expect(result.modifiedCount).toBe(1)
   })
+
+  it('includes the current scrapeStats in the log update payload', async () => {
+    const col = getMockCollection()
+    col.updateOne.mockResolvedValue({ modifiedCount: 1 })
+    kcnaState.scrapeId = 'abc-123'
+    kcnaState.scrapeStats.articleURLs = 4
+    kcnaState.scrapeStats.pics = 9
+
+    await updateLogKCNA()
+
+    expect(col.updateOne).toHaveBeenCalledWith(
+      { scrapeId: 'abc-123' },
+      expect.objectContaining({
+        $set: expect.objectContaining({
+          scrapeStats: { articleURLs: 4, articles: 0, picSetURLs: 0, picSets: 0, pics: 9, articlesTG: 0, picSetsTG: 0 },
+        }),
+      })
+    )
+  })
 })
 
 // ---- logScrapeStartKCNA ----
@@ -190,5 +209,23 @@ describe('logScrapeStopKCNA', () => {
     expect(kcnaState.scrapeId).toBeNull()
     // but result captured the final state
     expect(result.scrapeId).toBe('test-id')
+  })
+
+  it('writes the final scrapeStats to the log and then zeroes them for the next run', async () => {
+    const col = getMockCollection()
+    col.updateOne.mockResolvedValue({})
+
+    kcnaState.scrapeStartTime = new Date(Date.now() - 1000)
+    kcnaState.scrapeId = 'test-id'
+    kcnaState.scrapeStats.articlesTG = 7
+
+    const result = await logScrapeStopKCNA()
+
+    expect(result.scrapeStats.articlesTG).toBe(7)
+    expect(col.updateOne).toHaveBeenLastCalledWith(
+      { scrapeId: 'test-id' },
+      expect.objectContaining({ $set: expect.objectContaining({ scrapeStats: expect.objectContaining({ articlesTG: 7 }) }) })
+    )
+    expect(kcnaState.scrapeStats.articlesTG).toBe(0)
   })
 })

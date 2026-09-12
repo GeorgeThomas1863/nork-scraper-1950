@@ -36,7 +36,7 @@ vi.mock('../models/nork-model.js', () => ({
   }),
 }))
 
-import kcnaState from '../src/util/state.js'
+import kcnaState, { resetStateKCNA } from '../src/util/state.js'
 import {
   extractPicSetTitle,
   buildPicSetTitleText,
@@ -456,5 +456,78 @@ describe('pic set Telegram delivery', () => {
     expect(titleText).toContain('A &lt; B &amp; C &gt; D')
     expect(titleText).toContain('x&amp;y')
     expect(picSet.title).toBe(title)
+  })
+})
+
+// ---- scrapeStats ----
+
+describe('pic set scrapeStats', () => {
+  const listPageURL = 'http://www.kcna.kp/en/gallery/list/6837a75abf5c6249d0e39ee758e763ea'
+
+  beforeEach(() => {
+    resetStateKCNA()
+    kcnaState.scrapeActive = true
+    kcnaState.scrapeId = 'test-scrape-id'
+  })
+
+  it('records new pic set URLs found in scrapeStats.picSetURLs', async () => {
+    mockHTMLByURL.set(listPageURL, currentGalleryListHTML)
+    mockCollection.findOne
+      .mockResolvedValueOnce(null)
+      .mockResolvedValue({ seq: 6 })
+    mockCollection.findOneAndUpdate.mockResolvedValue({ seq: 7 })
+    mockCollection.insertOne.mockResolvedValue({ acknowledged: true })
+
+    const result = await scrapePicSetURLsKCNA([{ typeKey: 'photoArr', pageArray: [listPageURL] }])
+
+    expect(result.length).toBeGreaterThan(0)
+    expect(kcnaState.scrapeStats.picSetURLs).toBe(result.length)
+  })
+
+  it('records scraped pic set content in scrapeStats.picSets', async () => {
+    const url = 'http://www.kcna.kp/en/gallery/detail/b13bb492c9ddf31add8a84cbe137c5a6'
+    mockHTMLByURL.set(url, currentGalleryDetailHTML)
+    mockCollection.find
+      .mockReturnValueOnce({ toArray: vi.fn().mockResolvedValue([{ url, date: new Date(2026, 6, 19) }]) })
+      .mockReturnValueOnce({ toArray: vi.fn().mockResolvedValue([]) })
+    mockCollection.findOne.mockResolvedValue({ seq: 0 })
+    mockCollection.findOneAndUpdate.mockResolvedValue({ seq: 1 })
+    mockCollection.insertOne.mockResolvedValue({ acknowledged: true })
+
+    const result = await scrapePicSetContentKCNA()
+
+    expect(result).toHaveLength(1)
+    expect(kcnaState.scrapeStats.picSets).toBe(1)
+  })
+
+  it('records Telegram-uploaded pic sets in scrapeStats.picSetsTG', async () => {
+    const { tgSendMessage } = await import('../src/tg-api.js')
+    const { postPicArrayTG } = await import('../src/kcna/pics.js')
+    tgSendMessage.mockResolvedValue({ ok: true })
+    postPicArrayTG.mockResolvedValue([{ ok: true }])
+    mockCollection.find.mockReturnValue({ toArray: vi.fn().mockResolvedValue([{
+      url: 'http://www.kcna.kp/photo', date: new Date(2024, 5, 15), title: 'Title', picSetId: 1,
+      picArray: [{ url: 'http://www.kcna.kp/1.jpg', savePath: '/tmp/1.jpg', date: new Date(2024, 5, 15) }],
+    }]) })
+
+    const result = await uploadPicSetsKCNA()
+
+    expect(result).toHaveLength(1)
+    expect(kcnaState.scrapeStats.picSetsTG).toBe(1)
+  })
+
+  it('does not count a pic set upload whose photo send fails', async () => {
+    const { tgSendMessage } = await import('../src/tg-api.js')
+    const { postPicArrayTG } = await import('../src/kcna/pics.js')
+    tgSendMessage.mockResolvedValue({ ok: true })
+    postPicArrayTG.mockResolvedValue([])
+    mockCollection.find.mockReturnValue({ toArray: vi.fn().mockResolvedValue([{
+      url: 'http://www.kcna.kp/photo', date: new Date(2024, 5, 15), title: 'Title', picSetId: 1,
+      picArray: [{ url: 'http://www.kcna.kp/1.jpg', savePath: '/tmp/1.jpg', date: new Date(2024, 5, 15) }],
+    }]) })
+
+    await uploadPicSetsKCNA()
+
+    expect(kcnaState.scrapeStats.picSetsTG).toBe(0)
   })
 })

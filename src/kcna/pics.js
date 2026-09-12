@@ -53,6 +53,7 @@ export const downloadPicsKCNA = async () => {
       console.log(`STORED PIC: ${picName} | MODIFIED: ${storeData.modifiedCount}`);
 
       downloadPicArray.push(storeParams);
+      kcnaState.scrapeStats.pics = downloadPicArray.length;
     } catch (e) {
       console.log("MONGO ERROR FOR PIC DOWNLOAD: " + url);
       console.log(e.message);

@@ -1,4 +1,14 @@
-const RESET_STATE = {
+export const buildEmptyScrapeStats = () => ({
+  articleURLs: 0,
+  articles: 0,
+  picSetURLs: 0,
+  picSets: 0,
+  pics: 0,
+  articlesTG: 0,
+  picSetsTG: 0,
+});
+
+const buildResetState = () => ({
   scrapeId: null,
   scrapeStartTime: null,
   scrapeEndTime: null,
@@ -7,15 +17,16 @@ const RESET_STATE = {
   scrapeError: null,
   scrapeMessage: null,
   scrapeStep: null,
-};
+  scrapeStats: buildEmptyScrapeStats(),
+});
 
 const kcnaState = {
   scrapeActive: false,
   scrapeRunning: false,
   schedulerActive: false,
-  ...RESET_STATE,
+  ...buildResetState(),
 };
 
-export const resetStateKCNA = () => Object.assign(kcnaState, RESET_STATE);
+export const resetStateKCNA = () => Object.assign(kcnaState, buildResetState());
 
 export default kcnaState;
