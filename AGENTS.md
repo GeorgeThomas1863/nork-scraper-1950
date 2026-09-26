@@ -58,7 +58,7 @@ Watch target (KCTV) vars. `WATCH_PATH` is required whenever `site=watch` is used
 
 ```
 WATCH_PATH=/path/to/watch-vids      # required for the watch target; where MP4s are written
-VID_PAGES_COLLECTION=vidPages       # MongoDB collection for KCTV bulletin entries
+WATCH_COLLECTION=watch             # MongoDB collection for KCTV bulletin entries
 WATCH_PROFILE_PATH=                 # optional; defaults to ~/.playwright-profiles/kcnawatch
 WATCH_HEADLESS=true                 # optional; default true
 WATCH_BASE_URL=https://kcnawatch.org  # optional; default https://kcnawatch.org
@@ -100,7 +100,7 @@ This is a Node.js/Express scraper (ESM modules) that pulls content from KCNA (kc
 **Watch target (KCTV)** (`src/watch/`): a second pipeline that pulls KCTV news bulletins from kcnawatch.org. `admin-start-scrape` with `site: "watch"` runs `scrapeWatch()` in `src/watch/scrape-watch.js` instead of `scrapeKCNA()`; both share `kcnaState`, the scrape log, and the `runScrapeStage` / `finalizeFailedScrape` helpers exported from `src/kcna/scrape-kcna.js`, so only one scrape of either kind can run at a time. Stages, in order:
 
 1. `KCTV LISTING WATCH` — `scrapeKctvListing()` (`src/watch/kctv-listing.js`) reads the bulletin listing and returns entries for the 5pm and 8pm news only (`WATCH_VID_TYPES`). It throws if there are zero candidates or the profile is not logged in.
-2. `KCTV UPLOAD WATCH` — `uploadVidPagesWatch(entryArray)` stores new entries in the `VID_PAGES_COLLECTION` collection (`vidPages`).
+2. `KCTV UPLOAD WATCH` — `uploadVidPagesWatch(entryArray)` stores new entries in the `WATCH_COLLECTION` collection (`watch`).
 3. `KCTV DOWNLOAD WATCH` — `downloadVidsWatch()` downloads the MP4s that have not been fetched yet.
 
 Notes on how it works and why:

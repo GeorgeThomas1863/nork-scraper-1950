@@ -265,6 +265,7 @@ describe('downloadVidsWatch', () => {
     const result = await downloadVidsWatch()
 
     expect(result).toBe(1)
+    expect(dbGet().collection).toHaveBeenCalledWith('watch')
     expect(getMockCollection().updateOne).toHaveBeenCalledWith(
       { url: 'https://kcnawatch.org/kctv/1.mp4' },
       {
@@ -352,6 +353,12 @@ describe('uploadVidPagesWatch', () => {
     const result = await uploadVidPagesWatch([entry('https://kcnawatch.org/v1')])
 
     expect(result).toBe(1)
+    expect(dbGet().collection).toHaveBeenCalledWith('watch')
+    expect(getMockCollection().findOneAndUpdate).toHaveBeenCalledWith(
+      { _id: 'watch' },
+      { $inc: { seq: 1 } },
+      { returnDocument: 'after' }
+    )
     expect(getMockCollection().insertOne).toHaveBeenCalledTimes(1)
     expect(getMockCollection().insertOne).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -365,7 +372,34 @@ describe('uploadVidPagesWatch', () => {
     expect(updateLogKCNA).toHaveBeenCalled()
   })
 
-  it('skips an entry whose url already exists and does not call buildNumericId/insertOne', async () => {
+  it('seeds a missing watch counter from the highest existing vidPageId', async () => {
+    getMockCollection().findOne.mockResolvedValue(null)
+    const toArray = vi.fn().mockResolvedValue([{ vidPageId: 42 }])
+    const limit = vi.fn().mockReturnValue({ toArray })
+    const sort = vi.fn().mockReturnValue({ limit })
+    getMockCollection().find.mockReturnValue({ sort })
+    getMockCollection().findOneAndUpdate.mockResolvedValue({ seq: 43 })
+
+    const result = await uploadVidPagesWatch([entry('https://kcnawatch.org/v1')])
+
+    expect(result).toBe(1)
+    expect(sort).toHaveBeenCalledWith({ vidPageId: -1 })
+    expect(getMockCollection().updateOne).toHaveBeenCalledWith(
+      { _id: 'watch' },
+      { $setOnInsert: { seq: 42 } },
+      { upsert: true }
+    )
+    expect(getMockCollection().findOneAndUpdate).toHaveBeenCalledWith(
+      { _id: 'watch' },
+      { $inc: { seq: 1 } },
+      { returnDocument: 'after' }
+    )
+    expect(getMockCollection().insertOne).toHaveBeenCalledWith(
+      expect.objectContaining({ vidPageId: 43 })
+    )
+  })
+
+  it('skips an entry whose url already exists and does not advance the counter or insert', async () => {
     getMockCollection().findOne.mockImplementation(async (query) => {
       if ('url' in query) return { url: query.url } // already stored
       return { seq: 40 }

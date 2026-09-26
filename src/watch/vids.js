@@ -4,11 +4,10 @@ import path from "path";
 
 import kcnaState from "../util/state.js";
 import dbModel from "../../models/db-model.js";
-import { buildNumericId } from "../util/util.js";
 import { updateLogKCNA } from "../util/log.js";
 
 export const uploadVidPagesWatch = async (entryArray) => {
-  const vidPages = process.env.VID_PAGES_COLLECTION;
+  const watchCollection = process.env.WATCH_COLLECTION;
   if (!kcnaState.scrapeActive) return 0;
   if (!entryArray || !entryArray.length) return 0;
 
@@ -19,11 +18,11 @@ export const uploadVidPagesWatch = async (entryArray) => {
     const { url } = entry;
     if (!url) continue;
 
-    const checkModel = new dbModel({ url }, vidPages);
+    const checkModel = new dbModel({ url }, watchCollection);
     const exists = await checkModel.urlExists();
     if (exists) continue;
 
-    const vidPageId = await buildNumericId("vidPages");
+    const vidPageId = await new dbModel({ idKey: "vidPageId" }, watchCollection).nextId();
 
     const params = {
       ...entry,
@@ -32,7 +31,7 @@ export const uploadVidPagesWatch = async (entryArray) => {
     };
 
     try {
-      const storeModel = new dbModel(params, vidPages);
+      const storeModel = new dbModel(params, watchCollection);
       const storeData = await storeModel.storeAny();
       if (!storeData?.acknowledged) continue;
 
@@ -56,7 +55,7 @@ export const uploadVidPagesWatch = async (entryArray) => {
 //++++++++++++++++++++++++++++++++++++++++++
 
 export const downloadVidsWatch = async () => {
-  const vidPages = process.env.VID_PAGES_COLLECTION;
+  const watchCollection = process.env.WATCH_COLLECTION;
   const vidPath = process.env.WATCH_PATH;
   if (!vidPath) throw new Error("WATCH_PATH environment variable is not set");
 
@@ -65,7 +64,7 @@ export const downloadVidsWatch = async () => {
 
   ensureVidDir(vidPath);
 
-  const vidModel = new dbModel({ keyExists: "url", keyEmpty: "vidSize" }, vidPages);
+  const vidModel = new dbModel({ keyExists: "url", keyEmpty: "vidSize" }, watchCollection);
   const vidArray = await vidModel.findEmptyItems();
   if (!vidArray || !vidArray.length) return 0;
 
@@ -91,7 +90,7 @@ export const downloadVidsWatch = async () => {
     };
 
     try {
-      const storeVidModel = new dbModel(storeParams, vidPages);
+      const storeVidModel = new dbModel(storeParams, watchCollection);
       const storeData = await storeVidModel.updateObjItem();
       if (!storeData) continue;
 

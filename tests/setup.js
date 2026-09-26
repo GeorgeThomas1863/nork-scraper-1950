@@ -20,7 +20,7 @@ process.env.SCRAPE_INTERVAL = '3600000'
 
 // watch (KCTV) target
 process.env.WATCH_PATH = '/tmp/watch'
-process.env.VID_PAGES_COLLECTION = 'vidPages'
+process.env.WATCH_COLLECTION = 'watch'
 process.env.WATCH_BASE_URL = 'https://kcnawatch.org'
 process.env.WATCH_HEADLESS = 'true'
 process.env.VID_PROGRESS_SIZE = '1048576'
