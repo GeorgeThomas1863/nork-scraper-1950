@@ -54,11 +54,22 @@ API_PASSWORD=<password>
 API_SCRAPER=/api/scrape
 ```
 
+Watch target (KCTV) vars. `WATCH_PATH` is required whenever `site=watch` is used; the rest have defaults:
+
+```
+WATCH_PATH=/path/to/watch-vids      # required for the watch target; where MP4s are written
+VID_PAGES_COLLECTION=vidPages       # MongoDB collection for KCTV bulletin entries
+WATCH_PROFILE_PATH=                 # optional; defaults to ~/.playwright-profiles/kcnawatch
+WATCH_HEADLESS=true                 # optional; default true
+WATCH_BASE_URL=https://kcnawatch.org  # optional; default https://kcnawatch.org
+VID_PROGRESS_SIZE=1048576           # log download progress every N bytes
+```
+
 `HOST` is optional and defaults to `127.0.0.1`; Docker Compose sets it to `0.0.0.0`.
 
 ## Tests
 
-`tests/` has 16 `.test.js` files: api-controller, articles, db-model, log, middleware/listen-host, nork-model, pics, picSets, repair-empty-pics, scheduler, scrape-kcna, src, startup-config, tg-api, update-db, util. Shared HTML fixtures live in `tests/fixtures/kcna-current.js`.
+`tests/` holds one `.test.js` file per source module: api-controller, articles, db-model, kctv-listing, log, middleware/listen-host, nork-model, pics, picSets, repair-empty-pics, scheduler, scrape-kcna, scrape-watch, src, startup-config, tg-api, update-db, util, watch-vids. Shared HTML fixtures live in `tests/fixtures/`.
 
 ## Architecture
 
@@ -68,14 +79,16 @@ This is a Node.js/Express scraper (ESM modules) that pulls content from KCNA (kc
 
 **Authentication**: Every POST body must include `password` matching `API_PASSWORD` env var, or a 401 is returned.
 
-**Commands** sent in POST body `{ command, howMuch, password }`:
+**Commands** sent in POST body `{ command, site, howMuch, password }`:
 - `admin-start-scrape` / `admin-stop-scrape` — run a one-off scrape
-- `admin-start-scheduler` / `admin-stop-scheduler` — periodic scraping via `setInterval`
+- `admin-start-scheduler` / `admin-stop-scheduler` — periodic scraping via `setInterval` (KCNA only)
 - `admin-scrape-status` — returns current `kcnaState`
 
-`howMuch` values: `"admin-scrape-new"` (last 2 pages per category) or full scrape (all pages).
+`site` values: `"kcna"` (default when absent) or `"watch"`. Only `admin-start-scrape` reads `site`; every other command is KCNA-only, including the scheduler.
 
-**URL definitions** (`src/util/define-things.js`): 1335-line file of hardcoded KCNA pagination URLs, split into `articleURLs` and `picSetURLs` by category. This drives what gets scraped.
+`howMuch` values: `"admin-scrape-new"` (first page per category), `"admin-scrape-all"` (all pages), `"admin-scrape-url"` (a single supplied URL).
+
+**URL definitions** (`src/util/define-things.js`): ~35-line file of hardcoded KCNA listing URLs, split into `articleURLs` and `picSetURLs` by category, plus the matching category display names. This drives what gets scraped.
 
 **Scrape pipeline** (`src/kcna/scrape-kcna.js`), executed in order — wrapped in `try/catch/finally` so `logScrapeStopKCNA` always runs and `scrapeActive` is always reset to `false`, even on error:
 1. Scrape article/picSet listing pages → extract URLs → store to MongoDB
@@ -83,6 +96,20 @@ This is a Node.js/Express scraper (ESM modules) that pulls content from KCNA (kc
 3. Download pics to filesystem (`PIC_PATH/kcna_pic_{picId}.jpg`)
 4. Update article/picSet docs with downloaded pic metadata
 5. Upload articles + pic sets to Telegram (sorted oldest→newest)
+
+**Watch target (KCTV)** (`src/watch/`): a second pipeline that pulls KCTV news bulletins from kcnawatch.org. `admin-start-scrape` with `site: "watch"` runs `scrapeWatch()` in `src/watch/scrape-watch.js` instead of `scrapeKCNA()`; both share `kcnaState`, the scrape log, and the `runScrapeStage` / `finalizeFailedScrape` helpers exported from `src/kcna/scrape-kcna.js`, so only one scrape of either kind can run at a time. Stages, in order:
+
+1. `KCTV LISTING WATCH` — `scrapeKctvListing()` (`src/watch/kctv-listing.js`) reads the bulletin listing and returns entries for the 5pm and 8pm news only (`WATCH_VID_TYPES`). It throws if there are zero candidates or the profile is not logged in.
+2. `KCTV UPLOAD WATCH` — `uploadVidPagesWatch(entryArray)` stores new entries in the `VID_PAGES_COLLECTION` collection (`vidPages`).
+3. `KCTV DOWNLOAD WATCH` — `downloadVidsWatch()` downloads the MP4s that have not been fetched yet.
+
+Notes on how it works and why:
+
+- **Listing needs a real browser.** kcnawatch.org runs a bot check, so the listing is scraped with Playwright driving a *persistent* Chrome profile: `channel: "chrome"`, `ignoreDefaultArgs: ["--enable-automation"]`, and `--disable-blink-features=AutomationControlled`. Headless is controlled by `WATCH_HEADLESS` (default true).
+- **One-time manual login required.** The profile at `WATCH_PROFILE_PATH` (default `~/.playwright-profiles/kcnawatch`) must be logged into kcnawatch.org by hand once, headed. After that the saved session carries the scrape. If the profile is logged out, stage 1 throws.
+- **Video download needs no browser.** MP4s come straight from `streamer.nknews.org` over plain HTTP with a browser User-Agent and a kcnawatch Referer header. No cookies are involved.
+- **Output**: files are written to `WATCH_PATH` as `kctv_<date>_<vidType>.mp4`; progress is logged every `VID_PROGRESS_SIZE` bytes.
+- **Local only for now.** The Docker image has no Chrome, so the watch target cannot run in the container. Run it locally until Chrome is added to the image.
 
 **State**: `kcnaState` in `src/util/state.js` is a module-level singleton. `scrapeActive` is checked throughout the pipeline — setting it to `false` stops the scrape mid-run. The scheduler stores `intervalId` at module scope (not in state) to avoid serialization issues.
 

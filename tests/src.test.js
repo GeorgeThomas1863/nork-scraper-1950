@@ -4,6 +4,10 @@ vi.mock('../src/kcna/scrape-kcna.js', () => ({
   scrapeKCNA: vi.fn(),
 }))
 
+vi.mock('../src/watch/scrape-watch.js', () => ({
+  scrapeWatch: vi.fn(),
+}))
+
 vi.mock('../src/util/scheduler.js', () => ({
   startSchedulerKCNA: vi.fn(),
   stopSchedulerKCNA: vi.fn(),
@@ -22,6 +26,7 @@ vi.mock('../models/db-model.js', () => ({
 import kcnaState from '../src/util/state.js'
 import { runScraper } from '../src/src.js'
 import { scrapeKCNA } from '../src/kcna/scrape-kcna.js'
+import { scrapeWatch } from '../src/watch/scrape-watch.js'
 import { startSchedulerKCNA, stopSchedulerKCNA } from '../src/util/scheduler.js'
 import { logScrapeStopKCNA } from '../src/util/log.js'
 import dbModel from '../models/db-model.js'
@@ -65,6 +70,36 @@ describe('runScraper', () => {
     const result = await runScraper({ command: 'admin-start-scrape' })
     expect(scrapeKCNA).not.toHaveBeenCalled()
     expect(result.scrapeMessage).toBe('Scrape already in progress')
+  })
+
+  it('starts the watch pipeline when site is watch', async () => {
+    scrapeWatch.mockResolvedValue({ scrapeActive: false })
+    const inputParams = { command: 'admin-start-scrape', site: 'watch', howMuch: 'admin-scrape-new' }
+
+    const result = await runScraper(inputParams)
+
+    expect(scrapeWatch).toHaveBeenCalledWith(inputParams)
+    expect(scrapeKCNA).not.toHaveBeenCalled()
+    expect(result).toBe(kcnaState)
+  })
+
+  it('starts the KCNA pipeline when site is kcna', async () => {
+    scrapeKCNA.mockResolvedValue({ scrapeActive: false })
+    const inputParams = { command: 'admin-start-scrape', site: 'kcna', howMuch: 'admin-scrape-new' }
+
+    await runScraper(inputParams)
+
+    expect(scrapeKCNA).toHaveBeenCalledWith(inputParams)
+    expect(scrapeWatch).not.toHaveBeenCalled()
+  })
+
+  it('defaults to the KCNA pipeline when site is missing', async () => {
+    scrapeKCNA.mockResolvedValue({ scrapeActive: false })
+
+    await runScraper({ command: 'admin-start-scrape', howMuch: 'admin-scrape-new' })
+
+    expect(scrapeKCNA).toHaveBeenCalled()
+    expect(scrapeWatch).not.toHaveBeenCalled()
   })
 
   // ---- admin-stop-scrape ----

@@ -45,3 +45,7 @@ desktop.ini
 
 # Downloaded pics (if PIC_PATH ever points inside the repo)
 pics/
+
+# Watch target output (if paths ever point inside the repo)
+watch-vids/
+.playwright-profiles/

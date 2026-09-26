@@ -20,6 +20,6 @@ export const apiEndpointController = async (req, res) => {
 };
 
 const buildRequestContext = (inputParams) => {
-  const { command, howMuch } = inputParams;
-  return { command, howMuch };
+  const { command, howMuch, site } = inputParams;
+  return { command, howMuch, site };
 };

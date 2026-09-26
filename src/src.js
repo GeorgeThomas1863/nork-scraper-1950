@@ -1,5 +1,6 @@
 import kcnaState from "./util/state.js";
 import { scrapeKCNA } from "./kcna/scrape-kcna.js";
+import { scrapeWatch } from "./watch/scrape-watch.js";
 import { startSchedulerKCNA, stopSchedulerKCNA } from "./util/scheduler.js";
 
 export const runScraper = async (inputParams) => {
@@ -54,10 +55,18 @@ export const runScraper = async (inputParams) => {
 //runs unawaited so the admin request returns before the scrape finishes;
 //the frontend status poll tracks progress
 const startScrapeUnawaited = (inputParams) => {
-  return scrapeKCNA(inputParams).catch((error) => {
+  const runScrape = pickScrapeBySite(inputParams.site);
+
+  return runScrape(inputParams).catch((error) => {
     console.log("ADMIN SCRAPE ERROR: " + error.message);
     return null;
   });
+};
+
+//site defaults to kcna; only the watch target uses the KCTV pipeline
+const pickScrapeBySite = (site) => {
+  if (site === "watch") return scrapeWatch;
+  return scrapeKCNA;
 };
 
 const buildRunningScrapeMessage = () => {

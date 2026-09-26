@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import { resolveListenHost } from "./middleware/listen-host.js";
 
-dotenv.config({ path: ".env" });
+dotenv.config({ path: [".env.local", ".env"], quiet: true });
 
 const { default: express } = await import("express");
 const { default: routes } = await import("./routes/router.js");

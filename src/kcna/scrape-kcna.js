@@ -48,12 +48,13 @@ const runScrapePipeline = async (howMuch) => {
   await runScrapeStage("PIC SET UPLOAD KCNA", uploadPicSetsKCNA);
 };
 
-const runScrapeStage = async (scrapeStep, operation, ...operationArgs) => {
+//shared with the watch pipeline (src/watch/scrape-watch.js)
+export const runScrapeStage = async (scrapeStep, operation, ...operationArgs) => {
   kcnaState.scrapeStep = scrapeStep;
   return await operation(...operationArgs);
 };
 
-const finalizeFailedScrape = async (error) => {
+export const finalizeFailedScrape = async (error) => {
   console.log("SCRAPE ERROR: " + error.message);
   error.apiMessage = `Scrape failed during ${kcnaState.scrapeStep || "scrape initialization"}`;
   kcnaState.scrapeActive = false;
