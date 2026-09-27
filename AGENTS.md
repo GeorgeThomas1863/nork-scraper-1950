@@ -81,10 +81,10 @@ This is a Node.js/Express scraper (ESM modules) that pulls content from KCNA (kc
 
 **Commands** sent in POST body `{ command, site, howMuch, password }`:
 - `admin-start-scrape` / `admin-stop-scrape` — run a one-off scrape
-- `admin-start-scheduler` / `admin-stop-scheduler` — periodic scraping via `setInterval` (KCNA only)
+- `admin-start-scheduler` / `admin-stop-scheduler` — periodic scraping via `setInterval` that runs KCNA then the KCNA Watch video scrape sequentially each tick
 - `admin-scrape-status` — returns current `kcnaState`
 
-`site` values: `"kcna"` (default when absent) or `"watch"`. Only `admin-start-scrape` reads `site`; every other command is KCNA-only, including the scheduler.
+`site` values: `"kcna"` (default when absent) or `"watch"`. Only `admin-start-scrape` reads `site`; the scheduler always runs both KCNA and watch in sequence and does not read `site`.
 
 `howMuch` values: `"admin-scrape-new"` (first page per category), `"admin-scrape-all"` (all pages), `"admin-scrape-url"` (a single supplied URL).
 

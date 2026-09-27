@@ -1,6 +1,7 @@
 import kcnaState from "./state.js";
 import dbModel from "../../models/db-model.js";
 import { scrapeKCNA } from "../kcna/scrape-kcna.js";
+import { scrapeWatch } from "../watch/scrape-watch.js";
 
 const SCHEDULER_CONFIG_KEY = "schedulerState";
 
@@ -20,7 +21,7 @@ export const startSchedulerKCNA = async () => {
     runScheduledScrape(ownedGeneration);
   }, scrapeInterval);
 
-  startInitialScrape();
+  startInitialScrape(ownedGeneration);
 
   return true;
 };
@@ -37,15 +38,12 @@ const logSchedulerStart = () => {
 };
 
 //runs unawaited so the admin request returns before the scrape finishes
-const startInitialScrape = () => {
+const startInitialScrape = (ownedGeneration) => {
   if (kcnaState.scrapeActive || kcnaState.scrapeRunning) return null;
 
   console.log("STARTING INITIAL SCRAPE");
 
-  return scrapeKCNA({ howMuch: "admin-scrape-new" }).catch((error) => {
-    console.log("INITIAL SCRAPE ERROR: " + error.message);
-    return null;
-  });
+  return runScrapeSequence(ownedGeneration);
 };
 
 const runScheduledScrape = async (ownedGeneration) => {
@@ -54,12 +52,27 @@ const runScheduledScrape = async (ownedGeneration) => {
 
   console.log("STARTING NEW SCRAPE");
 
+  return await runScrapeSequence(ownedGeneration);
+};
+
+const runScrapeSequence = async (ownedGeneration) => {
   try {
-    return await scrapeKCNA({ howMuch: "admin-scrape-new" });
+    await scrapeKCNA({ howMuch: "admin-scrape-new" });
   } catch (error) {
     console.log("SCHEDULED SCRAPE ERROR: " + error.message);
-    return null;
   }
+
+  if (!ownsScheduler(ownedGeneration)) return null;
+
+  console.log("STARTING WATCH SCRAPE");
+
+  try {
+    await scrapeWatch({ howMuch: "admin-scrape-new" });
+  } catch (error) {
+    console.log("SCHEDULED WATCH SCRAPE ERROR: " + error.message);
+  }
+
+  return null;
 };
 
 const ownsScheduler = (ownedGeneration) => {

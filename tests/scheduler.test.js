@@ -4,6 +4,10 @@ vi.mock('../src/kcna/scrape-kcna.js', () => ({
   scrapeKCNA: vi.fn().mockResolvedValue({}),
 }))
 
+vi.mock('../src/watch/scrape-watch.js', () => ({
+  scrapeWatch: vi.fn().mockResolvedValue({}),
+}))
+
 // Mock dbModel at class level — intercept every `new dbModel(...)` call
 const mockGetUniqueItem = vi.fn()
 const mockStoreAny = vi.fn()
@@ -22,6 +26,7 @@ vi.mock('../models/db-model.js', () => ({
 import kcnaState, { resetStateKCNA } from '../src/util/state.js'
 import { startSchedulerKCNA, stopSchedulerKCNA, resumeSchedulerKCNA } from '../src/util/scheduler.js'
 import { scrapeKCNA } from '../src/kcna/scrape-kcna.js'
+import { scrapeWatch } from '../src/watch/scrape-watch.js'
 import dbModel from '../models/db-model.js'
 
 const SCHEDULER_DOC = { configKey: 'schedulerState', schedulerOn: true }
@@ -94,7 +99,7 @@ describe('startSchedulerKCNA', () => {
     expect(result).toBe(true)
     expect(kcnaState.schedulerActive).toBe(true)
     expect(vi.getTimerCount()).toBe(1)
-    expect(consoleSpy).toHaveBeenCalledWith('INITIAL SCRAPE ERROR: initial scrape failed')
+    expect(consoleSpy).toHaveBeenCalledWith('SCHEDULED SCRAPE ERROR: initial scrape failed')
     consoleSpy.mockRestore()
   })
 
@@ -305,5 +310,117 @@ describe('resumeSchedulerKCNA', () => {
     expect(vi.getTimerCount()).toBe(0)
     expect(consoleSpy).toHaveBeenCalledWith('SCHEDULER STATE READ ERROR: mongo down')
     consoleSpy.mockRestore()
+  })
+})
+
+const createDeferredPromise = () => {
+  let resolve
+  const promise = new Promise((res) => {
+    resolve = res
+  })
+  return { promise, resolve }
+}
+
+describe('scheduler watch scrape', () => {
+  it('runs scrapeWatch with admin-scrape-new after the initial scrapeKCNA resolves', async () => {
+    await startSchedulerKCNA()
+    await vi.advanceTimersByTimeAsync(0) // flush the initial scrape chain
+
+    expect(scrapeKCNA).toHaveBeenCalledWith({ howMuch: 'admin-scrape-new' })
+    expect(scrapeWatch).toHaveBeenCalledWith({ howMuch: 'admin-scrape-new' })
+    expect(scrapeKCNA.mock.invocationCallOrder[0]).toBeLessThan(scrapeWatch.mock.invocationCallOrder[0])
+  })
+
+  it('runs scrapeKCNA then scrapeWatch on every interval tick', async () => {
+    await startSchedulerKCNA()
+    await vi.advanceTimersByTimeAsync(0) // flush the initial scrape chain
+    vi.clearAllMocks()
+
+    await vi.advanceTimersByTimeAsync(3600000)
+
+    expect(scrapeKCNA).toHaveBeenCalledWith({ howMuch: 'admin-scrape-new' })
+    expect(scrapeWatch).toHaveBeenCalledWith({ howMuch: 'admin-scrape-new' })
+    expect(scrapeKCNA.mock.invocationCallOrder[0]).toBeLessThan(scrapeWatch.mock.invocationCallOrder[0])
+  })
+
+  it('still runs scrapeWatch when the scheduled scrapeKCNA rejects', async () => {
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    await startSchedulerKCNA()
+    await vi.advanceTimersByTimeAsync(0) // flush the initial scrape chain
+    vi.clearAllMocks()
+    scrapeKCNA.mockRejectedValueOnce(new Error('scheduled scrape failed'))
+
+    await vi.advanceTimersByTimeAsync(3600000)
+
+    expect(consoleSpy).toHaveBeenCalledWith('SCHEDULED SCRAPE ERROR: scheduled scrape failed')
+    expect(scrapeWatch).toHaveBeenCalledWith({ howMuch: 'admin-scrape-new' })
+    consoleSpy.mockRestore()
+  })
+
+  it('logs and keeps the interval alive when the scheduled scrapeWatch rejects', async () => {
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    await startSchedulerKCNA()
+    await vi.advanceTimersByTimeAsync(0) // flush the initial scrape chain
+    vi.clearAllMocks()
+    scrapeWatch.mockRejectedValueOnce(new Error('watch scrape failed'))
+
+    await vi.advanceTimersByTimeAsync(3600000)
+
+    expect(consoleSpy).toHaveBeenCalledWith('SCHEDULED WATCH SCRAPE ERROR: watch scrape failed')
+    expect(kcnaState.schedulerActive).toBe(true)
+    expect(vi.getTimerCount()).toBe(1)
+
+    vi.clearAllMocks()
+    await vi.advanceTimersByTimeAsync(3600000)
+
+    expect(scrapeKCNA).toHaveBeenCalledWith({ howMuch: 'admin-scrape-new' })
+    consoleSpy.mockRestore()
+  })
+
+  it('does not call scrapeWatch after scrapeKCNA resolves once the scheduler has been stopped', async () => {
+    const deferred = createDeferredPromise()
+    scrapeKCNA.mockImplementationOnce(() => deferred.promise)
+
+    await startSchedulerKCNA()
+    await stopSchedulerKCNA()
+
+    deferred.resolve({})
+    await vi.advanceTimersByTimeAsync(0) // flush the now-resolved initial scrape chain
+
+    expect(scrapeWatch).not.toHaveBeenCalled()
+  })
+
+  it('never calls scrapeWatch before scrapeKCNA has resolved', async () => {
+    const deferred = createDeferredPromise()
+    scrapeKCNA.mockImplementationOnce(() => deferred.promise)
+
+    await startSchedulerKCNA()
+
+    expect(scrapeKCNA).toHaveBeenCalledTimes(1)
+    expect(scrapeWatch).not.toHaveBeenCalled()
+
+    deferred.resolve({})
+    await vi.advanceTimersByTimeAsync(0) // flush now that scrapeKCNA has resolved
+
+    expect(scrapeWatch).toHaveBeenCalledWith({ howMuch: 'admin-scrape-new' })
+  })
+
+  it('never calls scrapeWatch before scrapeKCNA has resolved on an interval tick', async () => {
+    await startSchedulerKCNA()
+    await vi.advanceTimersByTimeAsync(0) // flush initial run
+    vi.clearAllMocks()
+
+    const deferred = createDeferredPromise()
+    scrapeKCNA.mockImplementationOnce(() => deferred.promise)
+
+    await vi.advanceTimersByTimeAsync(3600000)
+
+    expect(scrapeKCNA).toHaveBeenCalledTimes(1)
+    expect(scrapeWatch).not.toHaveBeenCalled()
+
+    deferred.resolve({})
+    await vi.advanceTimersByTimeAsync(0)
+
+    expect(scrapeWatch).toHaveBeenCalledWith({ howMuch: 'admin-scrape-new' })
   })
 })
