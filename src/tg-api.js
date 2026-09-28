@@ -62,6 +62,43 @@ export const tgPostPicFS = async (inputParams, attempt = 0) => {
   }
 };
 
+// Telegram says 50 MB without stating MB vs MiB; use the smaller decimal figure
+export const TG_VID_MAX_BYTES = 50_000_000;
+
+export const tgPostVidFS = async (inputParams, attempt = 0) => {
+  if (!inputParams) return null;
+
+  if (attempt >= tokenArray.length) {
+    console.log("ALL TOKENS EXHAUSTED FOR sendVideo");
+    return null;
+  }
+
+  const token = tokenArray[tokenIndex];
+  const url = `https://api.telegram.org/bot${token}/sendVideo`;
+
+  try {
+    const vidForm = buildVidForm(inputParams);
+
+    if (!vidForm) return null;
+    const data = await tgPostPicReq(url, vidForm);
+    const verdict = checkToken(data);
+
+    if (verdict === "ok") return data;
+
+    if (verdict === "fatal") {
+      logFatalError("sendVideo", data);
+      return null;
+    }
+
+    await waitRetryAfter(data);
+    rotateToken();
+    return await tgPostVidFS(inputParams, attempt + 1);
+  } catch (e) {
+    console.log(e.response?.data ?? e.message);
+    return null;
+  }
+};
+
 //-----------------------
 
 export const tgGetReq = async (url) => {
@@ -130,6 +167,73 @@ export const buildPicForm = async (inputObj) => {
     console.log(e.message);
     return null;
   }
+};
+
+//returns the file size in bytes, or null if the stat call fails
+const readFileSize = (savePath) => {
+  try {
+    return fs.statSync(savePath).size;
+  } catch (e) {
+    console.log(e.message);
+    return null;
+  }
+};
+
+export const buildVidForm = (inputObj) => {
+  if (!inputObj) return null;
+  const { chatId, savePath, caption, mode, thumbPath } = inputObj;
+
+  //must come first; fs.existsSync(undefined) triggers a DEP0187 deprecation warning
+  if (!savePath) {
+    console.log("VID FILE PATH MISSING");
+    return null;
+  }
+
+  if (!fs.existsSync(savePath)) {
+    console.log("VID FILE NOT FOUND: " + savePath);
+    return null;
+  }
+
+  const fileSize = readFileSize(savePath);
+  if (fileSize === null) return null;
+
+  if (fileSize >= TG_VID_MAX_BYTES) {
+    console.log("VID FILE OVER TELEGRAM LIMIT");
+    return null;
+  }
+
+  try {
+    const form = new FormData();
+    form.append("chat_id", chatId);
+    form.append("video", fs.createReadStream(savePath));
+
+    if (caption) {
+      form.append("caption", caption);
+      form.append("parse_mode", mode);
+    }
+
+    form.append("supports_streaming", "true");
+
+    if (thumbPath && fs.existsSync(thumbPath)) {
+      form.append("thumbnail", fs.createReadStream(thumbPath));
+    }
+
+    return form;
+  } catch (e) {
+    console.log(e.message);
+    return null;
+  }
+};
+
+export const waitRetryAfter = async (data) => {
+  const retryAfter = data?.parameters?.retry_after;
+
+  if (typeof retryAfter !== "number" || retryAfter <= 0) return;
+
+  const waitSeconds = Math.min(retryAfter, 60);
+  console.log(`RATE LIMITED, WAITING ${waitSeconds}s BEFORE RETRY`);
+
+  await new Promise((resolve) => setTimeout(resolve, waitSeconds * 1000));
 };
 
 //failures a DIFFERENT token can fix; rate limited, or bad/revoked token with no access

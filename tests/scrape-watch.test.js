@@ -13,12 +13,18 @@ vi.mock('../src/watch/kctv-listing.js', () => ({
 vi.mock('../src/watch/vids.js', () => ({
   uploadVidPagesWatch: vi.fn(),
   downloadVidsWatch: vi.fn(),
+  downloadThumbsWatch: vi.fn(),
+}))
+
+vi.mock('../src/watch/upload-tg.js', () => ({
+  uploadVidsTGWatch: vi.fn(),
 }))
 
 import { scrapeWatch } from '../src/watch/scrape-watch.js'
 import { logScrapeStartKCNA, logScrapeStopKCNA } from '../src/util/log.js'
 import { scrapeKctvListing } from '../src/watch/kctv-listing.js'
-import { uploadVidPagesWatch, downloadVidsWatch } from '../src/watch/vids.js'
+import { uploadVidPagesWatch, downloadVidsWatch, downloadThumbsWatch } from '../src/watch/vids.js'
+import { uploadVidsTGWatch } from '../src/watch/upload-tg.js'
 import kcnaState, { resetStateKCNA } from '../src/util/state.js'
 
 const inputParams = { command: 'admin-start-scrape', site: 'watch', howMuch: 'admin-scrape-new' }
@@ -33,6 +39,8 @@ beforeEach(() => {
   scrapeKctvListing.mockResolvedValue([])
   uploadVidPagesWatch.mockResolvedValue(0)
   downloadVidsWatch.mockResolvedValue(0)
+  downloadThumbsWatch.mockResolvedValue(0)
+  uploadVidsTGWatch.mockResolvedValue(null)
 })
 
 describe('scrapeWatch', () => {
@@ -44,10 +52,12 @@ describe('scrapeWatch', () => {
     })
     uploadVidPagesWatch.mockImplementation(async () => observedSteps.push(kcnaState.scrapeStep))
     downloadVidsWatch.mockImplementation(async () => observedSteps.push(kcnaState.scrapeStep))
+    downloadThumbsWatch.mockImplementation(async () => observedSteps.push(kcnaState.scrapeStep))
+    uploadVidsTGWatch.mockImplementation(async () => observedSteps.push(kcnaState.scrapeStep))
 
     await scrapeWatch(inputParams)
 
-    expect(observedSteps).toEqual(['KCTV LISTING WATCH', 'KCTV UPLOAD WATCH', 'KCTV DOWNLOAD WATCH'])
+    expect(observedSteps).toEqual(['KCTV LISTING WATCH', 'KCTV UPLOAD WATCH', 'KCTV DOWNLOAD WATCH', 'KCTV THUMBS WATCH', 'KCTV TG UPLOAD WATCH'])
   })
 
   it('passes inputParams to the listing scrape and its entries to the upload', async () => {
@@ -59,6 +69,8 @@ describe('scrapeWatch', () => {
     expect(scrapeKctvListing).toHaveBeenCalledWith(inputParams)
     expect(uploadVidPagesWatch).toHaveBeenCalledWith(entryArray)
     expect(downloadVidsWatch).toHaveBeenCalledWith()
+    expect(downloadThumbsWatch).toHaveBeenCalledWith()
+    expect(uploadVidsTGWatch).toHaveBeenCalledWith()
   })
 
   it('finalizes once and returns the final state after success', async () => {
@@ -124,6 +136,19 @@ describe('scrapeWatch', () => {
     await expect(scrapeWatch(inputParams)).rejects.toBe(pipelineError)
 
     expect(pipelineError.apiMessage).toBe('Scrape failed during KCTV DOWNLOAD WATCH')
+    expect(kcnaState.scrapeActive).toBe(false)
+    consoleSpy.mockRestore()
+  })
+
+  it('identifies the TG upload stage when it fails', async () => {
+    const pipelineError = new Error('tg upload failed')
+    uploadVidsTGWatch.mockRejectedValue(pipelineError)
+    logScrapeStopKCNA.mockResolvedValue({})
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+
+    await expect(scrapeWatch(inputParams)).rejects.toBe(pipelineError)
+
+    expect(pipelineError.apiMessage).toBe('Scrape failed during KCTV TG UPLOAD WATCH')
     expect(kcnaState.scrapeActive).toBe(false)
     consoleSpy.mockRestore()
   })

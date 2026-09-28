@@ -1,7 +1,6 @@
 # Env
 .env
 .env.*
-!.env.example
 
 # Claude / agent tooling
 .claude/

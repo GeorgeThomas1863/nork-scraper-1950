@@ -6,6 +6,12 @@ import kcnaState from "../util/state.js";
 import dbModel from "../../models/db-model.js";
 import { updateLogKCNA } from "../util/log.js";
 
+//KCTV/KCNA Watch requires a browser-like User-Agent + Referer for reliable downloads; no cookies needed
+const WATCH_REQUEST_HEADERS = {
+  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36",
+  Referer: "https://kcnawatch.org/",
+};
+
 export const uploadVidPagesWatch = async (entryArray) => {
   const watchCollection = process.env.WATCH_COLLECTION;
   if (!kcnaState.scrapeActive) return 0;
@@ -121,14 +127,17 @@ const ensureVidDir = (vidPath) => {
   }
 };
 
-const buildVidFileName = (date, vidType) => {
+const buildWatchFileName = (date, vidType, ext) => {
   const itemDate = new Date(date);
   const year = itemDate.getUTCFullYear();
   const month = String(itemDate.getUTCMonth() + 1).padStart(2, "0");
   const day = String(itemDate.getUTCDate()).padStart(2, "0");
 
-  return `kctv_${year}-${month}-${day}_${vidType}.mp4`;
+  return `kctv_${year}-${month}-${day}_${vidType}.${ext}`;
 };
+
+const buildVidFileName = (date, vidType) => buildWatchFileName(date, vidType, "mp4");
+const buildThumbFileName = (date, vidType) => buildWatchFileName(date, vidType, "jpg");
 
 export const downloadVidFS = async (url, savePath, vidName, attempt = 0) => {
   if (!url || !savePath || !vidName) return null;
@@ -137,16 +146,12 @@ export const downloadVidFS = async (url, savePath, vidName, attempt = 0) => {
   if (!kcnaState.scrapeActive) return null;
 
   try {
-    //KCTV/KCNA Watch requires a browser-like User-Agent + Referer for reliable video downloads; no cookies needed
     const res = await axios({
       method: "get",
       url: url,
       timeout: 120 * 1000, //2 minutes
       responseType: "stream",
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36",
-        Referer: "https://kcnawatch.org/",
-      },
+      headers: WATCH_REQUEST_HEADERS,
     });
 
     if (!res || !res.data || !res.headers) {
@@ -225,4 +230,101 @@ const retryVidFS = async (url, savePath, vidName, attempt) => {
 
   console.log(`RETRYING DOWNLOAD: ${vidName}`);
   return downloadVidFS(url, savePath, vidName, 1);
+};
+
+//++++++++++++++++++++++++++++++++++++++++++
+
+//intentionally also backfills rows whose vid already downloaded, since thumbURL was only added later
+export const downloadThumbsWatch = async () => {
+  const watchCollection = process.env.WATCH_COLLECTION;
+  const vidPath = process.env.WATCH_PATH;
+  if (!vidPath) throw new Error("WATCH_PATH environment variable is not set");
+
+  kcnaState.scrapeStep = "KCTV THUMBS WATCH";
+  if (!kcnaState.scrapeActive) return 0;
+
+  ensureVidDir(vidPath);
+
+  const thumbModel = new dbModel({ keyExists: "thumbURL", keyEmpty: "thumbName" }, watchCollection);
+  const thumbArray = await thumbModel.findEmptyItems();
+  if (!thumbArray || !thumbArray.length) return 0;
+
+  console.log(`STARTING DOWNLOAD OF ${thumbArray.length} NEW THUMBS WATCH`);
+
+  let downloadedCount = 0;
+  for (const thumbRow of thumbArray) {
+    if (!kcnaState.scrapeActive) return downloadedCount;
+
+    const { url, thumbURL, date, vidType } = thumbRow;
+    if (!thumbURL || !date || !vidType) continue;
+
+    const thumbName = buildThumbFileName(date, vidType);
+    const savePath = path.join(vidPath, thumbName);
+
+    const thumbData = await downloadThumbFS(thumbURL, savePath, thumbName);
+    if (!thumbData) continue;
+
+    console.log(`STORING THUMB: ${thumbName} | ${Math.round(thumbData.downloadedSize / 1024)}KB`);
+
+    const storeParams = {
+      keyToLookup: "url",
+      itemValue: url,
+      updateObj: { thumbName: thumbName, thumbPath: savePath, thumbSize: thumbData.downloadedSize },
+    };
+
+    try {
+      const storeThumbModel = new dbModel(storeParams, watchCollection);
+      const storeData = await storeThumbModel.updateObjItem();
+      if (!storeData) continue;
+
+      console.log(`STORED THUMB: ${thumbName} | MODIFIED: ${storeData.modifiedCount}`);
+      downloadedCount++;
+    } catch (e) {
+      console.log("MONGO ERROR FOR THUMB DOWNLOAD: " + url);
+      console.log(e.message);
+    }
+  }
+
+  kcnaState.scrapeMessage = `FINISHED DOWNLOADING ${downloadedCount} NEW THUMBS WATCH`;
+  await updateLogKCNA();
+
+  console.log("FINISHED THUMB DOWNLOAD WATCH");
+  console.log(`DOWNLOADED ${downloadedCount} THUMBS`);
+
+  return downloadedCount;
+};
+
+export const downloadThumbFS = async (url, savePath, thumbName) => {
+  if (!url || !savePath || !thumbName) return null;
+  if (!kcnaState.scrapeActive) return null;
+
+  try {
+    const res = await axios({
+      method: "get",
+      url: url,
+      timeout: 30 * 1000, //30 seconds
+      responseType: "arraybuffer",
+      headers: WATCH_REQUEST_HEADERS,
+    });
+
+    if (!res || !res.data) {
+      throw new Error(`Empty axios response for ${url}`);
+    }
+
+    const downloadedSize = res.data.length;
+    if (!downloadedSize) {
+      console.log(`EMPTY THUMB DOWNLOAD: ${thumbName} | ${url}`);
+      removeVidFS(savePath);
+      return null;
+    }
+
+    fs.writeFileSync(savePath, res.data);
+
+    console.log(`THUMB DOWNLOAD COMPLETE: ${thumbName} | FINAL SIZE: ${Math.round(downloadedSize / 1024)}KB`);
+    return { downloadedSize };
+  } catch (e) {
+    console.log(`THUMB DOWNLOAD ERROR: ${thumbName} | ${e.message}`);
+    removeVidFS(savePath);
+    return null;
+  }
 };

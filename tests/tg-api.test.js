@@ -24,6 +24,10 @@ import {
   checkToken,
   tgSendMessage,
   tgPostPicFS,
+  buildVidForm,
+  tgPostVidFS,
+  waitRetryAfter,
+  TG_VID_MAX_BYTES,
 } from '../src/tg-api.js'
 
 const TOKEN_COUNT = process.env.TOKEN_ARRAY.split(',').length
@@ -410,3 +414,269 @@ describe('tgPostPicFS rotation policy', () => {
     expect(axios.post).toHaveBeenCalledTimes(TOKEN_COUNT)
   })
 })
+
+// ---- buildVidForm ----
+
+describe('buildVidForm', () => {
+  it('returns null for falsy input', () => {
+    expect(buildVidForm(null)).toBeNull()
+    expect(buildVidForm(undefined)).toBeNull()
+  })
+
+  it('returns null without calling fs.existsSync when savePath is missing', () => {
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    const existsSpy = vi.spyOn(fs, 'existsSync')
+
+    const result = buildVidForm({ chatId: '-1234', caption: 'test', mode: 'HTML' })
+
+    expect(result).toBeNull()
+    expect(existsSpy).not.toHaveBeenCalled()
+
+    existsSpy.mockRestore()
+    consoleSpy.mockRestore()
+  })
+
+  it('returns null when savePath does not exist on filesystem', () => {
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    const result = buildVidForm({
+      chatId: '-1234',
+      savePath: '/nonexistent/path/vid.mp4',
+      caption: 'test',
+      mode: 'HTML',
+    })
+    expect(result).toBeNull()
+    consoleSpy.mockRestore()
+  })
+
+  it('returns null when the file is over the telegram size limit', () => {
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    vi.spyOn(fs, 'existsSync').mockReturnValue(true)
+    vi.spyOn(fs, 'statSync').mockReturnValue({ size: TG_VID_MAX_BYTES })
+
+    const result = buildVidForm({
+      chatId: '-1234',
+      savePath: '/tmp/watch/big.mp4',
+      caption: 'test',
+      mode: 'HTML',
+    })
+
+    expect(result).toBeNull()
+    const overLimitLines = consoleSpy.mock.calls.filter(
+      ([line]) => typeof line === 'string' && line.includes('OVER TELEGRAM LIMIT')
+    )
+    expect(overLimitLines).toHaveLength(1)
+
+    vi.restoreAllMocks()
+  })
+
+  it('builds a FormData object with video fields when savePath exists', () => {
+    vi.spyOn(fs, 'existsSync').mockReturnValue(true)
+    vi.spyOn(fs, 'statSync').mockReturnValue({ size: 1000 })
+    vi.spyOn(fs, 'createReadStream').mockReturnValue('STREAM')
+
+    const result = buildVidForm({
+      chatId: '-1001234567890',
+      savePath: '/tmp/watch/kctv_vid_1.mp4',
+      caption: 'Test caption',
+      mode: 'HTML',
+    })
+
+    expect(result).not.toBeNull()
+    expect(result.append).toHaveBeenCalledWith('chat_id', '-1001234567890')
+    expect(result.append).toHaveBeenCalledWith('video', 'STREAM')
+    expect(result.append).toHaveBeenCalledWith('caption', 'Test caption')
+    expect(result.append).toHaveBeenCalledWith('parse_mode', 'HTML')
+    expect(result.append).toHaveBeenCalledWith('supports_streaming', 'true')
+    expect(result.append).not.toHaveBeenCalledWith('thumbnail', expect.anything())
+
+    vi.restoreAllMocks()
+  })
+
+  it('appends a thumbnail stream when thumbPath is given and exists', () => {
+    vi.spyOn(fs, 'existsSync').mockReturnValue(true)
+    vi.spyOn(fs, 'statSync').mockReturnValue({ size: 1000 })
+    vi.spyOn(fs, 'createReadStream').mockImplementation((p) => `STREAM:${p}`)
+
+    const result = buildVidForm({
+      chatId: '-1001234567890',
+      savePath: '/tmp/watch/kctv_vid_1.mp4',
+      caption: 'Test caption',
+      mode: 'HTML',
+      thumbPath: '/tmp/watch/kctv_vid_1_thumb.jpg',
+    })
+
+    expect(result).not.toBeNull()
+    expect(result.append).toHaveBeenCalledWith('thumbnail', 'STREAM:/tmp/watch/kctv_vid_1_thumb.jpg')
+
+    vi.restoreAllMocks()
+  })
+
+  it('skips the thumbnail when thumbPath is given but does not exist', () => {
+    vi.spyOn(fs, 'existsSync').mockImplementation((p) => p === '/tmp/watch/kctv_vid_1.mp4')
+    vi.spyOn(fs, 'statSync').mockReturnValue({ size: 1000 })
+    vi.spyOn(fs, 'createReadStream').mockReturnValue('STREAM')
+
+    const result = buildVidForm({
+      chatId: '-1001234567890',
+      savePath: '/tmp/watch/kctv_vid_1.mp4',
+      caption: 'Test caption',
+      mode: 'HTML',
+      thumbPath: '/tmp/watch/missing_thumb.jpg',
+    })
+
+    expect(result).not.toBeNull()
+    expect(result.append).not.toHaveBeenCalledWith('thumbnail', expect.anything())
+
+    vi.restoreAllMocks()
+  })
+
+  it('omits caption and parse_mode fields when no caption is given', () => {
+    vi.spyOn(fs, 'existsSync').mockReturnValue(true)
+    vi.spyOn(fs, 'statSync').mockReturnValue({ size: 1000 })
+    vi.spyOn(fs, 'createReadStream').mockReturnValue('STREAM')
+
+    const result = buildVidForm({
+      chatId: '-1001234567890',
+      savePath: '/tmp/watch/kctv_vid_1.mp4',
+      caption: undefined,
+      mode: 'HTML',
+    })
+
+    expect(result).not.toBeNull()
+    expect(result.append).toHaveBeenCalledWith('chat_id', '-1001234567890')
+    expect(result.append).toHaveBeenCalledWith('video', 'STREAM')
+    expect(result.append).toHaveBeenCalledWith('supports_streaming', 'true')
+    expect(result.append).not.toHaveBeenCalledWith('caption', expect.anything())
+    expect(result.append).not.toHaveBeenCalledWith('parse_mode', expect.anything())
+
+    vi.restoreAllMocks()
+  })
+})
+
+// ---- waitRetryAfter ----
+
+describe('waitRetryAfter', () => {
+  it('resolves immediately when there is no usable retry_after', async () => {
+    await expect(waitRetryAfter(undefined)).resolves.toBeUndefined()
+    await expect(waitRetryAfter({})).resolves.toBeUndefined()
+    await expect(waitRetryAfter({ parameters: {} })).resolves.toBeUndefined()
+    await expect(waitRetryAfter({ parameters: { retry_after: -1 } })).resolves.toBeUndefined()
+  })
+
+  it('waits the retry_after duration, capped at 60s', async () => {
+    vi.useFakeTimers()
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+
+    const promise = waitRetryAfter({ parameters: { retry_after: 120 } })
+    let resolved = false
+    promise.then(() => {
+      resolved = true
+    })
+
+    await vi.advanceTimersByTimeAsync(59000)
+    expect(resolved).toBe(false)
+
+    await vi.advanceTimersByTimeAsync(1000)
+    expect(resolved).toBe(true)
+
+    consoleSpy.mockRestore()
+    vi.useRealTimers()
+  })
+})
+
+// ---- tgPostVidFS ----
+
+describe('tgPostVidFS', () => {
+  const params = {
+    chatId: '-1001234567890',
+    savePath: '/tmp/watch/kctv_vid_1.mp4',
+    caption: 'Test caption',
+    mode: 'HTML',
+  }
+
+  beforeEach(() => {
+    vi.spyOn(console, 'log').mockImplementation(() => {})
+    vi.spyOn(fs, 'existsSync').mockReturnValue(true)
+    vi.spyOn(fs, 'statSync').mockReturnValue({ size: 1000 })
+    vi.spyOn(fs, 'createReadStream').mockReturnValue('STREAM')
+  })
+
+  it('returns null for falsy input', async () => {
+    expect(await tgPostVidFS(null)).toBeNull()
+    expect(axios.post).not.toHaveBeenCalled()
+  })
+
+  it('returns null and does not call axios when the file is missing', async () => {
+    vi.spyOn(fs, 'existsSync').mockReturnValue(false)
+    axios.post = vi.fn()
+
+    const result = await tgPostVidFS(params)
+    expect(result).toBeNull()
+    expect(axios.post).not.toHaveBeenCalled()
+  })
+
+  it('returns null and does not call axios when the file is over the size limit', async () => {
+    vi.spyOn(fs, 'statSync').mockReturnValue({ size: TG_VID_MAX_BYTES })
+    axios.post = vi.fn()
+
+    const result = await tgPostVidFS(params)
+    expect(result).toBeNull()
+    expect(axios.post).not.toHaveBeenCalled()
+  })
+
+  it('returns null and does not call axios when statSync throws', async () => {
+    vi.spyOn(fs, 'statSync').mockImplementation(() => {
+      throw new Error('EACCES: permission denied')
+    })
+    axios.post = vi.fn()
+
+    const result = await tgPostVidFS(params)
+    expect(result).toBeNull()
+    expect(axios.post).not.toHaveBeenCalled()
+  })
+
+  it('returns data on success', async () => {
+    axios.post = vi.fn().mockResolvedValue({ data: { ok: true, result: { message_id: 10 } } })
+
+    const result = await tgPostVidFS(params)
+    expect(result).toEqual({ ok: true, result: { message_id: 10 } })
+    expect(axios.post).toHaveBeenCalledTimes(1)
+  })
+
+  it('fails fast on a fatal 400 without rotating', async () => {
+    axios.post = vi.fn().mockRejectedValue(tgError(400, 'Bad Request: VIDEO_INVALID'))
+
+    const result = await tgPostVidFS(params)
+    expect(result).toBeNull()
+    expect(axios.post).toHaveBeenCalledTimes(1)
+  })
+
+  it('waits retry_after seconds then rotates to a different token on 429', async () => {
+    vi.useFakeTimers()
+    axios.post = vi
+      .fn()
+      .mockRejectedValueOnce({ response: { data: { ok: false, error_code: 429, parameters: { retry_after: 5 } } } })
+      .mockResolvedValueOnce({ data: { ok: true, result: { message_id: 11 } } })
+
+    const promise = tgPostVidFS(params)
+    await vi.advanceTimersByTimeAsync(5000)
+    const result = await promise
+
+    expect(result).toEqual({ ok: true, result: { message_id: 11 } })
+    expect(axios.post).toHaveBeenCalledTimes(2)
+
+    const [first, second] = tokensUsed()
+    expect(second).not.toBe(first)
+
+    vi.useRealTimers()
+  })
+
+  it('returns null after all tokens are exhausted', async () => {
+    axios.post = vi.fn().mockRejectedValue(new Error('ECONNRESET'))
+
+    const result = await tgPostVidFS(params)
+    expect(result).toBeNull()
+    expect(axios.post).toHaveBeenCalledTimes(TOKEN_COUNT)
+  })
+})
+

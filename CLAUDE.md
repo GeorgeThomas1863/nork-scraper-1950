@@ -63,6 +63,7 @@ WATCH_PROFILE_PATH=                 # optional; defaults to ~/.playwright-profil
 WATCH_HEADLESS=true                 # optional; default true
 WATCH_BASE_URL=https://kcnawatch.org  # optional; default https://kcnawatch.org
 VID_PROGRESS_SIZE=1048576           # log download progress every N bytes
+TG_VID_CHUNK_BYTES=40000000         # optional; Telegram upload piece size (40 MB default)
 ```
 
 `HOST` is optional and defaults to `127.0.0.1`; Docker Compose sets it to `0.0.0.0`.
@@ -102,6 +103,8 @@ This is a Node.js/Express scraper (ESM modules) that pulls content from KCNA (kc
 1. `KCTV LISTING WATCH` — `scrapeKctvListing()` (`src/watch/kctv-listing.js`) reads the bulletin listing and returns entries for the 5pm and 8pm news only (`WATCH_VID_TYPES`). It throws if there are zero candidates or the profile is not logged in.
 2. `KCTV UPLOAD WATCH` — `uploadVidPagesWatch(entryArray)` stores new entries in the `WATCH_COLLECTION` collection (`watch`).
 3. `KCTV DOWNLOAD WATCH` — `downloadVidsWatch()` downloads the MP4s that have not been fetched yet.
+4. `KCTV THUMBS WATCH` — `downloadThumbsWatch()` downloads thumbnails for all entries.
+5. **Telegram upload** — After thumbnails, stage `KCTV TG UPLOAD WATCH` posts each new video to `TG_CHANNEL_ID`: one HTML header message, then the video split with ffmpeg stream copy into pieces under 50,000,000 bytes (Telegram bot upload limit) each posted as its own `sendVideo` message in order (caption on the first piece only); pieces are written to `WATCH_PATH/tg/` and deleted after a successful post; rows are marked `uploaded: true`, progress is kept in `telegramDelivery` so a failed run resumes; unmarked rows are retried next scrape. Optional env `TG_VID_CHUNK_BYTES` (default 40000000, i.e. 40 MB) sets the target piece size. Requires `ffmpeg` and `ffprobe` on PATH (installed in the Docker image; install locally for `npm run dev`).
 
 Notes on how it works and why:
 

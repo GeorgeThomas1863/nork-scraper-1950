@@ -26,7 +26,7 @@ vi.mock('fs', async (importOriginal) => {
   const actual = await importOriginal()
   return {
     ...actual,
-    default: { ...actual.default, createWriteStream: vi.fn(), rmSync: vi.fn(), mkdirSync: vi.fn() },
+    default: { ...actual.default, createWriteStream: vi.fn(), rmSync: vi.fn(), mkdirSync: vi.fn(), writeFileSync: vi.fn() },
   }
 })
 
@@ -34,7 +34,7 @@ import fs from 'fs'
 import { PassThrough, Writable } from 'stream'
 import axios from 'axios'
 import kcnaState from '../src/util/state.js'
-import { uploadVidPagesWatch, downloadVidsWatch, downloadVidFS } from '../src/watch/vids.js'
+import { uploadVidPagesWatch, downloadVidsWatch, downloadVidFS, downloadThumbsWatch, downloadThumbFS } from '../src/watch/vids.js'
 import { dbGet } from '../middleware/db-config.js'
 import { updateLogKCNA } from '../src/util/log.js'
 
@@ -62,6 +62,7 @@ beforeEach(() => {
   fs.createWriteStream.mockImplementation(() => new Writable({ write(chunk, enc, cb) { cb() } }))
   fs.rmSync.mockImplementation(() => {})
   fs.mkdirSync.mockImplementation(() => {})
+  fs.writeFileSync.mockImplementation(() => {})
 
   getMockCollection().find.mockReturnValue({ toArray: vi.fn().mockResolvedValue([]) })
   getMockCollection().updateOne.mockResolvedValue({ modifiedCount: 1 })
@@ -304,6 +305,195 @@ describe('downloadVidsWatch', () => {
     })
 
     const result = await downloadVidsWatch()
+
+    expect(axios).toHaveBeenCalledTimes(1)
+    expect(result).toBe(1)
+  })
+})
+
+// ---- downloadThumbFS ----
+
+const thumbResponse = (size, headerOverrides = {}) => ({
+  data: Buffer.alloc(size, 1),
+  headers: { 'content-length': String(size), ...headerOverrides },
+})
+
+describe('downloadThumbFS', () => {
+  const url = 'https://kcnawatch.org/kctv-video/abc123.jpg'
+  const savePath = 'C:/tmp/watch/kctv_2026-07-19_news8pm.jpg'
+  const thumbName = 'kctv_2026-07-19_news8pm.jpg'
+
+  it('returns null for missing args', async () => {
+    expect(await downloadThumbFS(null, savePath, thumbName)).toBeNull()
+    expect(await downloadThumbFS(url, null, thumbName)).toBeNull()
+    expect(await downloadThumbFS(url, savePath, null)).toBeNull()
+    expect(axios).not.toHaveBeenCalled()
+  })
+
+  it('returns null without calling axios when scrapeActive is false', async () => {
+    kcnaState.scrapeActive = false
+
+    expect(await downloadThumbFS(url, savePath, thumbName)).toBeNull()
+    expect(axios).not.toHaveBeenCalled()
+  })
+
+  it('sends the same User-Agent and Referer headers as downloadVidFS with a 30 second timeout', async () => {
+    axios.mockResolvedValue(thumbResponse(2048))
+
+    await downloadThumbFS(url, savePath, thumbName)
+
+    expect(axios).toHaveBeenCalledWith(
+      expect.objectContaining({
+        method: 'get',
+        url: url,
+        responseType: 'arraybuffer',
+        timeout: 30000,
+        headers: {
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36',
+          Referer: 'https://kcnawatch.org/',
+        },
+      })
+    )
+  })
+
+  it('writes the file and returns the byte count on success', async () => {
+    axios.mockResolvedValue(thumbResponse(4096))
+
+    const result = await downloadThumbFS(url, savePath, thumbName)
+
+    expect(result.downloadedSize).toBe(4096)
+    expect(fs.writeFileSync).toHaveBeenCalledWith(savePath, expect.any(Buffer))
+    expect(fs.rmSync).not.toHaveBeenCalled()
+  })
+
+  it('removes the file and returns null without retrying when the body is empty', async () => {
+    axios.mockResolvedValue(thumbResponse(0))
+
+    const result = await downloadThumbFS(url, savePath, thumbName)
+
+    expect(result).toBeNull()
+    expect(axios).toHaveBeenCalledTimes(1)
+    expect(fs.writeFileSync).not.toHaveBeenCalled()
+    expect(fs.rmSync).toHaveBeenCalledWith(savePath, { force: true })
+  })
+
+  it('removes the file and returns null without retrying when axios rejects', async () => {
+    axios.mockRejectedValue(new Error('Request failed with status code 404'))
+
+    const result = await downloadThumbFS(url, savePath, thumbName)
+
+    expect(result).toBeNull()
+    expect(axios).toHaveBeenCalledTimes(1)
+    expect(fs.rmSync).toHaveBeenCalledWith(savePath, { force: true })
+  })
+})
+
+// ---- downloadThumbsWatch ----
+
+describe('downloadThumbsWatch', () => {
+  const thumbRow = (url, thumbURL, date, vidType) => ({ url, thumbURL, date, vidType })
+
+  it('throws when WATCH_PATH is unset', async () => {
+    const original = process.env.WATCH_PATH
+    delete process.env.WATCH_PATH
+
+    try {
+      await expect(downloadThumbsWatch()).rejects.toThrow('WATCH_PATH')
+    } finally {
+      process.env.WATCH_PATH = original
+    }
+  })
+
+  it('returns 0 without querying the db when scrapeActive is false', async () => {
+    kcnaState.scrapeActive = false
+
+    const result = await downloadThumbsWatch()
+
+    expect(result).toBe(0)
+    expect(getMockCollection().find).not.toHaveBeenCalled()
+  })
+
+  it('returns 0 when there is nothing to download', async () => {
+    getMockCollection().find.mockReturnValue({ toArray: vi.fn().mockResolvedValue([]) })
+
+    const result = await downloadThumbsWatch()
+
+    expect(result).toBe(0)
+  })
+
+  it('downloads a row, builds the kctv_<date>_<vidType>.jpg filename from a UTC date, and stores thumbName/thumbPath/thumbSize', async () => {
+    getMockCollection().find.mockReturnValue({
+      toArray: vi
+        .fn()
+        .mockResolvedValue([
+          thumbRow('https://kcnawatch.org/kctv/1', 'https://kcnawatch.org/kctv/1.jpg', new Date('2026-07-19T23:30:00Z'), 'news8pm'),
+        ]),
+    })
+    axios.mockResolvedValue(thumbResponse(5120))
+
+    const result = await downloadThumbsWatch()
+
+    expect(result).toBe(1)
+    expect(dbGet().collection).toHaveBeenCalledWith('watch')
+    expect(getMockCollection().updateOne).toHaveBeenCalledWith(
+      { url: 'https://kcnawatch.org/kctv/1' },
+      {
+        $set: expect.objectContaining({
+          thumbName: 'kctv_2026-07-19_news8pm.jpg',
+          thumbSize: 5120,
+        }),
+      }
+    )
+    expect(updateLogKCNA).toHaveBeenCalled()
+  })
+
+  it('skips a row whose thumbnail download rejects and does not update it', async () => {
+    getMockCollection().find.mockReturnValue({
+      toArray: vi
+        .fn()
+        .mockResolvedValue([
+          thumbRow('https://kcnawatch.org/kctv/2', 'https://kcnawatch.org/kctv/2.jpg', new Date('2026-07-19T00:00:00Z'), 'news5pm'),
+        ]),
+    })
+    axios.mockRejectedValue(new Error('Request failed with status code 404'))
+
+    const result = await downloadThumbsWatch()
+
+    expect(result).toBe(0)
+    expect(getMockCollection().updateOne).not.toHaveBeenCalled()
+  })
+
+  it('skips a row whose thumbnail body is empty and does not update it', async () => {
+    getMockCollection().find.mockReturnValue({
+      toArray: vi
+        .fn()
+        .mockResolvedValue([
+          thumbRow('https://kcnawatch.org/kctv/3', 'https://kcnawatch.org/kctv/3.jpg', new Date('2026-07-19T00:00:00Z'), 'news5pm'),
+        ]),
+    })
+    axios.mockResolvedValue(thumbResponse(0))
+
+    const result = await downloadThumbsWatch()
+
+    expect(result).toBe(0)
+    expect(getMockCollection().updateOne).not.toHaveBeenCalled()
+  })
+
+  it('stops before processing the second row once scrapeActive flips false after the first store', async () => {
+    getMockCollection().find.mockReturnValue({
+      toArray: vi.fn().mockResolvedValue([
+        thumbRow('https://kcnawatch.org/kctv/1', 'https://kcnawatch.org/kctv/1.jpg', new Date('2026-07-19T00:00:00Z'), 'news5pm'),
+        thumbRow('https://kcnawatch.org/kctv/2', 'https://kcnawatch.org/kctv/2.jpg', new Date('2026-07-19T00:00:00Z'), 'news8pm'),
+      ]),
+    })
+    axios.mockResolvedValue(thumbResponse(1024))
+    getMockCollection().updateOne.mockImplementation(async () => {
+      kcnaState.scrapeActive = false // scrape gets stopped right after the first row is stored
+      return { modifiedCount: 1 }
+    })
+
+    const result = await downloadThumbsWatch()
 
     expect(axios).toHaveBeenCalledTimes(1)
     expect(result).toBe(1)
