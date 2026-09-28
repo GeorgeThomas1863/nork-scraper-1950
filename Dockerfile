@@ -7,10 +7,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg && rm -r
 
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
+RUN npx playwright install --with-deps chrome
 
 COPY --chown=node:node . .
 
-RUN mkdir -p /data/pics && chown node:node /data/pics
+RUN mkdir -p /data/pics /data/watch /data/watch-profile \
+ && chown node:node /data/pics /data/watch /data/watch-profile
 
 USER node
 CMD ["node", "app.js"]
