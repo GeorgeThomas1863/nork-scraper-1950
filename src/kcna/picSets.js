@@ -6,7 +6,14 @@ import dbModel from "../../models/db-model.js";
 import { tgSendMessage } from "../tg-api.js";
 import { postPicArrayTG } from "./pics.js";
 import { updateLogKCNA } from "../util/log.js";
-import { buildNumericId, extractItemDate, sortArrayByDate, normalizeInputsTG } from "../util/util.js";
+import {
+  buildNumericId,
+  extractItemDate,
+  sortArrayByDate,
+  normalizeInputsTG,
+  escapeTelegramHTML,
+  buildCaptionURLText,
+} from "../util/util.js";
 
 export const scrapePicSetURLsKCNA = async (inputObj) => {
   if (!kcnaState.scrapeActive) return null;
@@ -185,18 +192,42 @@ export const parsePicSetContent = async (inputObj) => {
   const document = dom.window.document;
 
   const picSetTitle = extractPicSetTitle(document);
-  if (!picSetTitle) return null;
+  if (!picSetTitle) {
+    console.log(`PIC SET CONTENT MISSING: ${url} | NO TITLE`);
+    return null;
+  }
 
-  const picSetPicArray = await extractPicSetPicArray(document, date);
-  if (!picSetPicArray?.length) return null;
+  const picSetDate = resolvePicSetDate(document, date, url);
+
+  const picSetPicArray = await extractPicSetPicArray(document, picSetDate);
+  if (!picSetPicArray?.length) {
+    console.log(`PIC SET CONTENT MISSING: ${url} | NO PICTURES`);
+    return null;
+  }
 
   const picSetParams = {
     title: picSetTitle,
+    date: picSetDate,
     picArray: picSetPicArray,
   };
 
   const isStored = await storePicSetContent(url, picSetParams, picSets);
   return isStored ? picSetParams : null;
+};
+
+// Pic sets whose list-page date was null (no .publish-time/nobr next to the gallery
+// thumbnail) get one more chance here, since the detail document is already loaded:
+// reuse the same verified date selector against the whole page, then fall back to the
+// scrape time so the set is never silently skipped for want of a date (see
+// extractPicSetPicArray's `!date` guard below).
+const resolvePicSetDate = (document, listDate, url) => {
+  if (listDate) return listDate;
+
+  const detailDate = extractItemDate(document);
+  if (detailDate) return detailDate;
+
+  console.log(`PIC SET DATE MISSING, USING SCRAPE TIME: ${url}`);
+  return kcnaState.scrapeStartTime ?? new Date();
 };
 
 const storePicSetContent = async (url, params, picSets) => {
@@ -221,8 +252,26 @@ export const extractPicSetTitle = (document) => {
   const currentTitle = titleElement?.getAttribute("alt")?.trim();
   if (currentTitle) return currentTitle;
 
-  const legacyTitle = document.querySelector(".title .main span");
-  return legacyTitle?.textContent?.trim() ?? null;
+  const legacyTitle = document.querySelector(".title .main span")?.textContent?.trim();
+  if (legacyTitle) return legacyTitle;
+
+  return extractPageTitleFallback(document);
+};
+
+// Some pic set titles contain an unescaped double quote (e.g. a quoted book title),
+// which KCNA does not HTML-entity-escape inside the img alt="" attribute. That
+// truncates the attribute value during HTML parsing (alt ends up ""), so both
+// selectors above miss it. The <head><title> tag holds the same text outside any
+// attribute, so it survives intact; KCNA prefixes it with "KCNA | " on every gallery
+// detail page.
+const KCNA_PAGE_TITLE_PREFIX = /^KCNA\s*\|\s*/;
+
+const extractPageTitleFallback = (document) => {
+  const pageTitle = document.querySelector("title")?.textContent?.trim();
+  if (!pageTitle) return null;
+
+  const strippedTitle = pageTitle.replace(KCNA_PAGE_TITLE_PREFIX, "").trim();
+  return strippedTitle || null;
 };
 
 export const extractPicSetPicArray = async (document, date) => {
@@ -323,7 +372,10 @@ const buildPicSetUploadData = (picSetObj) => {
 };
 
 export const postPicSetTG = async (inputObj, storeProgress = async () => true) => {
-  if (!inputObj || !inputObj.picArray || !inputObj.picArray.length) return false;
+  if (!inputObj || !inputObj.picArray || !inputObj.picArray.length) {
+    console.log(`PIC SET UPLOAD SKIPPED, NO PICTURES: ${inputObj?.url}`);
+    return false;
+  }
   const { url, date, picArray, telegramDelivery = {} } = inputObj;
   const tgInputs = normalizeInputsTG(url, date);
   const uploadObj = { ...inputObj, ...tgInputs };
@@ -424,15 +476,13 @@ export const buildPicSetPicCaption = (inputObj) => {
   if (!normalInputs) return null;
   const { dateNormal, urlNormal } = normalInputs;
 
-  const picSetPicCaption = `
+  const buildCaptionText = (urlText) => buildPicSetPicCaptionText(picIndex, picCount, dateNormal, urlText);
+  const captionURLText = buildCaptionURLText(url, urlNormal, buildCaptionText);
+
+  return buildCaptionText(captionURLText);
+};
+
+const buildPicSetPicCaptionText = (picIndex, picCount, dateNormal, urlText) => `
 <b>PIC ${picIndex} OF ${picCount} IN PIC SET</b> | <b>DATE:</b> <i>${dateNormal}</i> | <b>PIC URL:</b>
-<i>${escapeTelegramHTML(urlNormal)}</i>
+<i>${urlText}</i>
 `;
-
-  return picSetPicCaption;
-};
-
-const escapeTelegramHTML = (value) => {
-  if (value === null || value === undefined) return "";
-  return String(value).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
-};

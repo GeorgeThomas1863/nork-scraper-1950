@@ -653,3 +653,66 @@ describe('article Telegram delivery', () => {
     expect(article.title).toBe(title)
   })
 })
+
+// ---- BUG 1: whitespace-only content chunks never reach Telegram ----
+
+describe('BUG 1 - whitespace-only content chunks', () => {
+  it('drops an all-whitespace content chunk instead of sending it, without moving real content boundaries', async () => {
+    const { tgSendMessage } = await import('../src/tg-api.js')
+    tgSendMessage.mockResolvedValue({ ok: true })
+    // header "<b>[ARTICLE TEXT]:</b>\n\n" (24) + footer "\n\n<b>URL:</b> <i>x</i>" (22) = 46 overhead
+    // -> bodyCapacity 3050, so chunk 1 of 3 (indices 3050-6099) is pure whitespace.
+    process.env.TG_MAX_LENGTH = '3096'
+
+    const text = 'A' + ' '.repeat(9000) + 'B'
+    const result = await postArticleContentTG({
+      text, title: '', dateNormal: '', urlNormal: 'x', tgChannelId: '-100123',
+    })
+
+    expect(result).not.toBeNull()
+    const sentTexts = tgSendMessage.mock.calls.map(([params]) => params.text)
+
+    // The bug: unfiltered, this text splits into 3 chunks and the middle one (pure
+    // whitespace, no header/footer) is sent as-is, i.e. an all-whitespace message.
+    for (const sentText of sentTexts) expect(sentText.trim()).not.toBe('')
+
+    // The whitespace-only chunk must simply be gone - the real content chunks keep
+    // exactly the same cut points as the unfiltered split (chunk 0 and chunk 2).
+    expect(sentTexts).toHaveLength(2)
+    expect(sentTexts[0]).toBe('<b>[ARTICLE TEXT]:</b>\n\n' + text.slice(0, 3050))
+    expect(sentTexts[1]).toBe(text.slice(6100, 9002) + '\n\n<b>URL:</b> <i>x</i>')
+  })
+})
+
+// ---- BUG 2: buildArticlePicCaption never exceeds Telegram's caption limit ----
+
+describe('BUG 2 - buildArticlePicCaption caption length', () => {
+  it('does not put a data: URL in the caption', () => {
+    const dataURL = 'data:;base64,' + 'A'.repeat(500000)
+    const result = buildArticlePicCaption({
+      picIndex: 1,
+      picCount: 1,
+      date: new Date(2024, 5, 15),
+      url: dataURL,
+    })
+
+    expect(result).not.toBeNull()
+    expect(result).not.toContain('data:')
+    expect(result).toContain('embedded image')
+  })
+
+  it('keeps the visible caption text within 1024 chars for a 5,000-char normal URL', () => {
+    const longURL = 'http://www.kcna.kp/' + 'a'.repeat(5000) + '.jpg'
+    const result = buildArticlePicCaption({
+      picIndex: 3,
+      picCount: 9,
+      date: new Date(2024, 5, 15),
+      url: longURL,
+    })
+
+    expect(result).not.toBeNull()
+    const visibleLength = result.replace(/<[^>]+>/g, '')
+      .replaceAll('&amp;', '&').replaceAll('&lt;', '<').replaceAll('&gt;', '>').length
+    expect(visibleLength).toBeLessThanOrEqual(1024)
+  })
+})

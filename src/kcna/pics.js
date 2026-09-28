@@ -186,19 +186,34 @@ export const postPicTG = async (inputObj) => {
 
   // if (!kcnaState.scrapeActive) return null;
 
+  const picFilePath = resolvePicFilePath(savePath, picName);
+
   const params = {
     chatId: tgChannelId,
-    savePath: savePath,
+    savePath: picFilePath,
     caption: caption,
     mode: "html",
   };
 
-  console.log(`POSTING PIC TG: ${picName || savePath} | CHAT: ${tgChannelId}`);
+  console.log(`POSTING PIC TG: ${picName || picFilePath} | CHAT: ${tgChannelId}`);
 
   const data = await tgPostPicFS(params);
   if (!data) return null;
 
-  console.log(`POSTED PIC TG: ${picName || savePath} | MSG: ${data.result?.message_id}`);
+  console.log(`POSTED PIC TG: ${picName || picFilePath} | MSG: ${data.result?.message_id}`);
 
   return data;
+};
+
+//pics stored before the Docker move (2026-09-11) have a stale absolute savePath from the old host
+//filesystem; the file itself now lives under the current PIC_PATH under the same file name, so always
+//rebuild the path from PIC_PATH + file name instead of trusting the stored savePath's directory
+const resolvePicFilePath = (savePath, picName) => {
+  const fileName = picName || (savePath ? path.basename(savePath) : null);
+  if (!fileName) return null;
+
+  const picPath = process.env.PIC_PATH;
+  if (!picPath) return null;
+
+  return path.join(picPath, fileName);
 };

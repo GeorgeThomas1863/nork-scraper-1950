@@ -6,7 +6,15 @@ import dbModel from "../../models/db-model.js";
 import { tgSendMessage } from "../tg-api.js";
 import { postPicArrayTG } from "./pics.js";
 import { updateLogKCNA } from "../util/log.js";
-import { buildNumericId, extractItemDate, extractDatelineDate, sortArrayByDate, normalizeInputsTG } from "../util/util.js";
+import {
+  buildNumericId,
+  extractItemDate,
+  extractDatelineDate,
+  sortArrayByDate,
+  normalizeInputsTG,
+  escapeTelegramHTML,
+  buildCaptionURLText,
+} from "../util/util.js";
 
 export const scrapeArticleURLsKCNA = async (inputObj) => {
   if (!kcnaState.scrapeActive) return null;
@@ -499,7 +507,25 @@ const splitEscapedText = (text, maxLength) => {
     chunk += escapedCharacter;
   }
   if (chunk) chunkArray.push(chunk);
-  return chunkArray;
+
+  // A run of scraped whitespace (e.g. thousands of consecutive spaces) can fill an
+  // entire chunk on its own. A middle chunk gets no header/footer (buildChunkText),
+  // so that chunk would be sent to Telegram as a pure-whitespace message, which
+  // Telegram rejects ("text must be non-empty"). Drop whole whitespace-only chunks
+  // here, AFTER cutting, so this can only ever remove entries from chunkArray - it
+  // must never change where a non-empty chunk starts or ends. Changing those
+  // boundaries would break resume-by-index in postArticleContentTG for articles
+  // whose earlier chunks already sent successfully.
+  return dropWhitespaceOnlyChunks(chunkArray);
+};
+
+const dropWhitespaceOnlyChunks = (chunkArray) => {
+  const nonEmptyChunkArray = [];
+  for (const chunk of chunkArray) {
+    if (chunk.trim() === "") continue;
+    nonEmptyChunkArray.push(chunk);
+  }
+  return nonEmptyChunkArray;
 };
 
 //--------------------------------
@@ -536,13 +562,16 @@ export const buildArticlePicCaption = (inputObj) => {
   if (!normalInputs) return null;
   const { dateNormal, urlNormal } = normalInputs;
 
-  const articlePicCaption = `
-<b>ARTICLE PIC: ${picIndex} OF ${picCount}</b> | <b>DATE:</b> <i>${dateNormal}</i> | <b>PIC URL:</b>
-<i>${escapeTelegramHTML(urlNormal)}</i>
-`;
+  const buildCaptionText = (urlText) => buildArticlePicCaptionText(picIndex, picCount, dateNormal, urlText);
+  const captionURLText = buildCaptionURLText(url, urlNormal, buildCaptionText);
 
-  return articlePicCaption;
+  return buildCaptionText(captionURLText);
 };
+
+const buildArticlePicCaptionText = (picIndex, picCount, dateNormal, urlText) => `
+<b>ARTICLE PIC: ${picIndex} OF ${picCount}</b> | <b>DATE:</b> <i>${dateNormal}</i> | <b>PIC URL:</b>
+<i>${urlText}</i>
+`;
 
 export const buildChunkText = (chunk, inputObj, chunkIndex, isEscaped = false) => {
   if (!inputObj) return null;
@@ -555,9 +584,4 @@ export const buildChunkText = (chunk, inputObj, chunkIndex, isEscaped = false) =
   if (isFirst) text = "<b>[ARTICLE TEXT]:</b>\n\n" + text;
   if (isLast) text = text + "\n\n<b>URL:</b> <i>" + escapeTelegramHTML(urlNormal) + "</i>";
   return text;
-};
-
-const escapeTelegramHTML = (value) => {
-  if (value === null || value === undefined) return "";
-  return String(value).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 };

@@ -157,3 +157,45 @@ export const normalizeDate = (date) => {
   if (!date) return null;
   return new Date(date).toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" });
 };
+
+//-----------------
+
+export const escapeTelegramHTML = (value) => {
+  if (value === null || value === undefined) return "";
+  return String(value).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+};
+
+//-----------------
+
+// Telegram Bot API hard limit: sendPhoto caption is 0-1024 chars AFTER entity parsing.
+export const TG_CAPTION_MAX_LENGTH = 1024;
+// Shown instead of the pic URL when it is an inline data: URL (can be hundreds of KB).
+export const DATA_URL_PLACEHOLDER = "embedded image";
+
+// Some pic records have an inline data: URL for their "url" (base64 image data,
+// hundreds of KB), which must never be dropped into the caption as-is. Budgets the
+// (possibly placeholder) URL text against the caption's other content - built once
+// via buildCaptionText("") so callers with different caption wording each measure
+// their own overhead - then truncates and escapes it for use in the final caption.
+export const buildCaptionURLText = (url, urlNormal, buildCaptionText) => {
+  const rawCaptionURLText = url.startsWith("data:") ? DATA_URL_PLACEHOLDER : urlNormal;
+
+  const emptyCaption = buildCaptionText("");
+  const otherVisibleLength = countVisibleCaptionChars(emptyCaption);
+
+  return escapeTelegramHTML(truncateToVisibleBudget(rawCaptionURLText, otherVisibleLength));
+};
+
+// Backstop for any other very long URL: caps the caption's VISIBLE text (HTML tags
+// stripped, entities decoded) at TG_CAPTION_MAX_LENGTH. Truncates the raw, unescaped
+// URL text before it is HTML-escaped, so a cut can never land inside an &-entity or
+// a tag.
+export const truncateToVisibleBudget = (rawText, otherVisibleLength) => {
+  const budget = Math.max(0, TG_CAPTION_MAX_LENGTH - otherVisibleLength);
+  return rawText.length > budget ? rawText.slice(0, budget) : rawText;
+};
+
+export const countVisibleCaptionChars = (caption) => {
+  const withoutTags = caption.replace(/<[^>]+>/g, "");
+  return withoutTags.replaceAll("&amp;", "&").replaceAll("&lt;", "<").replaceAll("&gt;", ">").length;
+};
