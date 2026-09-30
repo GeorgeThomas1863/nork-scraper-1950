@@ -25,14 +25,16 @@ vi.mock("playwright", () => ({
   chromium: { launchPersistentContext: mockLaunchPersistentContext },
 }));
 
-import { parseKctvListing, scrapeKctvListing, WATCH_VID_TYPES } from "../src/watch/kctv-listing.js";
+import { parseKctvListing, scrapeKctvListing, isPlaceholderVidURL, WATCH_VID_TYPES } from "../src/watch/kctv-listing.js";
 import {
   kctvListingHTML,
+  kctvListingPlaceholderOnlyHTML,
   kctvListingEmptyHTML,
   kctvListingUppercaseThumbHTML,
   kctvListingQueryThumbHTML,
   kctvListingRelativeThumbHTML,
   kctvListingUnusableThumbsHTML,
+  kctvListingPlaceholderThumbHTML,
 } from "./fixtures/kctv-listing.js";
 
 beforeEach(() => {
@@ -133,6 +135,49 @@ describe("parseKctvListing", () => {
     const entryArray = parseKctvListing(kctvListingHTML, "https://kcnawatch.org");
     const titleArray = entryArray.map((entry) => entry.title);
     expect(titleArray).toEqual(["Full Broadcast", "5pm Bulletin", "8pm Bulletin"]);
+  });
+});
+
+describe("parseKctvListing - placeholder thumbnails", () => {
+  it("drops an entry whose thumbnail is the image-uploading placeholder but keeps the healthy one", () => {
+    const entryArray = parseKctvListing(kctvListingPlaceholderThumbHTML, "https://kcnawatch.org");
+    expect(entryArray).toHaveLength(1);
+    expect(entryArray[0].vidType).toBe("news8pm");
+    for (const entry of entryArray) {
+      expect(entry.url).not.toContain("image-uploading");
+    }
+  });
+
+  it("yields no entries but counts every candidate and placeholder for a placeholder-only page", () => {
+    const entryArray = parseKctvListing(kctvListingPlaceholderOnlyHTML, "https://kcnawatch.org");
+    expect(entryArray).toHaveLength(0);
+    expect(entryArray.candidateCount).toBe(2);
+    expect(entryArray.placeholderCount).toBe(2);
+  });
+
+  it("still counts the dropped placeholder entry in candidateCount", () => {
+    const entryArray = parseKctvListing(kctvListingPlaceholderThumbHTML, "https://kcnawatch.org");
+    expect(entryArray.candidateCount).toBe(2);
+  });
+});
+
+describe("isPlaceholderVidURL", () => {
+  it("returns true for the image-uploading placeholder mp4 url", () => {
+    expect(
+      isPlaceholderVidURL("https://kcnawatch.org/wp-content/themes/kcnawatch/images/image-uploading.mp4")
+    ).toBe(true);
+  });
+
+  it("returns false for a real streamer mp4 url", () => {
+    expect(
+      isPlaceholderVidURL("https://streamer.nknews.org/tvarchive/stream-1/stream-1-news5pm.mp4")
+    ).toBe(false);
+  });
+
+  it("returns false for null, undefined and an empty string", () => {
+    expect(isPlaceholderVidURL(null)).toBe(false);
+    expect(isPlaceholderVidURL(undefined)).toBe(false);
+    expect(isPlaceholderVidURL("")).toBe(false);
   });
 });
 
@@ -288,6 +333,12 @@ describe("scrapeKctvListing", () => {
     await expect(scrapeKctvListing({ howMuch: "admin-scrape-new" })).rejects.toThrow(
       "KCTV listing entries had no usable thumbnails"
     );
+  });
+
+  it("resolves to an empty array when the page holds only placeholder entries", async () => {
+    mockPage.content.mockResolvedValue(kctvListingPlaceholderOnlyHTML);
+
+    await expect(scrapeKctvListing({ howMuch: "admin-scrape-new" })).resolves.toEqual([]);
   });
 
   it("closes the context when all thumbnails are unusable", async () => {

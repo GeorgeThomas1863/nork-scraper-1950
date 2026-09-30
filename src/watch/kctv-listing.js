@@ -10,6 +10,7 @@ const ARCHIVE_PATH = "/kctv-archive/";
 const NOT_LOGGED_IN_PATH = "free-member-form";
 const FREE_MEMBER_POPUP_SELECTOR = ".nk-paywall-free-member-form, .free-member-form-inner";
 const ENTRY_WAIT_TIMEOUT_MS = 20000;
+const PLACEHOLDER_VID_MARKER = "image-uploading";
 
 export const scrapeKctvListing = async (inputParams) => {
   const { howMuch, scrapeURL } = inputParams ?? {};
@@ -24,7 +25,9 @@ export const scrapeKctvListing = async (inputParams) => {
 
   const entryArray = parseKctvListing(html, baseURL);
   if (!entryArray.candidateCount) throw new Error("KCTV listing produced zero candidates");
-  if (!entryArray.length) throw new Error("KCTV listing entries had no usable thumbnails");
+  if (!entryArray.length && !entryArray.placeholderCount) {
+    throw new Error("KCTV listing entries had no usable thumbnails");
+  }
 
   return filterKctvEntriesByType(entryArray);
 };
@@ -119,6 +122,7 @@ const filterKctvEntriesByType = (entryArray) => {
 export const parseKctvListing = (html, baseURL) => {
   const entryArray = [];
   entryArray.candidateCount = 0;
+  entryArray.placeholderCount = 0;
   if (!html || !baseURL) return entryArray;
 
   const dom = new JSDOM(html);
@@ -131,6 +135,13 @@ export const parseKctvListing = (html, baseURL) => {
   for (const entryElement of entryElementArray) {
     const entry = parseKctvEntryElement(entryElement, baseURL);
     if (!entry) continue;
+
+    if (isPlaceholderVidURL(entry.url)) {
+      console.log(`KCTV VID STILL UPLOADING, SKIPPING: ${entry.pageURL}`);
+      entryArray.placeholderCount++;
+      continue;
+    }
+
     entryArray.push(entry);
   }
 
@@ -180,6 +191,11 @@ const buildMp4URL = (thumbURL, baseURL) => {
   if (mp4URL === pathPart) return null;
 
   return mp4URL;
+};
+
+export const isPlaceholderVidURL = (url) => {
+  if (!url) return false;
+  return url.includes(PLACEHOLDER_VID_MARKER);
 };
 
 const MONTH_NAME_ARRAY = [

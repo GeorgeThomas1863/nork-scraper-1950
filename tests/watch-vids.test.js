@@ -309,6 +309,51 @@ describe('downloadVidsWatch', () => {
     expect(axios).toHaveBeenCalledTimes(1)
     expect(result).toBe(1)
   })
+
+  const PLACEHOLDER_URL = 'https://kcnawatch.org/wp-content/themes/kcnawatch/images/image-uploading.mp4'
+  const stuckPlaceholderRow = () => ({
+    date: new Date('2026-09-29T00:00:00Z'),
+    vidType: 'news5pm',
+    vidPageId: 9,
+    pageURL: 'https://kcnawatch.org/kctv-archive/6abbc4bece4c0',
+    url: PLACEHOLDER_URL,
+    thumbURL: '/wp-content/themes/kcnawatch/images/image-uploading.jpg',
+  })
+
+  it('deletes a placeholder-url row instead of downloading it', async () => {
+    getMockCollection().find.mockReturnValue({ toArray: vi.fn().mockResolvedValue([stuckPlaceholderRow()]) })
+    getMockCollection().deleteOne.mockResolvedValue({ deletedCount: 1 })
+
+    const result = await downloadVidsWatch()
+
+    expect(result).toBe(0)
+    expect(getMockCollection().deleteOne).toHaveBeenCalledWith({ url: PLACEHOLDER_URL })
+    expect(axios).not.toHaveBeenCalled()
+    expect(getMockCollection().updateOne).not.toHaveBeenCalled()
+  })
+
+  it('deletes the placeholder row and still downloads a healthy row in the same run', async () => {
+    getMockCollection().find.mockReturnValue({
+      toArray: vi.fn().mockResolvedValue([
+        stuckPlaceholderRow(),
+        vidRow('https://streamer.nknews.org/kctv/healthy.mp4', new Date('2026-09-28T00:00:00Z'), 'news8pm'),
+      ]),
+    })
+    getMockCollection().deleteOne.mockResolvedValue({ deletedCount: 1 })
+    axios.mockImplementation(() => vidResponse(2048))
+
+    const result = await downloadVidsWatch()
+
+    expect(result).toBe(1)
+    expect(getMockCollection().deleteOne).toHaveBeenCalledTimes(1)
+    expect(getMockCollection().deleteOne).toHaveBeenCalledWith({ url: PLACEHOLDER_URL })
+    expect(axios).toHaveBeenCalledTimes(1)
+    expect(axios).toHaveBeenCalledWith(expect.objectContaining({ url: 'https://streamer.nknews.org/kctv/healthy.mp4' }))
+    expect(getMockCollection().updateOne).toHaveBeenCalledWith(
+      { url: 'https://streamer.nknews.org/kctv/healthy.mp4' },
+      { $set: expect.objectContaining({ vidSize: 2048, vidName: 'kctv_2026-09-28_news8pm.mp4' }) }
+    )
+  })
 })
 
 // ---- downloadThumbFS ----

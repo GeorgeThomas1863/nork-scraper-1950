@@ -114,3 +114,60 @@ export const kctvListingUnusableThumbsHTML = `
     </div>
   </article>
 </div>`;
+
+export const kctvListingPlaceholderThumbHTML = `
+<div class="archive-list">
+  <article class="clearfix">
+    <div class="article-thumb">
+      <a href="/kctv-archive/6abbc4bece4c0">
+        <img class="img-fluid" src="/wp-content/themes/kcnawatch/images/image-uploading.jpg" alt="Tuesday September 29, 2026">
+      </a>
+    </div>
+    <div class="article-desc">
+      <h4><a href="/kctv-archive/6abbc4bece4c0">Tuesday September 29, 2026</a></h4>
+      <p class="broadcast-head">5pm Bulletin</p>
+      <p class="daily-tv">Daily news broadcast from North Korea</p>
+      <p class="kctv-light">Korea Central Television</p>
+    </div>
+  </article>
+  <article class="clearfix">
+    <div class="article-thumb">
+      <a href="/kctv-archive/6abbc4c0healthy">
+        <img class="img-fluid" src="https://streamer.nknews.org/tvarchive/stream-1790000000-2026-09-29-00-00/stream-1790000000-2026-09-29-00-00-news8pm/stream-1790000000-2026-09-29-00-00-news8pm.jpg" alt="Tuesday September 29, 2026">
+      </a>
+    </div>
+    <div class="article-desc">
+      <h4><a href="/kctv-archive/6abbc4c0healthy">Tuesday September 29, 2026</a></h4>
+      <p class="broadcast-head">8pm Bulletin</p>
+      <p class="daily-tv">Daily news broadcast from North Korea</p>
+      <p class="kctv-light">Korea Central Television</p>
+    </div>
+  </article>
+</div>`;
+
+
+export const kctvListingPlaceholderOnlyHTML = `
+<div class="archive-list">
+  <article class="clearfix">
+    <div class="article-thumb">
+      <a href="/kctv-archive/6abbc4bece4c0">
+        <img class="img-fluid" src="/wp-content/themes/kcnawatch/images/image-uploading.jpg" alt="Tuesday September 29, 2026">
+      </a>
+    </div>
+    <div class="article-desc">
+      <h4><a href="/kctv-archive/6abbc4bece4c0">Tuesday September 29, 2026</a></h4>
+      <p class="broadcast-head">5pm Bulletin</p>
+    </div>
+  </article>
+  <article class="clearfix">
+    <div class="article-thumb">
+      <a href="/kctv-archive/6abbc4c0other">
+        <img class="img-fluid" src="/wp-content/themes/kcnawatch/images/image-uploading.jpg" alt="Tuesday September 29, 2026">
+      </a>
+    </div>
+    <div class="article-desc">
+      <h4><a href="/kctv-archive/6abbc4c0other">Tuesday September 29, 2026</a></h4>
+      <p class="broadcast-head">8pm Bulletin</p>
+    </div>
+  </article>
+</div>`;

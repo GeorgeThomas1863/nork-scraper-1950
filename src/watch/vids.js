@@ -5,6 +5,7 @@ import path from "path";
 import kcnaState from "../util/state.js";
 import dbModel from "../../models/db-model.js";
 import { updateLogKCNA } from "../util/log.js";
+import { isPlaceholderVidURL } from "./kctv-listing.js";
 
 //KCTV/KCNA Watch requires a browser-like User-Agent + Referer for reliable downloads; no cookies needed
 const WATCH_REQUEST_HEADERS = {
@@ -81,6 +82,11 @@ export const downloadVidsWatch = async () => {
     if (!kcnaState.scrapeActive) return downloadedCount;
 
     const { url, date, vidType } = vidRow;
+    if (isPlaceholderVidURL(url)) {
+      await deletePlaceholderVidWatch(url, watchCollection);
+      continue;
+    }
+
     const vidName = buildVidFileName(date, vidType);
     const savePath = path.join(vidPath, vidName);
 
@@ -115,6 +121,21 @@ export const downloadVidsWatch = async () => {
   console.log(`DOWNLOADED ${downloadedCount} VIDS`);
 
   return downloadedCount;
+};
+
+//kcnawatch.org stores a placeholder url while it is still processing an upload; delete the row so the next listing run stores the real url
+const deletePlaceholderVidWatch = async (url, watchCollection) => {
+  try {
+    const deleteModel = new dbModel({ keyToLookup: "url", itemValue: url }, watchCollection);
+    const deleteData = await deleteModel.deleteItem();
+
+    console.log(`DELETED PLACEHOLDER VID: ${url}`);
+    return deleteData;
+  } catch (e) {
+    console.log("MONGO ERROR FOR PLACEHOLDER VID DELETE: " + url);
+    console.log(e.message);
+    return null;
+  }
 };
 
 const ensureVidDir = (vidPath) => {
