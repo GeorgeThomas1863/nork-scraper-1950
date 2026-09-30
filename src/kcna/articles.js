@@ -95,7 +95,10 @@ export const parseArticleLinkElement = async (linkElement, pageURL, type) => {
   const checkModel = new dbModel({ url: articleURL }, articles);
   const exists = await checkModel.urlExists();
 
-  if (exists) return null;
+  if (exists) {
+    await addTypeToExistingArticle(articleURL, type, articles);
+    return null;
+  }
 
   const articleDate = extractItemDate(linkElement.closest(".article") ?? linkElement);
   const articleId = await buildNumericId("articles");
@@ -104,7 +107,7 @@ export const parseArticleLinkElement = async (linkElement, pageURL, type) => {
     url: articleURL,
     pageURL: pageURL,
     date: articleDate,
-    articleType: type,
+    articleTypeArray: [type],
     scrapeId: kcnaState.scrapeId,
     articleId: articleId,
   };
@@ -122,6 +125,17 @@ export const parseArticleLinkElement = async (linkElement, pageURL, type) => {
   }
 
   return params;
+};
+
+const addTypeToExistingArticle = async (articleURL, type, articles) => {
+  try {
+    const updateModel = new dbModel({ url: articleURL, addKey: "articleTypeArray", addValue: type }, articles);
+    const updateData = await updateModel.addToSetByUrl();
+    if (updateData?.modifiedCount === 1) console.log(`ADDED TYPE ${type} TO EXISTING ARTICLE ${articleURL}`);
+  } catch (e) {
+    console.log(`MONGO ERROR ADDING TYPE ${type} TO ARTICLE: ${articleURL}`);
+    console.log(e.message);
+  }
 };
 
 const buildAbsoluteURL = (href, baseURL) => {
@@ -532,10 +546,10 @@ const dropWhitespaceOnlyChunks = (chunkArray) => {
 
 export const buildArticleTitleText = (inputObj) => {
   if (!inputObj) return null;
-  const { title, dateNormal, articleType, articleId, urlNormal } = inputObj;
+  const { title, dateNormal, articleTypeArray, articleId, urlNormal } = inputObj;
   const safeTitle = escapeTelegramHTML(title);
   const safeDate = escapeTelegramHTML(dateNormal);
-  const safeType = escapeTelegramHTML(articleType);
+  const safeType = escapeTelegramHTML((articleTypeArray ?? []).join(", "));
   const safeId = escapeTelegramHTML(articleId);
   const safeURL = escapeTelegramHTML(urlNormal);
 

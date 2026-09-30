@@ -109,6 +109,45 @@ describe('current KCNA article markup', () => {
     expect(mockCollection.insertOne).not.toHaveBeenCalled()
   })
 
+  it('adds the type to an existing article without returning it as new', async () => {
+    const pageURL = 'http://www.kcna.kp/en/article/list/6a47505ba5268fd7749c0fe11e4b24b4'
+    mockHTMLByURL.set(pageURL, currentArticleListHTML)
+    mockCollection.findOne.mockResolvedValue({ url: 'already stored' })
+    mockCollection.updateOne.mockResolvedValue({ modifiedCount: 1 })
+
+    const result = await parseArticleListPage(pageURL, 'top')
+
+    expect(result).toHaveLength(0)
+    expect(mockCollection.updateOne).toHaveBeenCalledWith(
+      { url: 'http://www.kcna.kp/en/article/detail/99d235cb100ee217cd6678bb8fc80e4d' },
+      { $addToSet: { articleTypeArray: 'top' } },
+    )
+    expect(mockCollection.insertOne).not.toHaveBeenCalled()
+  })
+
+  it('does not throw when adding a type to an existing article fails', async () => {
+    const pageURL = 'http://www.kcna.kp/en/article/list/6a47505ba5268fd7749c0fe11e4b24b4'
+    mockHTMLByURL.set(pageURL, currentArticleListHTML)
+    mockCollection.findOne.mockResolvedValue({ url: 'already stored' })
+    mockCollection.updateOne.mockRejectedValue(new Error('mongo down'))
+
+    expect(await parseArticleListPage(pageURL, 'top')).toHaveLength(0)
+  })
+
+  it('stores a new URL with articleTypeArray containing the type', async () => {
+    const pageURL = 'http://www.kcna.kp/en/article/list/6a47505ba5268fd7749c0fe11e4b24b4'
+    mockHTMLByURL.set(pageURL, currentArticleListHTML)
+    mockCollection.findOne.mockResolvedValueOnce(null).mockResolvedValue({ seq: 40 })
+    mockCollection.findOneAndUpdate.mockResolvedValue({ seq: 41 })
+    mockCollection.insertOne.mockResolvedValue({ acknowledged: true })
+
+    await parseArticleListPage(pageURL, 'latest')
+
+    const stored = mockCollection.insertOne.mock.calls[0][0]
+    expect(stored.articleTypeArray).toEqual(['latest'])
+    expect(stored).not.toHaveProperty('articleType')
+  })
+
   it('parses current article list links, dates, and absolute URLs', async () => {
     const pageURL = 'http://www.kcna.kp/en/article/list/6a47505ba5268fd7749c0fe11e4b24b4'
     mockHTMLByURL.set(pageURL, currentArticleListHTML)
@@ -124,7 +163,7 @@ describe('current KCNA article markup', () => {
     expect(result[0].url).toBe('http://www.kcna.kp/en/article/detail/99d235cb100ee217cd6678bb8fc80e4d')
     expect(result[0]).toMatchObject({
       pageURL,
-      articleType: 'top',
+      articleTypeArray: ['top'],
       scrapeId: 'test-scrape-id',
       articleId: 41,
     })
@@ -391,7 +430,7 @@ describe('buildArticleTitleText', () => {
     const result = buildArticleTitleText({
       title: 'Kim Inspects Factory',
       dateNormal: '06/15/2024',
-      articleType: 'fatboy',
+      articleTypeArray: ['fatboy'],
       articleId: 42,
       urlNormal: 'http[:]//www[.]kcna[.]kp/en/article/q/abc[.]kcmsf',
     })
@@ -402,11 +441,18 @@ describe('buildArticleTitleText', () => {
     expect(result).toContain('http[:]//www[.]kcna[.]kp/en/article/q/abc[.]kcmsf')
   })
 
+  it('shows multiple types joined with a comma', () => {
+    const result = buildArticleTitleText({
+      title: 'T', dateNormal: '01/01/2024', articleTypeArray: ['latest', 'top'], articleId: 1, urlNormal: 'x',
+    })
+    expect(result).toContain('<b>KCNA ARTICLE:</b> latest, top |')
+  })
+
   it('uses HTML bold tags', () => {
     const result = buildArticleTitleText({
       title: 'Test',
       dateNormal: '01/01/2024',
-      articleType: 'general',
+      articleTypeArray: ['general'],
       articleId: 1,
       urlNormal: 'http[:]//example[.]com',
     })
@@ -547,7 +593,7 @@ describe('article Telegram delivery', () => {
       date: new Date(2024, 5, 15),
       title: 'Title',
       text: 'Body',
-      articleType: 'news',
+      articleTypeArray: ['news'],
       articleId: 1,
       tgChannelId: '-100123',
     })
@@ -563,7 +609,7 @@ describe('article Telegram delivery', () => {
       date: new Date(2024, 5, 15),
       title: 'Title',
       text: 'Body',
-      articleType: 'news',
+      articleTypeArray: ['news'],
       articleId: 1,
     }]) })
 
@@ -578,7 +624,7 @@ describe('article Telegram delivery', () => {
     const { tgSendMessage } = await import('../src/tg-api.js')
     const article = {
       url: 'http://www.kcna.kp/article', date: new Date(2024, 5, 15), title: 'Title',
-      text: 'A'.repeat(80), articleType: 'news', articleId: 1,
+      text: 'A'.repeat(80), articleTypeArray: ['news'], articleId: 1,
     }
     mockCollection.find
       .mockReturnValueOnce({ toArray: vi.fn().mockResolvedValue([article]) })
@@ -622,7 +668,7 @@ describe('article Telegram delivery', () => {
     const { tgSendMessage } = await import('../src/tg-api.js')
     tgSendMessage.mockResolvedValue({ ok: true })
     mockCollection.find.mockReturnValue({ toArray: vi.fn().mockResolvedValue([{
-      url: 'http://www.kcna.kp/article', date: new Date(2024, 5, 15), title: 'Title', text: 'Body', articleType: 'news', articleId: 1,
+      url: 'http://www.kcna.kp/article', date: new Date(2024, 5, 15), title: 'Title', text: 'Body', articleTypeArray: ['news'], articleId: 1,
     }]) })
     mockCollection.updateOne.mockResolvedValue({ acknowledged: true, matchedCount: 0 })
 
@@ -633,7 +679,7 @@ describe('article Telegram delivery', () => {
     const { tgSendMessage } = await import('../src/tg-api.js')
     tgSendMessage.mockResolvedValue({ ok: true })
     mockCollection.find.mockReturnValue({ toArray: vi.fn().mockResolvedValue([{
-      url: 'http://www.kcna.kp/article', date: new Date(2024, 5, 15), title: 'Title', text: 'Body', articleType: 'news', articleId: 1,
+      url: 'http://www.kcna.kp/article', date: new Date(2024, 5, 15), title: 'Title', text: 'Body', articleTypeArray: ['news'], articleId: 1,
     }]) })
 
     await uploadArticlesKCNA()
@@ -643,7 +689,7 @@ describe('article Telegram delivery', () => {
 
   it('escapes scraped HTML characters at the Telegram boundary', () => {
     const title = 'A < B & C > D'
-    const article = { title, dateNormal: '06/15/2024', articleType: 'news & analysis', articleId: 1, urlNormal: 'x&y' }
+    const article = { title, dateNormal: '06/15/2024', articleTypeArray: ['news & analysis'], articleId: 1, urlNormal: 'x&y' }
     const titleText = buildArticleTitleText(article)
     const chunkText = buildChunkText('Body <tag> & text', { urlNormal: 'x&y', chunkTotal: 1 }, 0)
 

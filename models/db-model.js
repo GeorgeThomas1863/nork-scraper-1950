@@ -41,6 +41,12 @@ class dbModel {
     return updateData;
   }
 
+  async addToSetByUrl() {
+    const { url, addKey, addValue } = this.dataObject;
+    const updateData = await dbGet().collection(this.collection).updateOne({ url }, { $addToSet: { [addKey]: addValue } }); //prettier-ignore
+    return updateData;
+  }
+
   //--------------
 
   //GETS STUFF

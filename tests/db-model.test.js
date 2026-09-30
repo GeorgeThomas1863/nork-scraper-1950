@@ -227,6 +227,21 @@ describe('dbModel.urlExists', () => {
   })
 })
 
+// ---- addToSetByUrl ----
+
+describe('dbModel.addToSetByUrl', () => {
+  it('adds the value to the array matched by url', async () => {
+    const col = getMockCollection()
+    col.updateOne.mockResolvedValue({ modifiedCount: 1 })
+
+    const model = new dbModel({ url: 'http://a.com', addKey: 'articleTypeArray', addValue: 'top' }, 'articles')
+    const result = await model.addToSetByUrl()
+
+    expect(col.updateOne).toHaveBeenCalledWith({ url: 'http://a.com' }, { $addToSet: { articleTypeArray: 'top' } })
+    expect(result.modifiedCount).toBe(1)
+  })
+})
+
 // ---- itemExistsCheckBoolean ----
 
 describe('dbModel.itemExistsCheckBoolean', () => {
