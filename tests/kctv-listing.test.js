@@ -7,6 +7,7 @@ process.env.WATCH_HEADLESS = "true";
 const { mockPage, mockContext, mockLaunchPersistentContext } = vi.hoisted(() => {
   const mockPage = {
     goto: vi.fn(),
+    on: vi.fn(),
     waitForSelector: vi.fn(),
     content: vi.fn(),
     url: vi.fn(),
@@ -161,6 +162,51 @@ describe("parseKctvListing - placeholder thumbnails", () => {
   });
 });
 
+const buildEntryHTML = (thumbSrc, label) => `
+<article class="clearfix">
+  <div class="article-thumb"><a href="/kctv-archive/abc123"><img class="img-fluid" src="${thumbSrc}"></a></div>
+  <div class="article-desc">
+    <h4><a href="/kctv-archive/abc123">Thursday October 15, 2026</a></h4>
+    <p class="broadcast-head">${label}</p>
+  </div>
+</article>`;
+
+const REAL_8PM_THUMB =
+  "https://streamer.nknews.org/tvarchive/stream-1792022409-2026-10-15-00-00/stream-1792022409-2026-10-15-00-00-news8pm/stream-1792022409-2026-10-15-00-00-news8pm.jpg";
+const PLACEHOLDER_THUMB = "/wp-content/themes/kcnawatch/images/image-uploading.jpg";
+
+describe("parseKctvListing - raw server html", () => {
+  it("parses a real 8pm thumbnail into one news8pm entry with an mp4 url and UTC midnight date", () => {
+    const entryArray = parseKctvListing(buildEntryHTML(REAL_8PM_THUMB, "8pm Bulletin"), "https://kcnawatch.org");
+    expect(entryArray).toHaveLength(1);
+    expect(entryArray[0].vidType).toBe("news8pm");
+    expect(entryArray[0].url.endsWith("-news8pm.mp4")).toBe(true);
+    expect(entryArray[0].date.toISOString()).toBe("2026-10-15T00:00:00.000Z");
+  });
+
+  it("skips an image-uploading placeholder thumbnail and counts it", () => {
+    const entryArray = parseKctvListing(buildEntryHTML(PLACEHOLDER_THUMB, "8pm Bulletin"), "https://kcnawatch.org");
+    expect(entryArray).toHaveLength(0);
+    expect(entryArray.placeholderCount).toBe(1);
+  });
+
+  it("creates no entry from a script holding the video.file_path template", () => {
+    const template = '<article class="clearfix"><div class="article-thumb"><img src="${video.file_path}${video.file_name.replace(\'.mp4\', \'.jpg\')}"></div></article>';
+    const html = `<div><script>const tpl = \`${template}\`;</script></div>`;
+    const entryArray = parseKctvListing(html, "https://kcnawatch.org");
+    expect(entryArray).toHaveLength(0);
+    expect(entryArray.candidateCount).toBe(0);
+  });
+
+  it("drops a real DOM entry whose thumbnail src is an unrendered ${...} template", () => {
+    const templateThumb = "${video.file_path}${video.file_name}-news8pm.jpg";
+    const entryArray = parseKctvListing(buildEntryHTML(templateThumb, "8pm Bulletin"), "https://kcnawatch.org");
+    expect(entryArray.candidateCount).toBe(1);
+    expect(entryArray).toHaveLength(0);
+    expect(entryArray.placeholderCount).toBe(0);
+  });
+});
+
 describe("isPlaceholderVidURL", () => {
   it("returns true for the image-uploading placeholder mp4 url", () => {
     expect(
@@ -305,6 +351,42 @@ describe("scrapeKctvListing", () => {
     for (const entry of entryArray) {
       expect(WATCH_VID_TYPES).toContain(entry.vidType);
     }
+  });
+
+  it("parses the raw server html, not the DOM rewritten by the thumbnail onerror handler", async () => {
+    mockPage.goto.mockResolvedValue({
+      text: vi.fn().mockResolvedValue(buildEntryHTML(REAL_8PM_THUMB, "8pm Bulletin")),
+      status: vi.fn().mockReturnValue(200),
+      url: vi.fn().mockReturnValue("https://kcnawatch.org/kctv-archive/"),
+    });
+    mockPage.content.mockResolvedValue(buildEntryHTML(PLACEHOLDER_THUMB, "8pm Bulletin"));
+
+    const entryArray = await scrapeKctvListing({ howMuch: "admin-scrape-new" });
+    expect(entryArray).toHaveLength(1);
+    expect(entryArray[0].url.endsWith("-news8pm.mp4")).toBe(true);
+  });
+
+  it("falls back to the DOM html when the raw response body is empty", async () => {
+    mockPage.goto.mockResolvedValue({
+      text: vi.fn().mockResolvedValue(""),
+      status: vi.fn().mockReturnValue(200),
+      url: vi.fn().mockReturnValue("https://kcnawatch.org/kctv-archive/"),
+    });
+
+    const entryArray = await scrapeKctvListing({ howMuch: "admin-scrape-new" });
+    expect(entryArray).toHaveLength(2);
+  });
+
+  it("does not abort when the debug DOM read fails but the raw response html is available", async () => {
+    mockPage.goto.mockResolvedValue({
+      text: vi.fn().mockResolvedValue(kctvListingHTML),
+      status: vi.fn().mockReturnValue(200),
+      url: vi.fn().mockReturnValue("https://kcnawatch.org/kctv-archive/"),
+    });
+    mockPage.content.mockRejectedValue(new Error("dom read failed"));
+
+    const entryArray = await scrapeKctvListing({ howMuch: "admin-scrape-new" });
+    expect(entryArray).toHaveLength(2);
   });
 
   it("closes the browser context after a successful scrape", async () => {
