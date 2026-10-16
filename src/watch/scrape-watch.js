@@ -3,6 +3,7 @@ import { runScrapeStage, finalizeFailedScrape } from "../kcna/scrape-kcna.js";
 import { scrapeKctvListing } from "./kctv-listing.js";
 import { uploadVidPagesWatch, downloadVidsWatch, downloadThumbsWatch } from "./vids.js";
 import { uploadVidsTGWatch } from "./upload-tg.js";
+import { cleanupOldVidsWatch } from "./cleanup-vids.js";
 import kcnaState from "../util/state.js";
 
 export const scrapeWatch = async (inputParams) => {
@@ -38,4 +39,5 @@ const runScrapePipelineWatch = async (inputParams) => {
   await runScrapeStage("KCTV DOWNLOAD WATCH", downloadVidsWatch);
   await runScrapeStage("KCTV THUMBS WATCH", downloadThumbsWatch);
   await runScrapeStage("KCTV TG UPLOAD WATCH", uploadVidsTGWatch);
+  await runScrapeStage("KCTV CLEANUP WATCH", cleanupOldVidsWatch);
 };

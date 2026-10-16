@@ -103,6 +103,12 @@ class dbModel {
     return dataArray;
   }
 
+  async findMatching() {
+    const { filterObj } = this.dataObject;
+    const dataArray = await dbGet().collection(this.collection).find(filterObj).toArray(); //prettier-ignore
+    return dataArray;
+  }
+
   async findEmptyArrayItems() {
     const { keyExists, arrayKey } = this.dataObject;
     const dataArray = await dbGet()

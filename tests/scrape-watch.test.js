@@ -20,11 +20,16 @@ vi.mock('../src/watch/upload-tg.js', () => ({
   uploadVidsTGWatch: vi.fn(),
 }))
 
+vi.mock('../src/watch/cleanup-vids.js', () => ({
+  cleanupOldVidsWatch: vi.fn(),
+}))
+
 import { scrapeWatch } from '../src/watch/scrape-watch.js'
 import { logScrapeStartKCNA, logScrapeStopKCNA } from '../src/util/log.js'
 import { scrapeKctvListing } from '../src/watch/kctv-listing.js'
 import { uploadVidPagesWatch, downloadVidsWatch, downloadThumbsWatch } from '../src/watch/vids.js'
 import { uploadVidsTGWatch } from '../src/watch/upload-tg.js'
+import { cleanupOldVidsWatch } from '../src/watch/cleanup-vids.js'
 import kcnaState, { resetStateKCNA } from '../src/util/state.js'
 
 const inputParams = { command: 'admin-start-scrape', site: 'watch', howMuch: 'admin-scrape-new' }
@@ -41,6 +46,7 @@ beforeEach(() => {
   downloadVidsWatch.mockResolvedValue(0)
   downloadThumbsWatch.mockResolvedValue(0)
   uploadVidsTGWatch.mockResolvedValue(null)
+  cleanupOldVidsWatch.mockResolvedValue(0)
 })
 
 describe('scrapeWatch', () => {
@@ -54,10 +60,11 @@ describe('scrapeWatch', () => {
     downloadVidsWatch.mockImplementation(async () => observedSteps.push(kcnaState.scrapeStep))
     downloadThumbsWatch.mockImplementation(async () => observedSteps.push(kcnaState.scrapeStep))
     uploadVidsTGWatch.mockImplementation(async () => observedSteps.push(kcnaState.scrapeStep))
+    cleanupOldVidsWatch.mockImplementation(async () => observedSteps.push(kcnaState.scrapeStep))
 
     await scrapeWatch(inputParams)
 
-    expect(observedSteps).toEqual(['KCTV LISTING WATCH', 'KCTV UPLOAD WATCH', 'KCTV DOWNLOAD WATCH', 'KCTV THUMBS WATCH', 'KCTV TG UPLOAD WATCH'])
+    expect(observedSteps).toEqual(['KCTV LISTING WATCH', 'KCTV UPLOAD WATCH', 'KCTV DOWNLOAD WATCH', 'KCTV THUMBS WATCH', 'KCTV TG UPLOAD WATCH', 'KCTV CLEANUP WATCH'])
   })
 
   it('passes inputParams to the listing scrape and its entries to the upload', async () => {
@@ -71,6 +78,7 @@ describe('scrapeWatch', () => {
     expect(downloadVidsWatch).toHaveBeenCalledWith()
     expect(downloadThumbsWatch).toHaveBeenCalledWith()
     expect(uploadVidsTGWatch).toHaveBeenCalledWith()
+    expect(cleanupOldVidsWatch).toHaveBeenCalledWith()
   })
 
   it('finalizes once and returns the final state after success', async () => {
@@ -150,6 +158,7 @@ describe('scrapeWatch', () => {
 
     expect(pipelineError.apiMessage).toBe('Scrape failed during KCTV TG UPLOAD WATCH')
     expect(kcnaState.scrapeActive).toBe(false)
+    expect(cleanupOldVidsWatch).not.toHaveBeenCalled()
     consoleSpy.mockRestore()
   })
 

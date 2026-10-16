@@ -62,6 +62,7 @@ WATCH_COLLECTION=watch             # MongoDB collection for KCTV bulletin entrie
 WATCH_PROFILE_PATH=                 # optional; defaults to ~/.playwright-profiles/kcnawatch
 WATCH_HEADLESS=true                 # optional; default true
 WATCH_BASE_URL=https://kcnawatch.org  # optional; default https://kcnawatch.org
+WATCH_KEEP_DAYS=14                  # optional; days to keep local MP4s before cleanup (positive integer, else 14)
 VID_PROGRESS_SIZE=1048576           # log download progress every N bytes
 TG_VID_CHUNK_BYTES=40000000         # optional; Telegram upload piece size (40 MB default)
 ```
@@ -70,7 +71,7 @@ TG_VID_CHUNK_BYTES=40000000         # optional; Telegram upload piece size (40 M
 
 ## Tests
 
-`tests/` holds one `.test.js` file per source module: api-controller, articles, db-model, kctv-listing, log, middleware/listen-host, nork-model, pics, picSets, repair-empty-pics, scheduler, scrape-kcna, scrape-watch, src, startup-config, tg-api, update-db, util, watch-vids. Shared HTML fixtures live in `tests/fixtures/`.
+`tests/` holds one `.test.js` file per source module: api-controller, articles, cleanup-vids, db-model, kctv-listing, log, middleware/listen-host, nork-model, pics, picSets, repair-empty-pics, scheduler, scrape-kcna, scrape-watch, src, startup-config, tg-api, update-db, util, watch-vids. Shared HTML fixtures live in `tests/fixtures/`.
 
 ## Architecture
 
@@ -105,6 +106,7 @@ This is a Node.js/Express scraper (ESM modules) that pulls content from KCNA (kc
 3. `KCTV DOWNLOAD WATCH` — `downloadVidsWatch()` downloads the MP4s that have not been fetched yet. Any already-stored row whose URL is a placeholder is deleted instead of downloaded, so the next listing run can re-index it with the real URL.
 4. `KCTV THUMBS WATCH` — `downloadThumbsWatch()` downloads thumbnails for all entries.
 5. **Telegram upload** — After thumbnails, stage `KCTV TG UPLOAD WATCH` posts each new video to `TG_CHANNEL_ID`: one HTML header message, then the video split with ffmpeg stream copy into pieces under 50,000,000 bytes (Telegram bot upload limit) each posted as its own `sendVideo` message in order (caption on the first piece only); pieces are written to `WATCH_PATH/tg/` and deleted after a successful post; rows are marked `uploaded: true`, progress is kept in `telegramDelivery` so a failed run resumes; unmarked rows are retried next scrape. Optional env `TG_VID_CHUNK_BYTES` (default 40000000, i.e. 40 MB) sets the target piece size. Requires `ffmpeg` and `ffprobe` on PATH (installed in the Docker image; install locally for `npm run dev`).
+6. `KCTV CLEANUP WATCH` — `cleanupOldVidsWatch()` (`src/watch/cleanup-vids.js`) deletes the `.mp4` of records with `site: "watch"`, a broadcast `date` older than `WATCH_KEEP_DAYS` (default 14), a complete Telegram delivery (`uploaded`, `titleSent`, `chunksSent >= chunkPathArray.length`) and no `localDeleted`. It only deletes files inside `WATCH_PATH` ending in `.mp4`, then sets `localDeleted: true` and `localDeletedAt` on the record. The record, `url`, `vidSize`, `uploaded`, `telegramDelivery` and the thumbnail are never touched (the listing dedup, download selection and TG upload selection all depend on them).
 
 Notes on how it works and why:
 
